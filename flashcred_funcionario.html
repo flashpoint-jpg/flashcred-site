@@ -1,0 +1,1571 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FlashCred | Área do Funcionário</title>
+<link rel="manifest" href="manifest-funcionario.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0A2463">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FlashCred Func">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.1"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#0A2463;
+  --primary2:#123B91;
+  --azul:#2563EB;
+  --verde:#10B981;
+  --alerta:#F59E0B;
+  --perigo:#EF4444;
+  --bg:#F4F7FC;
+  --borda:#E2E8F0;
+  --texto:#1E293B;
+  --texto-claro:#64748B;
+  --raio:16px;
+  --sombra:0 10px 34px rgba(10,36,99,.09);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:'Inter',system-ui,-apple-system,sans-serif;background:radial-gradient(circle at 8% 0%,rgba(37,99,235,.07),transparent 30%),radial-gradient(circle at 95% 15%,rgba(16,185,129,.06),transparent 28%),var(--bg);color:var(--texto);line-height:1.6}
+.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.box,.card{background:#fff;border-radius:var(--raio);box-shadow:var(--sombra);border:1px solid rgba(226,232,240,.9)}
+.box{max-width:430px;width:100%;padding:38px 34px}
+h1{color:var(--primary);margin:0 0 6px;font-size:27px;font-weight:900;letter-spacing:-.6px}
+.sub,.info{color:var(--texto-claro)}
+.info{font-size:13px;line-height:1.6}
+label{display:block;font-size:11px;font-weight:700;margin:16px 0 7px;text-transform:uppercase;letter-spacing:.6px;color:#334155}
+input,button{width:100%;padding:13px 15px;border-radius:12px;font-size:15px;font-family:inherit}
+input{border:1px solid #d7e0eb;background:#f8fafc;transition:.2s}
+input:hover{border-color:#aebdd1}
+input:focus{outline:none;border-color:var(--azul);background:#fff;box-shadow:0 0 0 4px rgba(37,99,235,.12)}
+button{border:0;background:linear-gradient(135deg,var(--primary),var(--azul));color:#fff;font-weight:700;cursor:pointer;transition:.2s;box-shadow:0 10px 24px rgba(37,99,235,.20)}
+button:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(37,99,235,.26)}
+button:disabled{opacity:.65;cursor:not-allowed;transform:none;box-shadow:none}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid rgba(37,99,235,.45);outline-offset:2px}
+.erro{color:#dc2626;margin-top:10px;font-size:13px;font-weight:600}
+.hidden{display:none!important}
+.top{background:linear-gradient(135deg,#071b4d,var(--primary));color:#fff;padding:20px 26px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 10px 30px rgba(7,27,77,.20)}
+.top strong{font-size:17px;letter-spacing:-.2px}
+.top button{width:auto;background:rgba(255,255,255,.14);padding:10px 18px;border-radius:10px;box-shadow:none;font-size:14px;font-weight:700}
+.top button:hover{background:rgba(255,255,255,.24);transform:none;box-shadow:none}
+main{max-width:1100px;margin:auto;padding:30px 20px 60px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{padding:26px;margin-top:18px}
+
+.frases-prontas{display:flex;flex-direction:column;gap:12px}
+#catalogoFuncionario{display:block;width:100%}
+.catalogo-funcionario{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;clear:both}
+.catalogo-item{background:#F8FAFC;border:1px solid var(--borda,#E2E8F0);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.catalogo-item img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#EEF2F7}
+.catalogo-item-info{padding:9px 10px}
+.catalogo-item-nome{font-size:12px;font-weight:700;color:#1E293B;line-height:1.3;margin-bottom:5px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:normal;overflow-wrap:break-word}
+.catalogo-item-preco{font-size:13.5px;font-weight:900;color:#0A2463;margin-bottom:7px}
+.catalogo-item-wpp{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;background:#25D366;color:#fff;border:none;border-radius:8px;padding:8px 4px;font-size:11.5px;font-weight:800;cursor:pointer;text-decoration:none}
+.catalogo-secao-titulo{display:block;width:100%;clear:both;font-size:13px;font-weight:800;color:#0A2463;margin:16px 0 10px;text-transform:uppercase;letter-spacing:.02em}
+.frase-pronta{background:#F8FAFC;border:1px solid var(--borda,#E2E8F0);border-radius:14px;padding:14px}
+.frase-pronta-titulo{font-weight:800;font-size:13px;color:#0A2463;margin-bottom:6px}
+.frase-pronta-texto{font-size:13px;color:#334155;line-height:1.55;white-space:pre-line;margin-bottom:10px}
+.frase-pronta-botao{border:0;border-radius:10px;padding:9px 14px;font-weight:800;font-size:12.5px;cursor:pointer;background:linear-gradient(135deg,#0A2463,#2563EB);color:#fff}
+.frase-pronta-botao.copiado{background:linear-gradient(135deg,#059669,#10B981)}
+.card h3{color:var(--primary);font-size:17px;margin:0 0 6px;font-weight:800}
+.valor{font-size:26px;font-weight:800;margin-top:8px;color:var(--primary)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid .full{grid-column:1/-1}
+.acao{margin-top:14px;background:linear-gradient(135deg,#059669,var(--verde));box-shadow:0 12px 26px rgba(16,185,129,.24)}
+.acao:hover{box-shadow:0 16px 32px rgba(16,185,129,.30)}
+.badge{display:inline-block;padding:6px 11px;border-radius:999px;font-size:12px;font-weight:700;background:#e8eefc;color:var(--primary)}
+.pix{background:#dcfce7;color:#15803d}
+.pend{background:#fef3c7;color:#a16207}
+.pago{background:#dcfce7;color:#15803d}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:13px 12px;border-bottom:1px solid #eef1f6;font-size:14px}
+th{background:#f8fafc;color:#334155;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.ok{color:#15803d}
+.msg{margin-top:12px;font-weight:700;font-size:14px}
+@media(max-width:700px){.cards,.grid{grid-template-columns:1fr}table{display:block;overflow:auto;white-space:nowrap}}
+
+.send-overlay{position:fixed;inset:0;background:rgba(7,27,77,.62);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:9999}
+.send-box{background:#fff;width:min(470px,100%);border-radius:24px;padding:34px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.28);animation:pop .28s ease}
+.send-icon{width:76px;height:76px;margin:0 auto 18px;border-radius:50%;background:linear-gradient(135deg,#dbeafe,#dcfce7);display:flex;align-items:center;justify-content:center;font-size:34px;animation:pulse 1.5s infinite}
+.send-box h3{margin:0 0 8px;color:var(--primary);font-size:22px;font-weight:800}
+.send-box p{color:var(--texto-claro);line-height:1.5;margin:8px 0}
+.send-progress{height:8px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin:20px 0 12px}
+.send-progress span{display:block;height:100%;width:35%;border-radius:99px;background:linear-gradient(90deg,var(--azul),var(--verde));animation:progress 1.5s ease-in-out infinite}
+.send-status{font-size:13px;font-weight:700;color:var(--primary)}
+.comissao-explicacao{background:linear-gradient(135deg,#eff6ff,#ecfdf5);border:1px solid #dbeafe}
+.comissao-passos{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.comissao-passo{background:#fff;border-radius:12px;padding:13px;border:1px solid #e5e7eb}
+.comissao-passo b{display:block;color:var(--primary);margin-bottom:5px}
+.comissao-passo span{font-size:12px;color:var(--texto-claro);line-height:1.4}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes progress{0%{transform:translateX(-120%)}100%{transform:translateX(330%)}}
+@media(max-width:700px){.comissao-passos{grid-template-columns:1fr}}
+
+.funcionario-guia{background:linear-gradient(135deg,#eef6ff,#f0fdf4);border:1px solid #dbeafe}
+.funcionario-guia h3{margin:0 0 8px;color:var(--primary);font-weight:800}
+.funcionario-guia ul{margin:10px 0 0;padding-left:20px;color:#475569;line-height:1.7}
+.campo-bloqueado{background:#f1f5f9!important;color:var(--texto-claro)!important;cursor:not-allowed!important;border-color:#cbd5e1!important}
+.campo-bloqueado-wrap{position:relative}
+.campo-bloqueado-wrap small{display:block;color:var(--texto-claro);font-size:11px;margin-top:4px}
+
+.simulador{border:1px solid #dbeafe;background:linear-gradient(135deg,#f8fbff,#f0fdf4)}
+.simulador h3{margin:0 0 6px;color:var(--primary);font-weight:800}
+.simulador-header{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.simulador-header h3{margin:0;color:var(--primary)}
+.simulador-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}
+.sim-box{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:13px}
+.sim-box small{display:block;color:var(--texto-claro);margin-bottom:5px}
+.sim-box strong{font-size:19px;color:var(--primary)}
+.sim-box.locked{background:#f8fafc}
+.sim-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.sim-item{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px}
+.sim-item small{display:block;color:var(--texto-claro);font-size:11px;margin-bottom:5px}
+.sim-item strong{display:block;color:#0f172a;font-size:18px}
+.sim-item .muted{font-size:12px;color:var(--texto-claro);font-weight:normal}
+.sim-result{margin-top:12px;padding:15px;border-radius:14px;background:#fff;border:1px solid #dbeafe}
+.sim-result .parcel{font-size:28px;font-weight:800;color:var(--primary)}
+.sim-lock{font-size:11px;color:var(--texto-claro);margin-top:8px}
+.comissao-destaque{margin-top:14px;padding:18px;border-radius:14px;background:linear-gradient(135deg,#071b4d,var(--primary));color:#fff}
+.comissao-destaque small{display:block;opacity:.85}
+.comissao-destaque strong{display:block;font-size:25px;margin-top:4px}
+.comissao-destaque span{display:block;margin-top:5px;font-size:13px;opacity:.92}
+@media(max-width:700px){.simulador-grid{grid-template-columns:1fr}.sim-grid{grid-template-columns:1fr 1fr}}
+@keyframes notifSlideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+</style></head><body>
+
+<div
+    id="convitePushFuncionario"
+    style="display:none;position:fixed;top:16px;left:16px;right:16px;z-index:99998;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:linear-gradient(135deg,#0A2463,#0F8B8D);color:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 14px 40px rgba(10,36,99,.35)"
+>
+    <div>
+        <div style="font-weight:900;font-size:15px;margin-bottom:4px">🔔 Ativar notificações</div>
+        <div style="font-size:13px;opacity:.9;line-height:1.4">Receba aviso na hora quando seu cliente pagar a entrada ou a parcela, mesmo com o app fechado.</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+        <button type="button" onclick="ativarNotificacaoFuncionario()" style="background:#fff;color:#0A2463;border:none;border-radius:10px;padding:11px 16px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap">Ativar</button>
+        <button type="button" onclick="document.getElementById('convitePushFuncionario').style.display='none'" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:10px;padding:11px 14px;font-weight:700;font-size:13px;cursor:pointer">✕</button>
+    </div>
+</div>
+
+<section id="login" class="login"><div class="box"><h1>FlashCred</h1><div class="sub">Área exclusiva do funcionário</div><label>Usuário</label><input id="usuario" autocomplete="username" placeholder="Digite seu usuário"><label>Senha</label><input id="senha" type="password" autocomplete="current-password" placeholder="Digite sua senha"><button onclick="entrar()">Entrar</button><div id="erro" class="erro"></div><p class="info">Use o usuário e a senha criados no Painel Administrativo → Funcionários.</p></div></section>
+<section id="app" class="hidden"><header class="top"><strong>FlashCred — Funcionário</strong><button onclick="sair()">Sair</button></header><main>
+<h2 id="boasVindas">Olá!</h2><p class="sub">Suas indicações, comissões e solicitações de saque.</p>
+<div class="card" id="bannerNovidadeApp" style="background:linear-gradient(135deg,#0A2463,#2563EB);color:#fff">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+        <div>
+            <div style="font-weight:900;font-size:15px;margin-bottom:4px">🎉 Novidade!</div>
+            <div style="font-size:13.5px;opacity:.92;line-height:1.5">Agora você pode instalar este painel como aplicativo no seu celular e trabalhar direto por ele — sem precisar abrir o navegador toda vez.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0">
+            <button type="button" onclick="instalarAppFuncionario()" style="background:#fff;color:#0A2463;border:none;border-radius:10px;padding:11px 16px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap">📲 Instalar agora</button>
+            <button type="button" onclick="document.getElementById('bannerNovidadeApp').style.display='none'" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:10px;padding:11px 14px;font-weight:700;font-size:13px;cursor:pointer">✕</button>
+        </div>
+    </div>
+</div>
+
+<div class="card funcionario-guia"><h3>🚀 Como funciona sua indicação</h3><p class="info">Você cadastra os dados do cliente e envia a proposta. Depois, acompanha o andamento pelo painel.</p><ul><li><b>Preencha:</b> nome, CPF, data de nascimento, WhatsApp, CEP, endereço e valor desejado.</li><li><b>O cliente precisa ter 18 anos ou mais</b> para solicitar o crédito.</li><li><b>Entrada, juros e prazo de entrega</b> seguem o padrão definido no Painel Administrativo e não podem ser alterados pelo funcionário.</li><li><b>Parcelas:</b> o funcionário pode escolher de <b>1x até 12x</b> somente para simular e apresentar as opções ao cliente.</li><li>A proposta enviada usa os parâmetros oficiais do sistema, com a quantidade de parcelas escolhida pelo funcionário, limitada a 12x.</li></ul></div>
+
+<div class="card"><h3>💬 Frases prontas — cliente desconfiado</h3><p class="info">Copie e cole na conversa com o cliente quando ele perguntar se é golpe ou por que pedimos entrada.</p><div id="frasesProntas" class="frases-prontas"></div></div>
+
+<div class="card"><h3>🛋️ Catálogo de Produtos</h3><p class="info">Fotos e valores pra você mostrar ao cliente e ele escolher. O valor final é confirmado por ele mesmo, direto na lojinha, depois da proposta aprovada.</p><div id="catalogoFuncionario" class="catalogo-funcionario"></div></div>
+
+<div class="card"><h3>➕ Nova indicação</h3><p class="info">Preencha os dados do cliente e o valor desejado. Os campos comerciais protegidos são exibidos para consulta.</p><div class="grid">
+<div><label>Nome completo</label><input id="nome" autocomplete="name" placeholder="Nome do cliente"></div>
+<div><label>CPF</label><input id="cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" maxlength="14"></div>
+<div><label>Data de nascimento</label><input id="nascimento" type="date" autocomplete="bday"><small class="info">Obrigatório: 18 anos ou mais.</small></div>
+<div><label>WhatsApp</label><input id="whatsapp" inputmode="tel" autocomplete="tel" placeholder="WhatsApp do cliente"></div>
+<div><label>CEP</label><input id="cep" inputmode="numeric" autocomplete="postal-code" placeholder="CEP" maxlength="9"></div>
+<div class="full"><label>Endereço</label><input id="endereco" autocomplete="street-address" placeholder="Endereço completo"></div>
+<div><label>Valor desejado</label><input id="valor" type="number" min="0" step="0.01" placeholder="R$ 0,00"></div>
+<div class="campo-bloqueado-wrap"><label>Entrada Pix</label><input id="entrada" class="campo-bloqueado" type="number" readonly tabindex="-1" aria-readonly="true"><small>🔒 Definida por você no Painel Administrativo</small></div>
+<div class="campo-bloqueado-wrap"><label>Juros mensal (%)</label><input id="juros" class="campo-bloqueado" type="number" readonly tabindex="-1" aria-readonly="true"><small>🔒 Definido por você no Painel Administrativo — mínimo 10%</small></div>
+<div class="campo-bloqueado-wrap"><label>Prazo de entrega (dias úteis)</label><input id="dias" class="campo-bloqueado" type="number" readonly tabindex="-1" aria-readonly="true"><small>🔒 Definido por você no Painel Administrativo</small></div>
+</div>
+<div style="margin:16px 0 4px">
+<label style="display:block;font-weight:800;font-size:13.5px;color:#0A2463;margin-bottom:10px">💳 Como o cliente vai pagar a entrada?</label>
+<div class="toggle-pagamento" style="display:flex;flex-wrap:wrap;background:#eef2f7;border-radius:15px;padding:4px;gap:4px">
+<label style="flex:1;min-width:130px;display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:11px;padding:11px 8px;cursor:pointer;text-align:center;transition:all .2s ease">
+<input type="radio" name="formaPagamentoEntradaFunc" value="pix_antecipado" checked style="display:none">
+<span style="font-size:13px;font-weight:800">⚡ Pix agora</span>
+<span style="font-size:10.5px;font-weight:700;opacity:.85">40% · escolhe o dia da entrega</span>
+</label>
+<label style="flex:1;min-width:130px;display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:11px;padding:11px 8px;cursor:pointer;text-align:center;transition:all .2s ease">
+<input type="radio" name="formaPagamentoEntradaFunc" value="na_entrega" style="display:none">
+<span style="font-size:13px;font-weight:800">📦 Pix na entrega</span>
+<span style="font-size:10.5px;font-weight:700;opacity:.85">55% · entrega mais lenta</span>
+</label>
+<label style="flex:1;min-width:130px;display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:11px;padding:11px 8px;cursor:pointer;text-align:center;transition:all .2s ease">
+<input type="radio" name="formaPagamentoEntradaFunc" value="cartao_entrega" style="display:none">
+<span style="font-size:13px;font-weight:800">💳 Cartão na entrega</span>
+<span style="font-size:10.5px;font-weight:700;opacity:.85">sem entrada</span>
+</label>
+<label style="flex:1;min-width:130px;display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:11px;padding:11px 8px;cursor:pointer;text-align:center;transition:all .2s ease">
+<input type="radio" name="formaPagamentoEntradaFunc" value="pix_total_entrega" style="display:none">
+<span style="font-size:13px;font-weight:800">💰 Pix total na entrega</span>
+<span style="font-size:10.5px;font-weight:700;opacity:.85">sem entrada, sem parcelar</span>
+</label>
+</div>
+</div>
+<style>
+.toggle-pagamento label:has(input:checked){background:linear-gradient(135deg,#0F8B8D,#0c6e70);color:#fff;box-shadow:0 4px 12px rgba(15,139,141,.32)}
+.toggle-pagamento label:has(input:not(:checked)){color:#64748b}
+</style>
+<div style="margin:18px 0 4px">
+<label style="display:block;font-weight:800;font-size:13.5px;color:#0A2463;margin-bottom:6px">📦 Produto(s) vendido(s) <span style="font-weight:500;color:#94a3b8">(opcional — preencha só o que fizer sentido)</span></label>
+<p class="info" style="margin-bottom:8px;font-size:11.5px">Você só consegue editar isso agora, antes de enviar. Depois de enviada, só o administrador altera a proposta.</p>
+<div id="listaProdutosNovaIndicacao"></div>
+<button type="button" onclick="adicionarLinhaProdutoNovaIndicacao()" style="background:#eef2f7;color:#0A2463;font-weight:700;font-size:12.5px;padding:9px 14px;border-radius:10px;border:none;cursor:pointer">➕ Adicionar produto</button>
+</div>
+<p class="info" style="margin:12px 0 6px"><b>Importante:</b> confirme a data de nascimento. O crédito só pode ser solicitado para cliente com 18 anos ou mais.</p>
+<button id="btnEnviarIndicacao" class="acao" onclick="novaIndicacao()">🚀 Enviar indicação</button><div id="msgIndicacao" class="msg"></div></div>
+
+<div class="card simulador"><div class="simulador-header"><h3>🧮 Simulador para apresentar ao cliente</h3><span class="badge">Entrada e juros protegidos • Parcelas 1x a 12x</span></div>
+<p class="info">Digite o <b>valor desejado</b>. A entrada e os juros aparecem automaticamente conforme a configuração do seu Painel Administrativo. Para conversar com o cliente, escolha abaixo quantas parcelas ele quer simular — de <b>1x até 12x</b>.</p>
+<div class="simulador-grid">
+<div class="sim-box"><small>Valor desejado</small><input id="simValorInput" type="number" min="0" step="0.01" placeholder="Digite o valor"></div>
+<div class="sim-box"><small>Entrada padrão</small><strong id="simEntrada">R$ 0,00</strong><span class="muted">🔒 somente visualização</span></div>
+<div class="sim-box"><small>Percentual da entrada</small><strong id="simEntradaPct">40%</strong><span class="muted">🔒 somente visualização</span></div>
+<div class="sim-box"><small>Juros mensal</small><strong id="simJuros">10%</strong><span class="muted">🔒 mínimo 10% • você controla no administrativo</span></div>
+<div class="sim-box"><small>Escolha as parcelas</small><select id="simParcelas" style="width:100%;padding:12px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;font-size:16px"><option value="1">1x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option><option value="5">5x</option><option value="6">6x</option><option value="7">7x</option><option value="8">8x</option><option value="9">9x</option><option value="10">10x</option><option value="11">11x</option><option value="12" selected>12x</option></select><span class="muted">👤 escolha apenas para simular</span></div>
+<div class="sim-box"><small>Valor de cada parcela</small><strong id="simParcela">R$ 0,00</strong></div>
+</div>
+<div class="comissao-destaque"><small id="simComissaoNome">Comissão do funcionário</small><strong id="simComissaoValor">R$ 0,00</strong><span id="simComissaoTexto">Por esta venda, você vai receber aproximadamente este valor de comissão.</span></div>
+</div>
+
+<div class="card">
+  <h3>💲 Tabela de Preços (Revenda)</h3>
+  <p class="info">Consulte o preço de revenda de qualquer produto do estoque. Digite parte do nome pra filtrar.</p>
+  <input type="text" id="buscaTabelaPrecos" placeholder="Buscar produto... Ex: guarda-roupa, cômoda, colchão" style="margin-bottom:12px">
+  <div id="listaTabelaPrecos" style="max-height:420px;overflow-y:auto;border:1px solid #E2E8F0;border-radius:12px"></div>
+  <p class="info" style="margin-top:10px;font-size:11.5px">Mostrando <span id="contadorTabelaPrecos">0</span> de <span id="totalTabelaPrecos">0</span> produtos</p>
+</div>
+
+<div class="card"><h3>📋 Minhas indicações</h3><div id="indicacoes">Carregando...</div></div>
+<div class="card"><h3>💰 Minhas comissões</h3>
+<div class="cards" style="margin-bottom:14px">
+    <div class="card" style="margin-top:0;padding:16px">
+        <h3 style="font-size:14px">🕒 A Receber</h3>
+        <div class="valor" id="comissaoAReceber" style="font-size:20px">R$ 0,00</div>
+        <span class="info" style="font-size:12px">Soma das comissões de propostas aguardando o cliente pagar a entrada</span>
+    </div>
+    <div class="card" style="margin-top:0;padding:16px">
+        <h3 style="font-size:14px">✅ Disponível para saque</h3>
+        <div class="valor" id="comissaoDisponivel" style="font-size:20px">R$ 0,00</div>
+    </div>
+    <div class="card" style="margin-top:0;padding:16px">
+        <h3 style="font-size:14px">💰 Já pago</h3>
+        <div class="valor" id="comissaoPaga" style="font-size:20px">R$ 0,00</div>
+    </div>
+</div>
+<div id="comissoes">Carregando...</div></div>
+<div class="card"><h3>🏦 Solicitar saque</h3>
+<div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:12px;padding:14px 16px;margin-bottom:14px">
+    <p style="font-size:12px;color:#166534;font-weight:700;text-transform:uppercase">Valor disponível pra sacar agora</p>
+    <p style="font-size:24px;font-weight:900;color:#15803D" id="valorDisponivelSaque">R$ 0,00</p>
+    <p style="font-size:11.5px;color:#166534">O saque sempre é do valor total disponível — 1 solicitação por dia.</p>
+</div>
+<div class="grid"><div><label>Chave Pix</label><input id="pixSaque" placeholder="Sua chave Pix"></div></div>
+<button class="acao" onclick="solicitarSaque()">Solicitar saque do valor disponível</button>
+<div id="msgSaque" class="msg"></div></div>
+<div class="card"><h3>💸 Meus saques</h3><div id="saques">Carregando...</div></div>
+</main></section>
+<script>
+const SUPABASE_URL='https://rgcclordmqjmwuzrrfbd.supabase.co';
+const SUPABASE_KEY='sb_publishable_g5Tcimge2aiMX8JE3ml1dg_6zbR3uXi';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let token=null,state=null;
+const brl=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function nomeFuncionario(){
+ return state?.funcionario?.nome||state?.nome||document.getElementById('usuario')?.value||'Funcionário';
+}
+async function buscarCepFuncionario(){
+ const campo=document.getElementById('cep');
+ const cep=campo.value.replace(/\D/g,'');
+ if(cep.length!==8)return;
+ try{
+  const r=await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+  const d=await r.json();
+  if(!d.erro){
+   let e='';
+   if(d.logradouro)e+=d.logradouro;
+   if(d.bairro)e+=(e?', ':'')+d.bairro;
+   if(d.localidade&&d.uf)e+=(e?', ':'')+`${d.localidade} - ${d.uf}`;
+   document.getElementById('endereco').value=e;
+  }
+ }catch(e){}
+}
+function gerarPropostaPDF(idx){
+ const p=(state.propostas||[])[idx];
+ if(!p){alert('Proposta não encontrada.');return}
+ const jsPDFLib=window.jspdf?.jsPDF;
+ if(!jsPDFLib){alert('Não foi possível carregar o gerador de PDF. Recarregue a página e tente novamente.');return}
+ const doc=new jsPDFLib();
+ const qt=Math.min(48,Math.max(1,Number(p.quantidade_parcelas)||12));
+ const valorEntrada=Number(p.valor_entrada)||0;
+ const valorDesejado=Number(p.valor_desejado)||0;
+ const juros=Number(p.juros_mensal)||10;
+ const financiado=Math.max(0,valorDesejado-valorEntrada);
+ const valorParcela=parcela(financiado,juros,qt);
+ const totalParcelas=valorParcela*qt;
+ const totalContrato=valorEntrada+totalParcelas;
+
+ doc.setFillColor(10,36,99);
+ doc.rect(0,0,210,30,'F');
+ doc.setTextColor(255,255,255);
+ doc.setFont('helvetica','bold');
+ doc.setFontSize(20);
+ doc.text('FlashCred',14,17);
+ doc.setFont('helvetica','normal');
+ doc.setFontSize(10);
+ doc.text('Proposta de Crédito — Limite no Pix Parcelado',14,24);
+
+ doc.setTextColor(30,41,59);
+ let y=42;
+ doc.setFont('helvetica','bold');
+ doc.setFontSize(12);
+ doc.text('Dados do cliente',14,y);y+=3;
+ doc.setDrawColor(226,232,240);
+ doc.line(14,y,196,y);y+=7;
+ doc.setFont('helvetica','normal');
+ doc.setFontSize(10.5);
+ doc.text(`Nome: ${p.nome||'-'}`,14,y);y+=6.5;
+ doc.text(`CPF: ${p.cpf||'-'}`,14,y);y+=6.5;
+ doc.text(`WhatsApp: ${p.whatsapp||p.telefone||'-'}`,14,y);y+=6.5;
+ doc.text(`Endereço: ${p.endereco||'-'}`,14,y);y+=6.5;
+ doc.text(`CEP: ${p.cep||'-'}`,14,y);y+=11;
+
+ doc.setFont('helvetica','bold');
+ doc.setFontSize(12);
+ doc.text('Condições da proposta',14,y);y+=3;
+ doc.line(14,y,196,y);y+=7;
+ doc.setFont('helvetica','normal');
+ doc.setFontSize(10.5);
+ doc.text(`Valor desejado: ${brl(valorDesejado)}`,14,y);y+=6.5;
+ doc.text(`Entrada via Pix: ${brl(valorEntrada)}`,14,y);y+=6.5;
+ doc.text(`Valor financiado: ${brl(financiado)}`,14,y);y+=6.5;
+ doc.text(`Juros mensal: ${juros}%`,14,y);y+=6.5;
+ doc.text(`Parcelamento: ${qt}x de ${brl(valorParcela)}`,14,y);y+=6.5;
+ doc.text(`Prazo de entrega: ${p.dias_entrega||7} dias úteis`,14,y);y+=11;
+
+ doc.setFillColor(240,253,249);
+ doc.roundedRect(14,y-5,182,16,3,3,'F');
+ doc.setFont('helvetica','bold');
+ doc.setFontSize(11);
+ doc.setTextColor(4,120,87);
+ doc.text(`Total do contrato: ${brl(totalContrato)}`,20,y+4);
+ y+=24;
+
+ doc.setTextColor(100,116,139);
+ doc.setFont('helvetica','normal');
+ doc.setFontSize(8.5);
+ doc.text(`Proposta gerada em ${new Date().toLocaleDateString('pt-BR')} por ${nomeFuncionario()}.`,14,278);
+ doc.text('Documento informativo, sujeito à confirmação e assinatura de contrato.',14,283);
+
+ doc.save(`Proposta_FlashCred_${String(p.nome||'cliente').trim().replace(/\s+/g,'_')}.pdf`);
+}
+function num(o,keys,f){for(const k of keys){const v=o?.[k];if(v!==undefined&&v!==null&&v!==''&&Number.isFinite(Number(v)))return Number(v)}return f}
+
+function validarCPF(cpf){
+  cpf=String(cpf||'').replace(/\D/g,'');
+  if(cpf.length!==11||/^(\d)\1+$/.test(cpf))return false;
+  let s=0,r;
+  for(let i=1;i<=9;i++)s+=+cpf[i-1]*(11-i);
+  r=(s*10)%11;if(r===10||r===11)r=0;
+  if(r!==+cpf[9])return false;
+  s=0;
+  for(let i=1;i<=10;i++)s+=+cpf[i-1]*(12-i);
+  r=(s*10)%11;if(r===10||r===11)r=0;
+  return r===+cpf[10];
+}
+
+function config(){
+ const c=state?.configuracao_simulador||state?.config_simulador||state?.configuracao||state?.config||state?.parametros||{};
+ const p=state?.politica||state?.regras||{};
+ const f=state?.funcionario||{};
+ const fontes=[c,p,f,state||{}];
+ let entrada=40,juros=10,comissao=0,dias=7;
+ for(const o of fontes){entrada=num(o,['entrada_percentual','percentual_entrada','entrada_padrao','percentualEntrada'],entrada);juros=num(o,['juros_mensal','juros','taxa_juros','juros_padrao'],juros);comissao=num(o,['percentual_comissao','comissao_percentual','percentualComissao'],comissao);dias=num(o,['dias_entrega','prazo_entrega','diasEntrega'],dias)}
+ if(!comissao){const x=(state?.comissoes||[]).find(c=>c?.percentual!=null);if(x)comissao=Number(x.percentual)||0}
+ if(juros<10)juros=10;
+ if(entrada<0)entrada=0;if(entrada>100)entrada=100;
+ return {entrada,juros,comissao,dias};
+}
+function parcela(principal,j,qt){if(principal<=0)return 0;const i=j/100;return i?principal*(i*Math.pow(1+i,qt))/(Math.pow(1+i,qt)-1):principal/qt}
+function formaPagamentoEntradaEscolhida(){const r=document.querySelector('input[name="formaPagamentoEntradaFunc"]:checked');return r?r.value:'pix_antecipado'}
+function percentualEntradaEscolhido(c){const f=formaPagamentoEntradaEscolhida();if(f==='cartao_entrega'||f==='pix_total_entrega')return 0;if(f==='na_entrega')return 55;return c.entrada}
+function formaPagamentoSemParcelamento(){const f=formaPagamentoEntradaEscolhida();return f==='cartao_entrega'||f==='pix_total_entrega'}
+function limiteMaximoParcelasFunc(){return formaPagamentoEntradaEscolhida()==='na_entrega'?6:12}
+function aplicarLimiteParcelasFunc(){
+    const limite=limiteMaximoParcelasFunc();
+    const select=document.getElementById('simParcelas');
+    if(!select) return;
+    Array.from(select.options).forEach(opt=>{ opt.disabled = Number(opt.value) > limite; });
+    if(Number(select.value) > limite) select.value = String(limite);
+}
+function atualizarSimulador(){
+ const c=config(),v=Number(document.getElementById('simValorInput')?.value)||0,qt=Math.min(limiteMaximoParcelasFunc(),Math.max(1,Number(document.getElementById('simParcelas')?.value)||12));
+ const pctEnt=percentualEntradaEscolhido(c);
+ const semParcelamento=formaPagamentoSemParcelamento();
+ const ent=semParcelamento?0:v*pctEnt/100,fin=Math.max(0,v-ent),par=semParcelamento?0:parcela(fin,c.juros,qt),nome=nomeFuncionario(),com=v*c.comissao/100;
+ document.getElementById('simEntrada').textContent=semParcelamento?'Sem entrada':brl(ent);
+ document.getElementById('simEntradaPct').textContent=semParcelamento?'—':pctEnt+'%';
+ document.getElementById('simJuros').textContent=semParcelamento?'—':c.juros+'%';
+ document.getElementById('simParcela').textContent=semParcelamento?brl(v)+' na entrega':brl(par);
+ document.getElementById('simComissaoNome').textContent='Comissão de '+nome;document.getElementById('simComissaoValor').textContent=brl(com);
+ document.getElementById('simComissaoTexto').textContent=com>0?'Por esta venda, '+nome+' vai receber aproximadamente '+brl(com)+' de comissão.':'A comissão será mostrada aqui conforme o percentual configurado no Painel Administrativo.';
+}
+function aplicarConfigVisual(){const c=config();document.getElementById('juros').value=c.juros;document.getElementById('dias').value=c.dias;const v=Number(document.getElementById('valor').value)||0;document.getElementById('entrada').value=v?(v*percentualEntradaEscolhido(c)/100).toFixed(2):'';atualizarSimulador()}
+async function entrar(){const u=document.getElementById('usuario').value.trim(),s=document.getElementById('senha').value;document.getElementById('erro').textContent='';try{const {data,error}=await db.rpc('funcionario_login',{p_usuario:u,p_senha:s});if(error)throw error;if(!data||!data.token)throw new Error('Login não retornou um token válido.');token=data.token;localStorage.setItem('fc_func_token',token);state=data||{};await carregar()}catch(e){document.getElementById('erro').textContent=e.message||'Não foi possível entrar.'}}
+async function restaurarSessao(){
+    try{
+        const {data,error}=await db.rpc('funcionario_dados_sessao',{p_token:token});
+        if(error) throw error;
+        state=data||{};
+        await carregar();
+    }catch(e){
+        // Token salvo é inválido/expirou — volta pra tela de login.
+        localStorage.removeItem('fc_func_token');
+        sessionStorage.removeItem('fc_func_token');
+        token=null; state=null;
+    }
+}
+async function carregar(){try{const fid=state?.id;if(!fid)throw new Error('Sessão inválida. Saia e entre novamente.');const fr=await db.from('funcionarios').select('*').eq('id',fid).maybeSingle();if(fr.error) throw fr.error;state.funcionario=fr.data||{id:fid,nome:state?.nome};const [pr,cr,sr]=await Promise.all([db.from('propostas').select('*').eq('funcionario_id',fid).order('created_at',{ascending:false}),db.from('comissoes').select('*').eq('funcionario_id',fid).order('created_at',{ascending:false}),db.from('saques').select('*').eq('funcionario_id',fid).order('data_solicitacao',{ascending:false})]);if(pr.error) throw pr.error;const propostasAnteriores=state.propostas||[];const propostasNovas=pr.data||[];detectarNovasAprovacoes(fid,propostasAnteriores,propostasNovas);state.propostas=propostasNovas;state.comissoes=cr.error?[]:(cr.data||[]);state.saques=sr.error?[]:(sr.data||[]);document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');document.getElementById('boasVindas').textContent='Olá, '+nomeFuncionario()+'!';render();aplicarConfigVisual();ativarTempoRealFuncionario(fid);inscreverPushFuncionario(false);mostrarConvitePushFuncionario();}catch(e){console.error(e);document.getElementById('erro').textContent=e.message||'Não foi possível carregar o painel do funcionário.';document.getElementById('indicacoes').textContent='Erro ao carregar indicações: '+(e.message||e)}}
+
+/* ===== AVISO SONORO DE PROPOSTA APROVADA ===== */
+function chaveAprovadosNotificados(fid){return 'fc_func_aprovados_notificados_'+fid}
+function obterAprovadosJaNotificados(fid){try{return new Set(JSON.parse(localStorage.getItem(chaveAprovadosNotificados(fid))||'[]'))}catch(e){return new Set()}}
+function salvarAprovadosJaNotificados(fid,conjunto){try{localStorage.setItem(chaveAprovadosNotificados(fid),JSON.stringify([...conjunto]))}catch(e){}}
+
+function detectarNovasAprovacoes(fid,anteriores,novas){
+    const jaNotificados=obterAprovadosJaNotificados(fid);
+    // Primeira carga da sessão (nada em memória ainda e nada salvo): só registra
+    // os que já estavam aprovados, sem avisar — senão toca o sino toda vez que
+    // o funcionário faz login e já tem aprovados antigos na lista.
+    const primeiraCarga=anteriores.length===0 && jaNotificados.size===0;
+    const recemAprovadas=novas.filter(p=>p.status==='Aprovada' && !jaNotificados.has(String(p.id)));
+
+    novas.forEach(p=>{ if(p.status==='Aprovada') jaNotificados.add(String(p.id)) });
+    salvarAprovadosJaNotificados(fid,jaNotificados);
+
+    if(primeiraCarga || !recemAprovadas.length) return;
+
+    recemAprovadas.forEach(p=>avisarPropostaAprovada(p));
+}
+
+function tocarSomSino(){
+    try{
+        const AudioCtx=window.AudioContext||window.webkitAudioContext;
+        const ctx=new AudioCtx();
+        [880,1320].forEach((freq,i)=>{
+            const osc=ctx.createOscillator();
+            const gain=ctx.createGain();
+            osc.type='sine';
+            osc.frequency.value=freq;
+            gain.gain.setValueAtTime(0.0001,ctx.currentTime+i*0.18);
+            gain.gain.exponentialRampToValueAtTime(0.3,ctx.currentTime+i*0.18+0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+i*0.18+0.5);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime+i*0.18);
+            osc.stop(ctx.currentTime+i*0.18+0.55);
+        });
+    }catch(e){console.warn('Não foi possível tocar o som:',e)}
+}
+
+function criarContainerNotificacoes(){
+    const container=document.createElement('div');
+    container.id='notificacoesAprovacao';
+    container.style.cssText='position:fixed;top:16px;right:16px;left:16px;max-width:380px;margin-left:auto;z-index:99999';
+    document.body.appendChild(container);
+    return container;
+}
+
+function mostrarNotificacaoAprovacao(proposta){
+    const container=document.getElementById('notificacoesAprovacao')||criarContainerNotificacoes();
+    const id='notif_'+proposta.id;
+    if(document.getElementById(id)) return;
+
+    const div=document.createElement('div');
+    div.id=id;
+    div.style.cssText='background:linear-gradient(135deg,#059669,#10B981);color:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 10px 30px rgba(16,185,129,.35);animation:notifSlideIn .3s ease';
+    div.innerHTML=`
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+            <div>
+                <div style="font-weight:800;font-size:14px">🔔 Proposta aprovada!</div>
+                <div style="font-size:13px;opacity:.95;margin-top:2px">${esc(proposta.nome||'Cliente')} — envie o link pra ele fechar</div>
+            </div>
+            <button onclick="document.getElementById('${id}').remove()" style="background:rgba(255,255,255,.25);border:none;border-radius:50%;width:24px;height:24px;color:#fff;font-size:12px;cursor:pointer;flex-shrink:0">✕</button>
+        </div>
+        <button onclick="enviarLinkAprovacao('${String(proposta.id)}');document.getElementById('${id}').remove()" style="width:100%;margin-top:10px;background:#fff;color:#059669;font-weight:800;font-size:13px;padding:9px;border-radius:10px;border:none;cursor:pointer">
+            📲 Enviar link pro cliente agora
+        </button>
+    `;
+    container.prepend(div);
+
+    setTimeout(()=>{ const el=document.getElementById(id); if(el) el.style.opacity='0.85' },15000);
+}
+
+function avisarPropostaAprovada(proposta){
+    tocarSomSino();
+    mostrarNotificacaoAprovacao(proposta);
+}
+
+
+let canalTempoRealFuncionario=null;
+function ativarTempoRealFuncionario(fid){
+    if(canalTempoRealFuncionario){ db.removeChannel(canalTempoRealFuncionario); canalTempoRealFuncionario=null; }
+    canalTempoRealFuncionario=db.channel('mudancas_funcionario_'+fid)
+        .on('postgres_changes',{event:'*',schema:'public',table:'propostas',filter:'funcionario_id=eq.'+fid},()=>{ carregar(); })
+        .on('postgres_changes',{event:'*',schema:'public',table:'comissoes',filter:'funcionario_id=eq.'+fid},()=>{ carregar(); })
+        .on('postgres_changes',{event:'*',schema:'public',table:'saques',filter:'funcionario_id=eq.'+fid},()=>{ carregar(); })
+        .subscribe();
+}
+function statusComissaoReal(c){
+    const proposta=(state.propostas||[]).find(p=>String(p.id)===String(c.proposta_id));
+    if(!proposta) return {texto:'Proposta removida',classe:'pend'};
+    if(!proposta.entrada_paga) return {texto:'Aguardando pagamento da entrada',classe:'pend'};
+    if(c.status==='pago') return {texto:'Pago',classe:'pago'};
+    if(c.status==='disponivel') return {texto:'Disponível',classe:'pix'};
+    return {texto:c.status||'Pendente',classe:'pend'};
+}
+function podeExcluirIndicacao(p){
+    // Só pode excluir enquanto a proposta ainda não foi aprovada pelo admin
+    // e a entrada não foi paga — depois disso, só o admin no Painel Administrativo.
+    return String(p.status||'Nova')==='Nova' && !p.entrada_paga;
+}
+function render(){
+    const cs=state.comissoes||[];
+    const ps=state.propostas||[];
+
+    // Soma os totais por status real (baseado no pagamento da entrada, não só no campo salvo).
+    let aReceber=0,disponivel=0,paga=0;
+    cs.forEach(c=>{
+        const v=Number(c.valor_comissao)||0;
+        const proposta=(state.propostas||[]).find(p=>String(p.id)===String(c.proposta_id));
+        if(!proposta){ return; } // proposta removida — não soma em lugar nenhum
+        if(!proposta.entrada_paga){ aReceber+=v; }
+        else if(c.status==='pago'){ paga+=v; }
+        else { disponivel+=v; }
+    });
+    const elReceber=document.getElementById('comissaoAReceber');
+    const elDisp=document.getElementById('comissaoDisponivel');
+    const elPaga=document.getElementById('comissaoPaga');
+    const elDispSaque=document.getElementById('valorDisponivelSaque');
+    if(elReceber) elReceber.textContent=brl(aReceber);
+    if(elDisp) elDisp.textContent=brl(disponivel);
+    if(elPaga) elPaga.textContent=brl(paga);
+    if(elDispSaque) elDispSaque.textContent=brl(disponivel);
+
+    const statusBadge=st=>{const s=String(st||'Nova');const cor=s==='Aprovada'?'pix':s==='Reprovada'?'pend':'pend';return `<span class="badge ${cor}">${esc(s)}</span>`};
+    document.getElementById('indicacoes').innerHTML=ps.length?'<div style="overflow:auto"><table><thead><tr><th>Cliente</th><th>Data</th><th>Valor</th><th>Status</th><th>Entrada</th><th>Ações</th></tr></thead><tbody>'+ps.map((p,idx)=>`<tr><td>${esc(p.nome)}</td><td>${p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):'—'}</td><td>${brl(p.valor_desejado)}</td><td>${statusBadge(p.status)}</td><td>${p.entrada_paga?'<span class="badge pix">Paga</span>':'<span class="badge pend">Aguardando</span>'}</td><td style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="acao" style="width:auto;padding:8px 12px;margin:0;font-size:13px" onclick="gerarPropostaPDF(${idx})">📄 PDF</button>${String(p.status||'Nova')==='Aprovada'?`<button type="button" class="acao" style="width:auto;padding:8px 12px;margin:0;font-size:13px;background:linear-gradient(135deg,#25D366,#128C7E)" onclick="enviarLinkAprovacao('${String(p.id)}')">🔗 Enviar link ao cliente</button>`:''}${podeExcluirIndicacao(p)?`<button type="button" class="acao" style="width:auto;padding:8px 12px;margin:0;font-size:13px;background:linear-gradient(135deg,#c62828,#EF4444)" onclick="excluirIndicacao('${String(p.id)}')">🗑️ Excluir</button>`:''}</td></tr>`).join('')+'</tbody></table></div>':'Nenhuma indicação ainda.';
+    document.getElementById('comissoes').innerHTML=cs.length?'<div style="overflow:auto"><table><thead><tr><th>Proposta</th><th>%</th><th>Comissão</th><th>Status</th></tr></thead><tbody>'+cs.map(c=>{const st=statusComissaoReal(c);return `<tr><td>#${esc(String(c.proposta_id??'-'))}</td><td>${Number(c.porcentagem)||0}%</td><td>${brl(c.valor_comissao)}</td><td><span class="badge ${st.classe}">${esc(st.texto)}</span></td></tr>`}).join('')+'</tbody></table></div>':'Nenhuma comissão ainda.';
+    const ss=state.saques||[];
+    document.getElementById('saques').innerHTML=ss.length?'<div style="overflow:auto"><table><thead><tr><th>Data</th><th>Valor</th><th>Pix</th><th>Status</th></tr></thead><tbody>'+ss.map(x=>`<tr><td>${x.data_solicitacao?new Date(x.data_solicitacao).toLocaleDateString('pt-BR'):'—'}</td><td>${brl(x.valor)}</td><td>${esc(x.chave_pix)}</td><td>${esc(x.status)}</td></tr>`).join('')+'</tbody></table></div>':'Nenhum saque solicitado.';
+}
+
+/* ===== PRODUTOS DA NOVA INDICAÇÃO (opcional — nenhum campo é obrigatório) =====
+   Só pode ser preenchido/editado ANTES de clicar em "Enviar indicação".
+   Depois de enviada, a proposta só pode ser alterada pelo admin no painel. */
+
+function linhaProdutoNovaIndicacao(prod){
+    prod = prod || {};
+    const rowId = 'prodNova_'+Math.random().toString(36).slice(2,9);
+    const nome = esc(prod.nome||''), cor = esc(prod.cor||''), espelho = prod.espelho||'', montagem = prod.montagem||'', observacao = esc(prod.observacao||'');
+    const quantidade = (prod.quantidade!==null&&prod.quantidade!==undefined&&prod.quantidade!=='') ? Number(prod.quantidade) : '';
+    const valor = (prod.valor!==null&&prod.valor!==undefined&&prod.valor!=='') ? Number(prod.valor) : '';
+    const frete = (prod.frete!==null&&prod.frete!==undefined&&prod.frete!=='') ? Number(prod.frete) : '';
+    return `
+        <div class="linha-produto-func" id="${rowId}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px;margin-bottom:8px">
+            <input type="text" class="campo produto-nome" placeholder="Nome do móvel" value="${nome}" style="padding:8px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px">
+            <input type="number" class="campo produto-quantidade" min="0" placeholder="Qtd" value="${quantidade}" style="padding:8px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px">
+            <input type="text" class="campo produto-cor" placeholder="Cor" value="${cor}" style="padding:8px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px">
+            <input type="number" class="campo produto-valor" min="0" step="0.01" placeholder="Valor R$" value="${valor}" style="padding:8px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px">
+            <select class="campo produto-espelho" style="padding:8px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px">
+                <option value="" ${!espelho?'selected':''}>Espelho?</option>
+                <option value="com_espelho" ${espelho==='com_espelho'?'selected':''}>Com espelho</option>
+                <option value="sem_espelho" ${espelho==='sem_espelho'?'selected':''}>Sem espelho</option>
+            </select>
+            <select class="campo produto-montagem" style="padding:8px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px">
+                <option value="" ${!montagem?'selected':''}>Montagem?</option>
+                <option value="com_montagem" ${montagem==='com_montagem'?'selected':''}>Com montagem</option>
+                <option value="sem_montagem" ${montagem==='sem_montagem'?'selected':''}>Sem montagem</option>
+            </select>
+            <input type="number" class="campo produto-frete" min="0" step="0.01" placeholder="Frete R$ (opcional)" value="${frete}" style="padding:8px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px">
+            <input type="text" class="campo produto-observacao" placeholder="Observação (opcional)" value="${observacao}" style="padding:8px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;grid-column:span 2">
+            <button type="button" onclick="document.getElementById('${rowId}').remove()" style="background:#FEE2E2;color:#DC2626;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🗑️ Remover</button>
+        </div>
+    `;
+}
+
+function adicionarLinhaProdutoNovaIndicacao(){
+    const lista=document.getElementById('listaProdutosNovaIndicacao');
+    if(lista) lista.insertAdjacentHTML('beforeend', linhaProdutoNovaIndicacao({}));
+}
+
+function coletarProdutosNovaIndicacao(){
+    const lista=document.getElementById('listaProdutosNovaIndicacao');
+    if(!lista) return [];
+    const produtos=[];
+    lista.querySelectorAll('.linha-produto-func').forEach(linha=>{
+        const nome=linha.querySelector('.produto-nome').value.trim();
+        const cor=linha.querySelector('.produto-cor').value.trim();
+        const espelho=linha.querySelector('.produto-espelho').value;
+        const montagem=linha.querySelector('.produto-montagem').value;
+        const qtdVal=linha.querySelector('.produto-quantidade').value;
+        const valorVal=linha.querySelector('.produto-valor').value;
+        const freteVal=linha.querySelector('.produto-frete').value;
+        const observacao=linha.querySelector('.produto-observacao').value.trim();
+        if(!nome&&!cor&&!espelho&&!montagem&&qtdVal===''&&valorVal===''&&freteVal===''&&!observacao) return;
+        produtos.push({
+            nome: nome||null, cor: cor||null, espelho: espelho||null, montagem: montagem||null,
+            quantidade: qtdVal!==''?Number(qtdVal):null,
+            valor: valorVal!==''?Number(valorVal):null,
+            frete: freteVal!==''?Number(freteVal):null,
+            observacao: observacao||null
+        });
+    });
+    return produtos;
+}
+
+function limparProdutosNovaIndicacao(){
+    const lista=document.getElementById('listaProdutosNovaIndicacao');
+    if(lista) lista.innerHTML='';
+}
+
+function enviarLinkAprovacao(id){
+    const proposta=(state.propostas||[]).find(p=>String(p.id)===String(id));
+    if(!proposta){
+        alert('Proposta não encontrada.');
+        return;
+    }
+
+    const link=window.location.origin+'/consultar.html?id='+String(proposta.id);
+
+    const primeiroNome=(proposta.nome||'').trim().split(' ')[0]||'';
+
+    const mensagem='Oi'+(primeiroNome?' '+primeiroNome:'')+'! Sua proposta na FlashCred foi aprovada 🎉\n\n'
+        +'Acesse esse link pra ver os detalhes, escolher as parcelas e assinar o contrato:\n'
+        +link+'\n\n'
+        +'Qualquer dúvida, me chama por aqui!';
+
+    const telefone=String(proposta.telefone||proposta.whatsapp||'').replace(/\D/g,'');
+
+    const urlWhats=telefone
+        ? 'https://wa.me/55'+telefone+'?text='+encodeURIComponent(mensagem)
+        : 'https://wa.me/?text='+encodeURIComponent(mensagem);
+
+    window.open(urlWhats,'_blank');
+}
+
+async function excluirIndicacao(id){
+    if(!confirm('Excluir esta indicação? Essa ação não pode ser desfeita.')) return;
+    try{
+        const proposta=(state.propostas||[]).find(p=>String(p.id)===String(id));
+        if(!proposta || !podeExcluirIndicacao(proposta)){
+            alert('Esta indicação já foi aprovada ou a entrada já foi paga — a exclusão agora só pode ser feita pelo Painel Administrativo.');
+            return;
+        }
+        const {error}=await db.rpc('funcionario_excluir_proposta',{p_token:token,p_proposta_id:Number(id)});
+        if(error) throw error;
+        await carregar();
+    }catch(e){
+        alert('Erro ao excluir: '+(e.message||e));
+    }
+}
+async function novaIndicacao(){
+    const msg=document.getElementById('msgIndicacao'),btn=document.getElementById('btnEnviarIndicacao');
+    msg.textContent='';
+    const nome=document.getElementById('nome').value.trim(),
+          cpf=document.getElementById('cpf').value.replace(/\D/g,''),
+          nasc=document.getElementById('nascimento').value,
+          wpp=document.getElementById('whatsapp').value.trim(),
+          cep=document.getElementById('cep').value.trim(),
+          end=document.getElementById('endereco').value.trim(),
+          valor=Number(document.getElementById('valor').value)||0;
+
+    if(!nome||!cpf||!nasc||!wpp||!cep||!end||valor<=0){
+        msg.textContent='❌ Preencha todos os dados do cliente e o valor desejado.';
+        return;
+    }
+
+    if(!validarCPF(cpf)){
+        msg.textContent='❌ CPF inválido. Confira os números digitados.';
+        return;
+    }
+
+    const dt=new Date(nasc+'T00:00:00'),hoje=new Date();
+    let idade=hoje.getFullYear()-dt.getFullYear();
+    if(hoje.getMonth()<dt.getMonth()||(hoje.getMonth()===dt.getMonth()&&hoje.getDate()<dt.getDate()))idade--;
+    if(isNaN(dt.getTime())||idade<18){
+        msg.textContent='❌ O cliente precisa ter 18 anos ou mais para solicitar o crédito.';
+        return;
+    }
+
+    // Bloqueia se esse CPF já tem proposta em aberto (não quitada) — em qualquer funcionário.
+    try{
+        const {data: propostasDoCpf, error: erroCpf} = await db
+            .from('propostas')
+            .select('id,entrada_paga,parcelas_pagas,quantidade_parcelas')
+            .eq('cpf', cpf);
+        if(erroCpf){
+            console.error('Erro ao checar CPF duplicado:', erroCpf);
+        } else if(
+            (propostasDoCpf||[]).some(p =>
+                !(p.entrada_paga && Number(p.parcelas_pagas||0) >= Number(p.quantidade_parcelas||0))
+            )
+        ){
+            msg.textContent='❌ Este CPF já tem uma proposta em aberto (não quitada) no sistema.';
+            return;
+        }
+    }catch(e){
+        console.error(e);
+    }
+
+    const c=config(),semParcelamento=formaPagamentoSemParcelamento(),qt=semParcelamento?0:Math.min(limiteMaximoParcelasFunc(),Math.max(1,Number(document.getElementById('simParcelas').value)||12)),formaPag=formaPagamentoEntradaEscolhida(),entrada=valor*percentualEntradaEscolhido(c)/100;
+    const datas=[];if(!semParcelamento){let d=new Date();for(let i=0;i<qt;i++){d=new Date(d.getTime()+30*86400000);datas.push(d.toISOString().slice(0,10))}}
+    const produtos=coletarProdutosNovaIndicacao();
+    btn.disabled=true;btn.textContent='⏳ Enviando...';
+    const ov=document.getElementById('envioOverlay');
+    ov.classList.remove('hidden');
+    document.getElementById('envioTitulo').textContent='Sua proposta está sendo enviada';
+    document.getElementById('envioTexto').textContent=nomeFuncionario()+', aguarde enquanto registramos a indicação.';
+    try{
+        if(!token) throw new Error('Sessão inválida. Saia e entre novamente.');
+        const {data: rpcData, error: rpcError} = await db.rpc('funcionario_criar_proposta',{
+            p_token: token,
+            p_nome: nome,
+            p_cpf: cpf,
+            p_nascimento: nasc,
+            p_whatsapp: wpp,
+            p_cep: cep,
+            p_endereco: end,
+            p_valor_desejado: valor,
+            p_valor_entrada: entrada,
+            p_juros_mensal: semParcelamento?0:c.juros,
+            p_quantidade_parcelas: qt,
+            p_dias_entrega: c.dias,
+            p_datas_parcelas: datas,
+            p_forma_pagamento_entrada: formaPag,
+            p_produtos: produtos
+        });
+        if(rpcError) throw rpcError;
+        const propostaId=rpcData.id;
+        limparProdutosNovaIndicacao();
+        document.getElementById('envioTitulo').textContent='✅ Proposta enviada!';
+        document.getElementById('envioTexto').textContent='Acompanhe o andamento pelo seu painel.';
+        await new Promise(r=>setTimeout(r,900));
+        ov.classList.add('hidden');
+        msg.textContent='✅ Indicação enviada com sucesso. Nº da proposta: '+propostaId;
+        ['nome','cpf','nascimento','whatsapp','cep','endereco','valor'].forEach(id=>document.getElementById(id).value='');
+        const rPix=document.querySelector('input[name="formaPagamentoEntradaFunc"][value="pix_antecipado"]');if(rPix)rPix.checked=true;
+        aplicarConfigVisual();
+        await carregar();
+    }catch(e){
+        ov.classList.add('hidden');
+        msg.textContent='❌ '+(e.message||'Erro ao enviar indicação.');
+    }finally{
+        btn.disabled=false;btn.textContent='🚀 Enviar indicação';
+    }
+}
+async function solicitarSaque(){const msg=document.getElementById('msgSaque');try{if(!token)throw new Error('Sessão inválida. Saia e entre novamente.');const pix=document.getElementById('pixSaque').value.trim();if(!pix){msg.textContent='❌ Informe sua chave Pix.';return}const {data,error}=await db.rpc('funcionario_solicitar_saque_saldo_total',{p_token:token,p_chave_pix:pix});if(error)throw error;msg.textContent=`✅ Saque de ${brl(data.valor)} solicitado com sucesso.`;document.getElementById('pixSaque').value='';await carregar()}catch(e){msg.textContent='❌ '+(e.message||'Erro ao solicitar saque.')}}
+function sair(){localStorage.removeItem('fc_func_token');sessionStorage.removeItem('fc_func_token');location.reload()}
+const FRASES_PRONTAS = [
+    {
+        titulo: '🛡️ "Isso é golpe?"',
+        texto: 'Entendo sua desconfiança, é ótimo que você tome cuidado! A FlashCred é uma empresa registrada, seus dados e o andamento da sua proposta ficam sempre disponíveis pra você acompanhar em tempo real pelo link que te enviei — nada é feito por fora ou sem registro.'
+    },
+    {
+        titulo: '🛡️ Por que pedimos uma entrada?',
+        texto: 'Entendemos que muitos tenham receio e pensem ser golpe — e é muito bom tomar cuidado!\n\nA entrada que pedimos não é extra, faz parte do valor total do seu móvel. Ela serve apenas para garantirmos que vamos comprar e reservar o produto especialmente para você, com todo o cuidado e compromisso.\n\n🤝 A FlashCred existe para ajudar você a ter seus móveis novos de forma simples e segura, sem enrolação. Tudo registrado, com acompanhamento em tempo real e atendimento direto com a gente.'
+    }
+];
+
+const CATALOGO_MOVEIS_FUNCIONARIO = [
+    {slug:'gr-canada', nome:'Guarda-Roupa Canadá 6 Portas 8 Gavetas', preco:2126.70},
+    {slug:'gr-dubai', nome:'Guarda-Roupa Dubai 8 Portas 4 Gavetas', preco:1390.00},
+    {slug:'guarda-roupa-230', nome:'Guarda-Roupa 230 (6 Portas 2 Gavetas Internas)', preco:1413.63},
+    {slug:'guarda-roupa-0240', nome:'Guarda-Roupa 0240 (4 Portas 2 Gavetas)', preco:1023.04},
+    {slug:'gr-napole', nome:'Guarda-Roupa Nápole 8 Portas 4 Gavetas', preco:1401.12},
+    {slug:'gr-monaco', nome:'Guarda-Roupa Mônaco 10 Portas 3 Gavetas', preco:1013.31},
+    {slug:'gr-07-portas', nome:'Guarda-Roupa 07 Portas 2 Gavetas', preco:746.43},
+    {slug:'gr-paris', nome:'Guarda-Roupa Paris', preco:904.89},
+    {slug:'gr-coimbra', nome:'Guarda-Roupa Coimbra 6 Portas 2 Gavetas', preco:668.59},
+    {slug:'gr-marrocos', nome:'Guarda-Roupa Marrocos 6 Portas 6 Gavetas', preco:1034.16},
+    {slug:'gr-04-portas', nome:'Guarda-Roupa 04 Portas 2 Gavetas', preco:494.84},
+    {slug:'gr-03-portas', nome:'Guarda-Roupa 03 Portas 2 Gavetas', preco:422.56},
+    {slug:'comoda-sevilha', nome:'Cômoda Sevilha com Porta-Joias', preco:671.37},
+    {slug:'comoda-05-gavetas', nome:'Cômoda 05 Gavetas', preco:315.53},
+    {slug:'comoda-milao', nome:'Cômoda Milão', preco:394.76},
+    {slug:'comoda-08-gavetas', nome:'Cômoda 08 Gavetas', preco:594.92},
+    {slug:'comoda-londres', nome:'Cômoda Londres', preco:482.33},
+    {slug:'multiuso-04-portas', nome:'Multiuso 04 Portas', preco:512.91},
+    {slug:'multiuso-02-portas', nome:'Multiuso 02 Portas', preco:326.65},
+    {slug:'aparador', nome:'Aparador 04 Portas', preco:254.37},
+];
+
+const CATALOGO_KITS_FUNCIONARIO = [
+    {slug:'kit-roma', nome:'Kit Cozinha Roma', preco:380.86},
+    {slug:'kit-04-portas-correr', nome:'Kit 04 Portas (02 de Correr) 01 Gaveta', preco:353.06},
+    {slug:'kit-berlim', nome:'Kit Cozinha Berlim', preco:489.28},
+    {slug:'kit-cleo-8-portas', nome:'Kit Cleo 08 Portas', preco:489.28},
+    {slug:'kit-04-portas-1210', nome:'Kit 04 Portas 01 Gaveta (1,21m)', preco:446.19},
+    {slug:'kit-siena', nome:'Kit Cozinha Siena', preco:636.62},
+    {slug:'kit-selena', nome:'Kit Cozinha Selena', preco:742.26},
+    {slug:'kit-camila', nome:'Kit Cozinha Camila', preco:786.74},
+    {slug:'kit-mega', nome:'Kit Cozinha Mega', preco:902.11},
+    {slug:'balcao-denver', nome:'Balcão Denver', preco:173.75},
+    {slug:'fruteira', nome:'Fruteira 02 Portas 01 Gaveta', preco:275.22},
+];
+
+function montarCatalogoFuncionario(){
+    const container = document.getElementById('catalogoFuncionario');
+    if(!container) return;
+
+    const itemHTML = prod => {
+        const precoFmt = Number(prod.preco).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+        const mensagem = encodeURIComponent(
+            `Olha esse aqui pra você! 😊\n\n🛋️ *${prod.nome}*\n💰 R$ ${precoFmt}\n\nQuer saber mais ou já fechar? É só me chamar aqui!`
+        );
+        return `
+            <div class="catalogo-item">
+                <img src="/${prod.slug}.jpg" alt="${prod.nome}">
+                <div class="catalogo-item-info">
+                    <div class="catalogo-item-nome">${prod.nome}</div>
+                    <div class="catalogo-item-preco">R$ ${precoFmt}</div>
+                    <a class="catalogo-item-wpp" href="https://wa.me/?text=${mensagem}" target="_blank" rel="noopener">
+                        📲 Enviar
+                    </a>
+                </div>
+            </div>
+        `;
+    };
+
+    container.innerHTML = `
+        <div class="catalogo-secao-titulo">Móveis Completos</div>
+        <div class="catalogo-funcionario">${CATALOGO_MOVEIS_FUNCIONARIO.map(itemHTML).join('')}</div>
+        <div class="catalogo-secao-titulo">Kits de Cozinha Avulsos</div>
+        <div class="catalogo-funcionario">${CATALOGO_KITS_FUNCIONARIO.map(itemHTML).join('')}</div>
+    `;
+}
+
+function montarFrasesProntas(){
+    const container = document.getElementById('frasesProntas');
+    if(!container) return;
+    container.innerHTML = FRASES_PRONTAS.map((f, i) => `
+        <div class="frase-pronta">
+            <div class="frase-pronta-titulo">${f.titulo}</div>
+            <div class="frase-pronta-texto">${f.texto.replace(/</g,'&lt;')}</div>
+            <button type="button" class="frase-pronta-botao" id="botaoFrase${i}" onclick="copiarFrasePronta(${i})">📋 Copiar</button>
+        </div>
+    `).join('');
+}
+
+function copiarFrasePronta(i){
+    const texto = FRASES_PRONTAS[i]?.texto || '';
+    const botao = document.getElementById('botaoFrase'+i);
+    const marcarCopiado = () => {
+        if(!botao) return;
+        const original = botao.textContent;
+        botao.textContent = '✅ Copiado!';
+        botao.classList.add('copiado');
+        setTimeout(() => { botao.textContent = original; botao.classList.remove('copiado'); }, 1800);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(texto).then(marcarCopiado).catch(() => {
+            alert('Não foi possível copiar automaticamente. Selecione e copie o texto manualmente.');
+        });
+    } else {
+        const ta = document.createElement('textarea');
+        ta.value = texto;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); marcarCopiado(); } catch(e) {}
+        document.body.removeChild(ta);
+    }
+}
+
+window.addEventListener('DOMContentLoaded',()=>{const v=document.getElementById('valor'),sv=document.getElementById('simValorInput'),sp=document.getElementById('simParcelas'),cepEl=document.getElementById('cep'),cpfEl=document.getElementById('cpf');if(v) v.addEventListener('input',()=>{const c=config(),x=Number(v.value)||0;document.getElementById('entrada').value=x?(x*percentualEntradaEscolhido(c)/100).toFixed(2):'';sv.value=v.value;atualizarSimulador()});if(sv) sv.addEventListener('input',()=>{v.value=sv.value;const c=config(),x=Number(sv.value)||0;document.getElementById('entrada').value=x?(x*percentualEntradaEscolhido(c)/100).toFixed(2):'';atualizarSimulador()});if(sp) sp.addEventListener('change',atualizarSimulador);document.querySelectorAll('input[name="formaPagamentoEntradaFunc"]').forEach(r=>r.addEventListener('change',()=>{const c=config(),x=Number(v.value)||0;document.getElementById('entrada').value=x?(x*percentualEntradaEscolhido(c)/100).toFixed(2):'';aplicarLimiteParcelasFunc();atualizarSimulador()}));aplicarLimiteParcelasFunc();if(cepEl){cepEl.addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,8).replace(/(\d{5})(\d{1,3})/,'$1-$2')});cepEl.addEventListener('blur',buscarCepFuncionario)}if(cpfEl){cpfEl.addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,11).replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2')})}montarFrasesProntas();montarCatalogoFuncionario();token=localStorage.getItem('fc_func_token')||sessionStorage.getItem('fc_func_token');if(token)restaurarSessao()})
+
+/* ============================================================
+   PWA — INSTALAR COMO APP
+============================================================ */
+
+if('serviceWorker' in navigator){
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw-funcionario.js').catch(e => console.warn('Service worker não registrado:', e));
+    });
+}
+
+let eventoInstalarPWAFuncionario = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    eventoInstalarPWAFuncionario = e;
+});
+
+/* ============================================================
+   NOTIFICAÇÕES PUSH — comissão liberada, cliente pagou parcela etc.
+============================================================ */
+
+function pedirPermissaoNotificacaoFuncionario(){
+    if(!('Notification' in window)) return Promise.resolve('unsupported');
+    if(Notification.permission === 'default'){
+        return Notification.requestPermission();
+    }
+    return Promise.resolve(Notification.permission);
+}
+
+function urlBase64ParaUint8ArrayFunc(base64String){
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+}
+
+function mostrarConvitePushFuncionario(){
+    if(!state?.id) return;
+    if(localStorage.getItem('flashcred_push_inscrito_func_' + state.id)) return;
+    const el = document.getElementById('convitePushFuncionario');
+    if(el) el.style.display = 'flex';
+}
+
+async function ativarNotificacaoFuncionario(){
+    const el = document.getElementById('convitePushFuncionario');
+    await pedirPermissaoNotificacaoFuncionario();
+    setTimeout(async () => {
+        await inscreverPushFuncionario(true);
+        if(el && Notification.permission === 'granted') el.style.display = 'none';
+    }, 300);
+}
+
+async function inscreverPushFuncionario(modoDiagnostico){
+    try{
+        const fid = state?.id;
+        if(!fid){
+            if(modoDiagnostico) alert('❌ Sessão do funcionário não identificada.');
+            return;
+        }
+        if(!('serviceWorker' in navigator) || !('PushManager' in window)){
+            if(modoDiagnostico) alert('❌ Esse navegador não suporta notificações push.');
+            return;
+        }
+        if(Notification.permission !== 'granted'){
+            if(modoDiagnostico) alert('❌ Permissão de notificação não concedida (status: ' + Notification.permission + ').');
+            return;
+        }
+        if(!modoDiagnostico && localStorage.getItem('flashcred_push_inscrito_func_' + fid)) return;
+
+        const registration = await navigator.serviceWorker.ready;
+
+        let subscription = await registration.pushManager.getSubscription();
+        if(!subscription){
+            const resp = await fetch('/api/push/chave-publica');
+            const { chave } = await resp.json();
+            if(!chave){
+                if(modoDiagnostico) alert('❌ O servidor não retornou a chave pública (VAPID).');
+                return;
+            }
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ParaUint8ArrayFunc(chave)
+            });
+        }
+
+        const respRegistrar = await fetch('/api/push/registrar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ papel: 'funcionario', referencia: fid, subscription })
+        });
+
+        const resultado = await respRegistrar.json().catch(() => null);
+
+        if(!respRegistrar.ok || (resultado && resultado.sucesso === false)){
+            if(modoDiagnostico) alert('❌ O servidor recusou o cadastro: ' + (resultado?.mensagem || respRegistrar.status));
+            return;
+        }
+
+        localStorage.setItem('flashcred_push_inscrito_func_' + fid, '1');
+        if(modoDiagnostico) alert('✅ Inscrito com sucesso! Você vai receber aviso quando seu cliente pagar a entrada ou a parcela.');
+
+    }catch(e){
+        console.warn('Não foi possível inscrever notificações push:', e);
+        if(modoDiagnostico) alert('❌ Erro ao inscrever: ' + (e.message || e));
+    }
+}
+
+function instalarAppFuncionario(){
+    if(eventoInstalarPWAFuncionario){
+        eventoInstalarPWAFuncionario.prompt();
+        eventoInstalarPWAFuncionario.userChoice.then(() => {
+            eventoInstalarPWAFuncionario = null;
+        });
+        return;
+    }
+    abrirInstrucoesInstalarAppFuncionario();
+}
+
+function abrirInstrucoesInstalarAppFuncionario(){
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(7,27,77,.75);display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML = `
+        <div style="background:#fff;border-radius:20px;padding:26px 22px;max-width:360px;width:100%">
+            <div style="font-size:17px;font-weight:900;color:#0A2463;margin-bottom:14px">📲 Como instalar o app</div>
+            <div style="font-size:13.5px;color:#334155;line-height:1.6;margin-bottom:14px">
+                <strong>No Android (Chrome):</strong><br>
+                Toca nos <strong>três pontinhos (⋮)</strong> no canto superior direito do navegador → toca em <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>.
+            </div>
+            <div style="font-size:13.5px;color:#334155;line-height:1.6;margin-bottom:18px">
+                <strong>No iPhone (Safari):</strong><br>
+                Toca no ícone de <strong>compartilhar</strong> (quadrado com seta pra cima, na barra de baixo) → desça e toque em <strong>"Adicionar à Tela de Início"</strong>.
+            </div>
+            <button type="button" onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;padding:13px;border:none;border-radius:12px;background:#0A2463;color:#fff;font-weight:800;font-size:14px;cursor:pointer">Entendi</button>
+        </div>
+    `;
+    modal.addEventListener('click', e => { if(e.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
+}
+
+window.addEventListener('appinstalled', () => {
+    const banner = document.getElementById('bannerNovidadeApp');
+    if(banner) banner.style.display = 'none';
+});
+
+
+/* ===== TABELA DE PREÇOS (REVENDA) ===== */
+const TABELA_PRECOS_REVENDA = [
+['Aparador 4 portas',254.37],
+['Aparador Doris',576.85],
+['Aparador New Odin',234.91],
+['Aparador Pilar',521.25],
+['Aparador Veneza',365.57],
+['Armário 1,20 2 pts Luana/Clara',234.91],
+['Armário 1,20 3 pts Luana/Clara',237.69],
+['Armário 1,20 c/vidro correr Luana/Clara',312.75],
+['Armário 2 pts 70cm Luana/Clara',152.9],
+['Armário Geladeira 70 Firenze',145.95],
+['Armário Geladeira 80 Núbia',126.49],
+['Armário Multiuso New 1,70',243.25],
+['Armário de Escritório Manuela',373.91],
+['Armário de Escritório Marcela',262.71],
+['Armário de Escritório Melissa',610.21],
+['Armário de Escritório Michele',258.54],
+['Armário de canto Luana/Clara',229.35],
+['Armário refrigerador Luana/Clara',111.2],
+['Aéreo 1 porta (5103)',183.48],
+['Aéreo 1 porta basculante (5102)',340.55],
+['Aéreo 120 Firenze',333.6],
+['Aéreo 120 Núbia',347.5],
+['Aéreo Basculante 2P',301.63],
+['Aéreo Basculante c/ Vidro',425.34],
+['Aéreo Duplo Lavanderia 1,20',301.63],
+['Aéreo Geladeira 700mm',126.49],
+['Aéreo Lavanderia 70',126.49],
+['Aéreo de canto (5135)',266.88],
+['Aéreo geladeira (5104)',150.12],
+['Balcão 1,20 Núbia',486.5],
+['Balcão 2 pts Luana/Clara',232.13],
+['Balcão 3 pts 2 gav c/tampo Luana/Clara',428.12],
+['Balcão 70cm Atenas/Aurora/Vitória',198.77],
+['Balcão Aéreo 2 portas REF 841',111.2],
+['Balcão Aéreo 3 portas 120 line',187.65],
+['Balcão Aéreo 3 portas REF 843',139.0],
+['Balcão Bianca (c/ rodízios)',190.43],
+['Balcão Bianca 1P 1 Gav',170.97],
+['Balcão Clara (0210)',412.83],
+['Balcão Cozinha Juma c/ Tampo',268.27],
+['Balcão Denver 2 pts',173.75],
+['Balcão Diamante',150.12],
+['Balcão Duetto (duplo forno)',234.91],
+['Balcão Duplo 2P 2 Gav',421.17],
+['Balcão Firenze 1,20',487.89],
+['Balcão Ipê (microforno)',291.9],
+['Balcão Jet',247.42],
+['Balcão Lavanderia Duplo 1,20M',421.17],
+['Balcão Line 1,20',326.65],
+['Balcão Liz (c/ rodízios)',230.74],
+['Balcão Prime',291.9],
+['Balcão Triplo s/ Tampo',394.76],
+['Balcão c/ tampo Atenas/Aurora/Vitória',333.6],
+['Balcão de canto Luana/Clara',266.88],
+['Balcão de cozinha Lavínia',319.7],
+['Balcão de pia 1,20 Luana/Clara',391.98],
+['Balcão p/ Pia 120 Canada',318.31],
+['Balcão p/ cuba REF 434',298.85],
+['Balcão p/ microondas EJ',218.23],
+['Balcão s/ tampo Atenas/Aurora/Vitória',315.53],
+['Base (casal)',257.15],
+['Base (solteiro)',240.47],
+['Base Baú (Casal)',611.6],
+['Base Baú (Solteiro)',574.07],
+['Base Bibox (Solteiro)',572.68],
+['Base Conjugada ortopédica 10cm (casal)',467.04],
+['Base Conjugada ortopédica 7cm (casal)',382.25],
+['Base Conjugada ortopédica 7cm (solteiro)',361.4],
+['Beliche Italia (88x188)',938.25],
+['Beliche Italia + auxiliar castanho',1214.86],
+['Beliche Italia c/ gaveta (88x188)',1681.9],
+['Beliche Jaspe MDF (88x188)',786.74],
+['Beliche Palmo (88x188)',882.65],
+['Beliche Palmo + auxiliar castanho',1159.26],
+['Beliche Pinho (88x188)',686.66],
+['Beliche Robusta MDF (88x188)',639.4],
+['Berço Doce Sonho (130x60)',421.17],
+['Berço Doce Sonho c/ rodízio (130x60)',471.21],
+['Berço New Baby Americano c/ rodízio (130x70)',417.0],
+['Berço Q Encanto Slim Americano (130x70)',507.35],
+['Buffet 2 portas Flow',375.3],
+['Buffet 3 portas Flow',511.52],
+['Buffet 4 portas Flow',669.98],
+['Buffet Charlote',343.33],
+['Buffet Milano 3 portas',1396.95],
+['Buffet Milano 4 portas',1701.36],
+['Buffet Real 2 portas',248.81],
+['Buffet Real 3 portas',312.75],
+['Buffet Real 4 portas',393.37],
+['Cabeceira Estofada Nepal/London (solteiro)',177.92],
+['Cabeceira Estofada Renivan (casal)',193.21],
+['Cabeceira Estofada Zahra (casal)',198.77],
+['Cabeceira Estofada Zahra (solteiro)',172.36],
+['Cadeira Bia',216.84],
+['Cadeira Brasil (conj. 4 unid.)',161.24],
+['Cadeira Brisa (conj. 2 unid.)',111.2],
+['Cadeira Gol',215.45],
+['Cadeira Mediterrânea',125.1],
+['Cadeira Monaco (encosto alto)',186.26],
+['Cadeira Rio (conj. 4 unid.)',104.25],
+['Cadeira Sol (avulsa)',115.37],
+['Cadeira Verniz (encosto alto)',280.78],
+['Cama Bibox Luara (88x188)',458.7],
+['Cama Confort madeira (88x188)',701.95],
+['Cama Dobrável (Solteiro)',312.75],
+['Cama Iris Casal (138x188)',401.71],
+['Cama Italia Suprema (138x188)',778.4],
+['Cama Italia c/ gaveta madeira (88x188)',1324.67],
+['Cama Italia madeira (138x188)',600.48],
+['Cama Italia madeira solteiro (88x188)',497.62],
+['Cama Juvenil formato de carro (70x150)',393.37],
+['Cama Juvenil peseira desenho (70x150)',358.62],
+['Cama Nathalia madeira maciça (138x188)',2307.4],
+['Cama Nova madeira (138x188)',600.48],
+['Cama Nova madeira solteiro (88x188)',497.62],
+['Cama Palmo madeira (138x188)',600.48],
+['Cama Palmo madeira solteiro (88x188)',497.62],
+['Cama auxiliar Bianca 100% MDF (88x188)',183.48],
+['Cama auxiliar madeira (88x188)',276.61],
+['Cantinho Café Flow',390.59],
+['Cantoneira (5107)',173.75],
+['Chapa espelho 2 Unidades 90x22',130.66],
+['Colchonete casca de ovo Ortobom',41.7],
+['Colchão casal Biflex Black D33',695.0],
+['Colchão casal Cristal (Mola Verticoil - Prorelax)',715.85],
+['Colchão casal Dream D20 (Gazin)',375.3],
+['Colchão casal Dueto D28',827.05],
+['Colchão casal Iso semi ortopédico D33/28',764.5],
+['Colchão casal Los Angeles D28 (Gazin)',913.23],
+['Colchão casal Mola Ensacada / Confort Tec 22 (RDG Flex)',813.15],
+['Colchão casal Ouroflex D28 (Gazin)',1091.15],
+['Colchão casal Pantanal D28 (Ortobom)',1035.55],
+['Colchão casal Pantanal D70/D28 todo espuma',754.77],
+['Colchão casal Pérola Negra Gazin',1112.0],
+['Colchão casal Style D33 (Passalacqua)',792.3],
+['Colchão casal Style D70/18 (Passalacqua)',708.9],
+['Colchão de berço Americano D18 (Toraflex)',97.3],
+['Colchão de berço Arco Íris Plus D18 (1,30x0,60)',105.64],
+['Colchão de berço Arco Íris Plus D18 (1,30x0,70)',119.54],
+['Colchão de berço Baby D18 (Toraflex)',87.57],
+['Colchão juvenil Arco Íris D18',152.9],
+['Colchão solteiro AP',155.68],
+['Colchão solteiro Cali D23 (Toraflex)',236.3],
+['Colchão solteiro Dream D20 (Gazin) 0,78',215.45],
+['Colchão solteiro Dream D20 (Gazin) 0,88',236.3],
+['Colchão solteiro Pantanal D70/D28',499.01],
+['Colchão solteiro Premium D28',298.85],
+['Colchão solteiro Proflex Biflex D28',315.53],
+['Colchão solteiro Proflex Biflex D33',472.6],
+['Colchão solteiro Querubin D20 (Anjos)',225.18],
+['Colchão solteiro Style Mix D33 (Passalacqua)',472.6],
+['Colchão solteiro Style Mix D70/D28',458.7],
+['Colchão solteiro Taurus D28 (Global)',315.53],
+['Conj. Anjo (4 cadeiras) vidro 90x90',1383.05],
+['Conj. Hana (6 cadeiras Gol) vidro 160x80',2121.14],
+['Conj. Hana (6 cadeiras Sol) vidro 160x80',1520.66],
+['Conjunto 2 criados Kosovo',258.54],
+['Conjunto Liz (mesa de centro)',205.72],
+['Conjunto Mesa Havana com 4 cad. Sol',795.08],
+['Conjunto Monaco 4 cadeiras',1200.96],
+['Conjunto Monaco 6 cadeiras',1766.69],
+['Cooktop 2 portas',239.08],
+['Cooktop Catar (4 e 5 bocas)',264.1],
+['Cooktop Fit',340.55],
+['Cooktop Libel 4 bocas',458.7],
+['Cooktop Libel 5 bocas',550.44],
+['Cooktop Roma (4 e 5 bocas)',328.04],
+['Cozinha Atenas (balcão 1,20m)',600.48],
+['Cozinha Aurora (balcão 1,20m)',594.92],
+['Cozinha Compacta Carol 6 pts 1 gav c/balcão',398.93],
+['Cozinha Compacta Nanda 5 pts 1 gav c/balcão',387.81],
+['Cozinha Compacta Vitória (balcão 1,20m)',594.92],
+['Cozinha Cristal (modulada)',1659.66],
+['Cozinha Esmeralda (modulada)',1534.56],
+['Cozinha Estrela (modulada)',753.38],
+['Cozinha Girassol (modulada)',1355.25],
+['Cozinha Juma (balcão 0,91m)',522.64],
+['Cozinha Lua (modulada)',576.85],
+['Cozinha Prime',585.19],
+['Cozinha Pérola (modulada)',1307.99],
+['Cozinha Rubi (modulada)',1455.33],
+['Cozinha Sol (modulada)',429.51],
+['Cozinha de parede Evolution (10 peças)',3737.71],
+['Cozinha de parede Evolution (4 peças)',1775.03],
+['Cozinha de parede Evolution (7 peças)',2910.66],
+['Cozinha de parede Firenze (4 peças)',1560.97],
+['Cozinha de parede Fit (4 peças)',1105.05],
+['Cozinha de parede Malta (4 peças)',1249.61],
+['Cozinha de parede Núbia (4 peças)',1445.6],
+['Cozinha de parede Soul (4 peças)',806.2],
+['Cozinha de parede Vert Plus (4 peças)',889.6],
+['Criado Mudo Bruna',120.93],
+['Cômoda 05 gavetas',315.53],
+['Cômoda 08 gavetas',594.92],
+['Cômoda Bali (2 portas 4 gav)',574.07],
+['Cômoda Berlim REF 13',1124.51],
+['Cômoda Doce Sonho (4 gavetas)',261.32],
+['Cômoda Doce Sonho (c/ sapateira)',353.06],
+['Cômoda Emas (5 gavetas)',403.1],
+['Cômoda Flávia (4 gavetas)',266.88],
+['Cômoda Flávia 4 Gav',239.08],
+['Cômoda Gisele (c/ 2 sapateiras, 4 gavetas)',428.12],
+['Cômoda Gisele 4 Gav 2P',379.47],
+['Cômoda Helena (6 gavetas)',366.96],
+['Cômoda Helena 6 Gav',326.65],
+['Cômoda Isabele (c/ sapateira, 5 gavetas)',621.33],
+['Cômoda Isabele 5 Gav 2P',524.03],
+['Cômoda Jade (8 gavetas telescópicas)',594.92],
+['Cômoda Laura (c/ sapateira, 4 gavetas)',365.57],
+['Cômoda Laura 4 Gav 1P',323.87],
+['Cômoda Londres (c/ sapateira)',735.31],
+['Cômoda Londres 2 pts 4 gav',482.33],
+['Cômoda Madri REF 33',1395.56],
+['Cômoda Mariah 4 Gav 2P',476.77],
+['Cômoda Milão 1 pta 5 gav',394.76],
+['Cômoda Monique (8 gavetas, 2 c/ chave)',607.43],
+['Cômoda Monique 8 Gav',539.32],
+['Cômoda New Baby (4 gavetas)',271.05],
+['Cômoda Paris (5 gavetas)',535.15],
+['Cômoda Raissa (8 gavetas)',480.94],
+['Cômoda Raíssa 8 Gav',423.95],
+['Cômoda Russa REF 36',1470.62],
+['Cômoda Sevilha 1 pta 4 gav c/porta joia',671.37],
+['Cômoda Sky (c/ sapateira, 3 gavetas)',360.01],
+['Cômoda Veneza',897.94],
+['Cômoda Vitória II (5 gav c/ sapateira, chave e pé)',455.92],
+['Esmaltera / nicho organizador Jade',116.76],
+['Espelho 90x35 3mm',93.13],
+['Fruteira 2 pts 1 gav',275.22],
+['Fruteira Grécia (c/ rodízios)',229.35],
+['Fruteira Isis',326.65],
+['Fruteira Isis 2P 1 Gav',300.24],
+['Fruteira Malu',322.48],
+['Fruteira Natasha',296.07],
+['Fruteira Natasha 1P 1 Gav',272.44],
+['Fruteira Nobre (c/ vidro e rodízio)',330.82],
+['Fruteira Talita',198.77],
+['Fruteira Talita 1 Gav',182.09],
+['Gabinete 2 portas (5106)',557.39],
+['Gabinete 4 gavetas (5200/5105)',437.85],
+['Gabinete Gêmeos 1,20M',340.55],
+['Gabinete Gêmeos 1,50M',404.49],
+['Gabinete Gêmeos 1,80M',458.7],
+['Gabinete Gêmeos 1M',287.73],
+['Gabinete Gêmeos 2M',483.72],
+['Gabinete Libra 1,20M',357.23],
+['Gabinete Libra 1,50M',428.12],
+['Gabinete Libra 1,80M',482.33],
+['Gabinete de canto (5136)',386.42],
+['Genova 1188 (2 portas)',667.2],
+['Genova 1189 (1 porta canto)',625.5],
+['Genova 1190 (1 porta)',404.49],
+['Genova 1191 (nicho)',248.81],
+['Genova 1192 (Ponte p/ cama 138cm)',1038.33],
+['Genova 2229 (Ponte p/ cama 88cm)',610.21],
+['Guarda-roupa 07 pts 02 gav',746.43],
+['Guarda-roupa 3 pts 2 gavetas c/pés',422.56],
+['Guarda-roupa 4 portas 2 gav c/pés',1023.04],
+['Guarda-roupa 4 pts 2 gavetas c/pés',494.84],
+['Guarda-roupa 6 portas 2 gav internas 2,30 alt',1413.63],
+['Guarda-roupa Cadis (4 portas 6 gavetas)',1515.1],
+['Guarda-roupa Califórnia 8 portas',1466.45],
+['Guarda-roupa Canadá 6 pts 08 gav',2126.7],
+['Guarda-roupa Capri 2P Correr 6 Gav',746.43],
+['Guarda-roupa Capri 2P Correr 6 Gav c/ Esp',806.2],
+['Guarda-roupa Capri 3P Correr 9 Gav',1041.11],
+['Guarda-roupa Capri 3P Correr 9 Gav c/ Esp',1105.05],
+['Guarda-roupa Coimbra 6 pts 2 gav c/pés',668.59],
+['Guarda-roupa Dallas 4 PT',514.3],
+['Guarda-roupa Domus (4 portas 3 gavetas)',1153.7],
+['Guarda-roupa Dubai 8 pts 4 gav c/pés',1390.0],
+['Guarda-roupa Flash (6 portas 2 gavetas)',697.78],
+['Guarda-roupa Florença madeira (5 portas)',2638.22],
+['Guarda-roupa França (6 portas)',2126.7],
+['Guarda-roupa Genova modulado (5 peças)',2984.33],
+['Guarda-roupa Grpa Ipê',847.9],
+['Guarda-roupa Guarujá (6 portas 4 gavetas)',1316.33],
+['Guarda-roupa Itapema (3 portas 9 gavetas)',1396.95],
+['Guarda-roupa Jatoba (8 portas + 4 gv)',1364.98],
+['Guarda-roupa Kioto 3P',514.3],
+['Guarda-roupa Kioto 4P',644.96],
+['Guarda-roupa Kioto 6P',834.0],
+['Guarda-roupa Las Vegas (8 pt 4 gv)',1252.39],
+['Guarda-roupa Lisboa 4P',701.95],
+['Guarda-roupa Lisboa 6P',1009.14],
+['Guarda-roupa Lisboa 8P',1295.48],
+['Guarda-roupa Lord Capelinha (4 portas 2 gavetas)',813.15],
+['Guarda-roupa Madri Rud Rack 4 PT',574.07],
+['Guarda-roupa Marrocos 6 pts 6 gav',1034.16],
+['Guarda-roupa Marslha 3 portas',857.63],
+['Guarda-roupa Melbourne 4 PT',960.49],
+['Guarda-roupa Michigan c/ espelho',1925.15],
+['Guarda-roupa Ms 912 (6 portas 2 gavetas)',868.75],
+['Guarda-roupa Mônaco 10 portas 3 gavetas',1013.31],
+['Guarda-roupa Napole 8p 4 gav',1401.12],
+['Guarda-roupa New Murano (10 portas 3 gavetas)',1203.74],
+['Guarda-roupa Paris - Capela',904.89],
+['Guarda-roupa Paris 3P 2 Gav',950.76],
+['Guarda-roupa Paris 3P 2 Gav c/ Esp',1067.52],
+['Guarda-roupa Porto Bello Plus (6 pts c/ 4 gav + pé)',1551.24],
+['Guarda-roupa Prático (6 portas 3 gavetas)',1191.23],
+['Guarda-roupa Roma 2P',682.49],
+['Guarda-roupa Roma 2P c/ Esp',799.25],
+['Guarda-roupa Sevilha 3P Correr',1862.6],
+['Guarda-roupa Sevilha 3P Correr c/ Esp',2026.62],
+['Guarda-roupa Sevilha 3P Correr c/ Esp nas 3 portas',2406.09],
+['Guarda-roupa Sidney 6 PT',590.75],
+['Guarda-roupa Solteiro Doce Sonho (2 portas)',586.58],
+['Guarda-roupa Solteiro Doce Sonho (3 portas)',597.7],
+['Guarda-roupa Valencia 6P 6 Gav',1608.23],
+['Guarda-roupa Valencia 6P 6 Gav c/ Esp',1781.98],
+['Guarda-roupa Valencia 6P 6 Gav c/ Vidro Reflecta',2564.55],
+['Guarda-roupa Venice (6 pts c/ 4 gav)',1830.63],
+['Guarda-roupa Versa (6 portas 2 gavetas)',639.4],
+['Guarda-roupa Versa 3 portas',417.0],
+['Guarda-roupa Versa 4 portas',483.72],
+['Guarda-roupa Verso (6 portas 2 gavetas)',1004.97],
+['Guarda-roupa Viena madeira (3 portas)',1641.59],
+['Guarda-roupa Viena madeira (5 portas)',2419.99],
+['Home Atenas',715.85],
+['Home Horus 65"',943.81],
+['Home Icaro 50"',636.62],
+['Kit 3 Prateleiras 1095x195x15',130.66],
+['Kit 3 Prateleiras 545x195x15',77.84],
+['Kit 3 Prateleiras 915x195x15',111.2],
+['Kit Banheiro Suspenso Siena 1 porta (39cm)',280.78],
+['Kit Banheiro Suspenso Siena 1 porta 2 gavetas (55cm)',298.85],
+['Kit cozinha 4 portas 1 gav 1,21m',446.19],
+['Kit cozinha 4 pts (2 pts de correr) 1 gav',353.06],
+['Kit cozinha Amora',1230.15],
+['Kit cozinha Berlim',489.28],
+['Kit cozinha Botanika',757.55],
+['Kit cozinha Bárbara',679.71],
+['Kit cozinha Camila s/ tampo',786.74],
+['Kit cozinha Cleo 8 portas',489.28],
+['Kit cozinha Coral 6 portas',411.44],
+['Kit cozinha Coral 8 portas',512.91],
+['Kit cozinha Coz Isis',394.76],
+['Kit cozinha Duda 1,20',417.0],
+['Kit cozinha Duda 1,40',504.57],
+['Kit cozinha Duda 90',347.5],
+['Kit cozinha Erva Doce 4 portas 90cm',433.68],
+['Kit cozinha Flora',625.5],
+['Kit cozinha Ibiza',1160.65],
+['Kit cozinha Liv 1,20',451.75],
+['Kit cozinha Malva/Roma 4 pts 1 gav',380.86],
+['Kit cozinha Mega',902.11],
+['Kit cozinha Murano 7 portas',1223.2],
+['Kit cozinha Select',818.71],
+['Kit cozinha Selena',742.26],
+['Kit cozinha Siena',636.62],
+['Kit cozinha Style 1,11',382.25],
+['Kit cozinha Zen',347.5],
+['Kit espelho 8 unid.',177.92],
+['Kit pé 4 unidades',11.12],
+['Kit pé 6 unidades',16.68],
+['Kit pé 8 unidades',22.24],
+['Kit pés para guarda-roupa',3.89],
+['Lavadora Libell 10kg',514.3],
+['Lavadora Libell 14kg',562.95],
+['Lavadora Libell 20kg',639.4],
+['Lavanderia Sheila',350.28],
+['Livreiro Anubis',269.66],
+['Livreiro Linus REF 1404',273.83],
+['Mesa Anjo com vidro',521.25],
+['Mesa Atenas Cajuela',1153.7],
+['Mesa Atlanta ardósia (4 cadeiras)',644.96],
+['Mesa Atlanta ardósia (6 cadeiras)',936.86],
+['Mesa Bellagio (4 cadeiras)',625.5],
+['Mesa Brasil 4 cad. estofada',854.85],
+['Mesa Brasil 6 cad. estofada',1180.11],
+['Mesa Brasil madeira com 4 cad. (Kasper)',749.21],
+['Mesa Brasil madeira com 6 cad.',992.46],
+['Mesa Daila com 4 cadeiras Bia',1395.56],
+['Mesa Daila com vidro',528.2],
+['Mesa Dobrável 900x385x15',127.88],
+['Mesa Dobrável 900x450x15',137.61],
+['Mesa Flip',330.82],
+['Mesa Flip com 4 cadeiras Sol',792.3],
+['Mesa Hana com vidro',828.44],
+['Mesa Havana off ou cinza',333.6],
+['Mesa Maricá MDP (4 cadeiras)',465.65],
+['Mesa Meaípe granito (4 cadeiras)',849.29],
+['Mesa Monaco 115x75 (só a mesa)',455.92],
+['Mesa Monaco 150x76 (só a mesa)',649.13],
+['Mesa Pallace',173.75],
+['Mesa Pallace com 4 cadeiras Brisa',618.55],
+['Mesa Tokio c/ Tampo de Vidro',681.1],
+['Mesa Topázio granito 100x60 (4 cadeiras)',597.7],
+['Mesa Topázio granito 70x70 (4 cadeiras)',493.45],
+['Mesa Verniz 1,20 (só a mesa)',968.83],
+['Mesa Verniz 1,60 (só a mesa)',1370.54],
+['Mesa de cabeceira Bruna (2 gavetas)',139.0],
+['Mesa de cabeceira Luxo (3 gavetas)',143.17],
+['Mesa de cabeceira Luxo 2 (4 gavetas)',166.8],
+['Mesa de cabeceira Malta Pet',169.58],
+['Mesa de cabeceira Presence c/ Rodízio',237.69],
+['Mesa de cabeceira Retrô Wood (3 gavetas)',209.89],
+['Mesa de computador 2 gavetas EJ',215.45],
+['Mesa de computador Gamer',195.99],
+['Mesa de computador Morada',265.49],
+['Mesa de computador Prática com gaveta',189.04],
+['Mesa de computador Prática sem gaveta',161.24],
+['Mesa de computador Viena',216.84],
+['Multiuso 2 portas 1,825',326.65],
+['Multiuso 4 portas',512.91],
+['Multiuso Atenas (c/ chave e pés)',639.4],
+['Multiuso Aura',257.15],
+['Multiuso Brisa',201.55],
+['Multiuso Córdoba (c/chave)',353.06],
+['Multiuso Dallas (c/ chave e pés)',586.58],
+['Multiuso Dueto 4 portas',423.95],
+['Multiuso Florença 2 pts',361.4],
+['Multiuso Ibiza REF 4099',272.44],
+['Multiuso Lavanda 2011',161.24],
+['Multiuso Lavanda 2014',236.3],
+['Multiuso Lavanderia 879',362.79],
+['Multiuso Lavanderia Caribe',372.52],
+['Multiuso Luna',298.85],
+['Multiuso Manuela 2P 1,80M',373.91],
+['Multiuso Marcela 2P 1,40M',304.41],
+['Multiuso Michele 2P 1,10M',258.54],
+['Multiuso Miriam',315.53],
+['Multiuso Nara c/ Rodízio',250.2],
+['Multiuso Nina (com pés)',219.62],
+['Multiuso Torino',569.9],
+['Multiuso Toronto',343.33],
+['Painel Byte 50"',290.51],
+['Painel Davos 55"',396.15],
+['Painel Fox 43"',180.7],
+['Painel Frizz Sublime 55"',405.88],
+['Painel Lana 60"',612.99],
+['Painel Lumi 1,80',321.09],
+['Painel Max 70"',430.9],
+['Painel Milos 50"',170.97],
+['Painel Palladium 58"',549.05],
+['Painel Thor 75"',250.2],
+['Paneleiro 2 portas (5101)',514.3],
+['Paneleiro 4 gavetas (5201)',726.97],
+['Paneleiro 4 pts 1 gav',311.36],
+['Paneleiro 4 pts 1 gav Clara',408.66],
+['Paneleiro 4 pts Clara',358.62],
+['Paneleiro 4 pts Luana',693.61],
+['Paneleiro 70 Firenze',667.2],
+['Paneleiro 70 Núbia',532.37],
+['Paneleiro Cozinha Compacta',383.64],
+['Paneleiro Duplo 2100mm',610.21],
+['Paneleiro torre quente Luana',494.84],
+['Penteadeira Atraente sem banqueta',437.85],
+['Penteadeira Carisma',625.5],
+['Pia 120x53 Inox',221.01],
+['Pia 120x55 Roralit CB Inox',368.35],
+['Pia 120x55 Sintética Granitada',208.5],
+['Pia 150x53 Inox',269.66],
+['Pia 150x55 Sintética',294.68],
+['Pia 150x55 Sintética c/ Cuba Inox',432.29],
+['Poltrona Dallas',304.41],
+['Poltrona Papai Turim',618.55],
+['Porta copos',34.75],
+['Puff Colchão 3 em 1 Ortobom (solteiro)',243.25],
+['Rack / Bancada Valencia',368.35],
+['Rack Artur 1,21',268.27],
+['Rack Cayman 1,36',319.7],
+['Rack Charlote Artely',458.7],
+['Rack Dili 1,20',405.88],
+['Rack Flow 1,80',468.43],
+['Rack Helena 1,36',315.53],
+['Rack Iris 1,20"',298.85],
+['Rack London 108',258.54],
+['Rack Mark 1,50"',373.91],
+['Roupeiro Onix (2pts 3 gav)',581.02],
+['Sapateira Anna',298.85],
+['Sapateira Isabela (c/chave)',340.55],
+['Sapateira Safira 2P',172.36],
+['Sapateira Safira 3 portas',250.2],
+['Sapateira Safira 3P',233.52],
+['Sapateira Safira 4 portas',350.28],
+['Sapateira Safira 4P',296.07],
+['Sofá Barcelona 1,80 D23 Veludo Luxo',1296.87],
+['Sofá Cama Laila',1237.1],
+['Sofá Cama Malu',569.9],
+['Sofá New Price 1,80',1737.5],
+['Sofá Pop 2 e 3 lugares',792.3],
+['Suporte de TV',18.07],
+['Tampo 25mm p/ Balcão',104.25],
+['Tampo para balcão 120cm REF 4631',100.08],
+['Tanquinho Super Star',493.45],
+['Travesseiro SM',11.81],
+['Travesseiro flocos Ortobom',14.59],
+['Tábua de passar Amélia',300.24],
+['Tábua de passar Melissa',251.59]
+];
+
+function renderizarTabelaPrecos(filtro){
+  const termo = (filtro||'').trim().toLowerCase();
+  const filtrados = termo ? TABELA_PRECOS_REVENDA.filter(([nome]) => nome.toLowerCase().includes(termo)) : TABELA_PRECOS_REVENDA;
+  const container = document.getElementById('listaTabelaPrecos');
+  if(!container) return;
+  const limite = 300;
+  const mostrar = filtrados.slice(0, limite);
+  container.innerHTML = mostrar.map(([nome,preco]) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #F1F5F9">
+      <span style="font-size:13.5px;color:#1E293B">${nome}</span>
+      <strong style="font-size:13.5px;color:#0A2463;white-space:nowrap">R$ ${preco.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>
+    </div>
+  `).join('') || '<div style="padding:16px;color:#64748B;font-size:13px">Nenhum produto encontrado.</div>';
+  const contador = document.getElementById('contadorTabelaPrecos');
+  const total = document.getElementById('totalTabelaPrecos');
+  if(contador) contador.textContent = mostrar.length;
+  if(total) total.textContent = TABELA_PRECOS_REVENDA.length;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderizarTabelaPrecos('');
+  const buscaTabela = document.getElementById('buscaTabelaPrecos');
+  if(buscaTabela) buscaTabela.addEventListener('input', e => renderizarTabelaPrecos(e.target.value));
+});
+
+</script>
+<div id="envioOverlay" class="send-overlay hidden" aria-live="polite">
+  <div class="send-box">
+    <div class="send-icon">🚀</div>
+    <h3 id="envioTitulo">Sua proposta está sendo enviada</h3>
+    <p id="envioTexto">Aguarde enquanto registramos sua indicação e enviamos os dados para análise.</p>
+    <div class="send-progress"><span></span></div>
+    <div class="send-status" id="envioStatus">Enviando proposta...</div>
+  </div>
+</div>
+</body></html>

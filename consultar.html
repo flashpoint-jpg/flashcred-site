@@ -1,0 +1,7092 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>Acompanhar Proposta | FlashCred</title>
+
+<link rel="manifest" href="manifest-cliente.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0A2463">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FlashCred">
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.1"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<script>
+tailwind.config = {
+    theme: {
+        extend: {
+            colors: {
+                primary: '#0A2463',
+                primaryDark: '#071D4D',
+                pix: '#32BCAD',
+                sucesso: '#10B981',
+                alerta: '#F59E0B',
+                perigo: '#EF4444'
+            }
+        }
+    }
+}
+</script>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: radial-gradient(circle at 6% 0%,rgba(15,139,141,.06),transparent 30%),radial-gradient(circle at 96% 15%,rgba(16,185,129,.05),transparent 28%),#F4F7FC;
+    color: #1E293B;
+    font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+}
+
+.app {
+    width: 100%;
+    max-width: 700px;
+    margin: auto;
+    padding: 16px;
+}
+
+.header {
+    background: linear-gradient(
+        135deg,
+        #071D4D,
+        #0A2463 55%,
+        #123f9b
+    );
+
+    color: white;
+    border-radius: 22px;
+    padding: 26px 24px;
+    margin-bottom: 16px;
+
+    box-shadow:
+        0 14px 36px rgba(7,29,77,.22);
+}
+
+.logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+
+    background: rgba(255,255,255,.12);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 22px;
+    margin-bottom: 12px;
+}
+
+.card {
+    background: white;
+    border-radius: 20px;
+    padding: 22px;
+    margin-bottom: 16px;
+
+    border: 1px solid rgba(226,232,240,.8);
+
+    box-shadow:
+        0 10px 30px rgba(15,23,42,.07);
+}
+
+.input,
+.select {
+    width: 100%;
+    padding: 14px;
+
+    border: 1px solid #CBD5E1;
+    border-radius: 12px;
+
+    background: #f8fafc;
+
+    font-size: 16px;
+    outline: none;
+    transition: .2s;
+}
+
+.input:hover,
+.select:hover {
+    border-color: #9fb0c5;
+}
+
+.input:focus,
+.select:focus {
+    border-color: #0F8B8D;
+    background: white;
+
+    box-shadow:
+        0 0 0 4px rgba(15,139,141,.11);
+}
+
+.btn {
+    width: 100%;
+    border: 0;
+    border-radius: 13px;
+    padding: 14px;
+
+    font-size: 15px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: .2s;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(0,0,0,.14);
+}
+
+.btn:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg,#0A2463,#0F8B8D);
+    color: white;
+    box-shadow: 0 10px 22px rgba(15,139,141,.20);
+}
+
+.btn-success {
+    background: linear-gradient(135deg,#059669,#10B981);
+    color: white;
+    box-shadow: 0 10px 22px rgba(16,185,129,.20);
+}
+
+.btn-pix {
+    background: linear-gradient(135deg,#227f76,#32BCAD);
+    color: white;
+    box-shadow: 0 10px 22px rgba(50,188,173,.22);
+}
+
+.btn-secondary {
+    background: #E8EDF5;
+    color: #334155;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg,#c62828,#EF4444);
+    color: white;
+    box-shadow: 0 10px 22px rgba(239,68,68,.20);
+}
+
+.btn-whatsapp {
+    background: #25D366;
+    color: white;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible{
+    outline:3px solid rgba(15,139,141,.45);
+    outline-offset:2px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.stepper {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin: 5px 0;
+}
+
+.stepper:before {
+    content: "";
+
+    position: absolute;
+
+    left: 8%;
+    right: 8%;
+    top: 17px;
+
+    height: 3px;
+
+    background: #E2E8F0;
+
+    z-index: 0;
+}
+
+.step {
+    position: relative;
+    z-index: 1;
+
+    width: 20%;
+
+    text-align: center;
+
+    font-size: 10px;
+
+    color: #94A3B8;
+
+    font-weight: 600;
+}
+
+.step-circle {
+    width: 34px;
+    height: 34px;
+
+    margin: auto auto 6px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #E2E8F0;
+    color: #64748B;
+
+    border: 3px solid #F3F6FA;
+    transition: .25s;
+}
+
+.step.active {
+    color: #0A2463;
+}
+
+.step.active .step-circle {
+    background: linear-gradient(135deg,#0A2463,#0F8B8D);
+    color: white;
+    box-shadow: 0 6px 16px rgba(15,139,141,.30);
+}
+
+.step.done {
+    color: #059669;
+}
+
+.step.done .step-circle {
+    background: linear-gradient(135deg,#059669,#10B981);
+    color: white;
+    box-shadow: 0 6px 16px rgba(16,185,129,.28);
+}
+
+.row {
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding: 11px 0;
+
+    border-bottom:
+        1px solid #E5E7EB;
+}
+
+.row:last-child {
+    border-bottom: 0;
+}
+
+.label {
+    color: #64748B;
+    font-size: 14px;
+}
+
+.value {
+    font-weight: 700;
+    text-align: right;
+}
+
+.info {
+    padding: 15px;
+
+    border-radius: 12px;
+
+    margin-bottom: 14px;
+}
+
+.info-blue {
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+}
+
+.info-green {
+    background: #ECFDF5;
+    border: 1px solid #A7F3D0;
+}
+
+.info-yellow {
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+}
+
+.info-red {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+}
+
+.parcela {
+    border: 1px solid #DCE3EC;
+
+    border-radius: 15px;
+
+    padding: 16px;
+
+    margin-bottom: 12px;
+
+    background: #fff;
+}
+
+.parcela-topo {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 10px;
+}
+
+.parcela-numero {
+    font-size: 16px;
+
+    font-weight: 800;
+
+    color: #0A2463;
+}
+
+.parcela-valor {
+    font-size: 18px;
+
+    font-weight: 800;
+}
+
+.parcela-detalhes {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 10px;
+
+    margin: 14px 0;
+}
+
+.parcela-info {
+    background: #F8FAFC;
+
+    border-radius: 10px;
+
+    padding: 10px;
+}
+
+.parcela-info small {
+    display: block;
+
+    color: #64748B;
+
+    margin-bottom: 3px;
+}
+
+.status {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    padding: 6px 10px;
+
+    border-radius: 30px;
+
+    font-size: 12px;
+
+    font-weight: 700;
+}
+
+.status-pago {
+    background: #DCFCE7;
+    color: #166534;
+}
+
+.status-pendente {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.status-atrasado {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+.pix-parcela {
+    margin-top: 12px;
+
+    padding-top: 12px;
+
+    border-top:
+        1px dashed #CBD5E1;
+}
+
+.qrcode-area {
+    display: flex;
+
+    justify-content: center;
+
+    padding: 14px;
+
+    background: white;
+
+    border-radius: 12px;
+
+    border: 1px solid #E2E8F0;
+
+    margin: 10px 0;
+}
+
+.codigo-pix {
+    background: #ECFDF5;
+
+    border: 2px solid #32BCAD;
+
+    border-radius: 12px;
+
+    padding: 12px;
+
+    text-align: center;
+
+    word-break: break-all;
+
+    font-size: 12px;
+
+    font-weight: 600;
+}
+
+.contrato {
+    background: #FCFCFD;
+
+    border: 1px solid #CBD5E1;
+
+    border-radius: 12px;
+
+    padding: 18px;
+
+    max-height: 350px;
+
+    overflow-y: auto;
+
+    line-height: 1.7;
+
+    font-size: 13px;
+
+    text-align: justify;
+}
+
+.contrato h3 {
+    text-align: center;
+
+    font-size: 16px;
+
+    margin-bottom: 15px;
+
+    color: #0A2463;
+}
+
+.resumo {
+    background: #EFF6FF;
+
+    border: 1px solid #BFDBFE;
+
+    border-radius: 12px;
+
+    padding: 16px;
+
+    margin-bottom: 15px;
+}
+
+.resumo-item {
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 10px;
+
+    padding: 7px 0;
+}
+
+.resumo-item span:first-child {
+    color: #64748B;
+}
+
+.resumo-item strong {
+    color: #0A2463;
+}
+
+.resumo-explicacao {
+    margin-top: 12px;
+
+    padding-top: 12px;
+
+    border-top:
+        1px dashed #BFDBFE;
+
+    color: #475569;
+
+    font-size: 13px;
+
+    line-height: 1.6;
+}
+
+.total-final {
+    font-size: 16px;
+
+    border-top:
+        2px solid #BFDBFE;
+
+    margin-top: 6px;
+
+    padding-top: 12px;
+}
+
+.entrega {
+    background: #FFFBEB;
+
+    border: 2px solid #F59E0B;
+
+    border-radius: 15px;
+
+    padding: 18px;
+
+    margin-bottom: 16px;
+}
+
+.barra-progresso {
+    width: 100%;
+
+    height: 14px;
+
+    background: #E2E8F0;
+
+    border-radius: 20px;
+
+    overflow: hidden;
+
+    margin: 12px 0;
+}
+
+.barra-preenchida {
+    height: 100%;
+
+    background: #F59E0B;
+
+    transition:
+        width .5s ease;
+}
+
+.entrega-concluida {
+    border-color: #10B981;
+    background: #ECFDF5;
+}
+
+.entrega-info {
+    display: flex;
+
+    justify-content: space-between;
+
+    font-size: 13px;
+
+    color: #64748B;
+}
+
+.pix-box {
+    background: #ECFDF5;
+
+    border: 2px solid #32BCAD;
+
+    border-radius: 16px;
+
+    padding: 18px;
+
+    text-align: center;
+}
+
+.btn-copy {
+    background: #0A2463;
+
+    color: white;
+
+    border: 0;
+
+    padding: 10px 14px;
+
+    border-radius: 9px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.assinatura-area {
+    margin-top: 15px;
+}
+
+video,
+#imagemAssinatura {
+    width: 100%;
+
+    max-height: 260px;
+
+    object-fit: cover;
+
+    border-radius: 12px;
+
+    background: #0F172A;
+}
+
+.modo-botoes {
+    display: flex;
+
+    gap: 8px;
+
+    margin-bottom: 12px;
+}
+
+.modo-botoes button {
+    flex: 1;
+}
+
+.sucesso {
+    background: #ECFDF5;
+
+    border: 2px solid #10B981;
+
+    border-radius: 15px;
+
+    padding: 22px;
+
+    text-align: center;
+
+    margin-bottom: 16px;
+}
+
+.sucesso i {
+    color: #10B981;
+
+    font-size: 42px;
+
+    margin-bottom: 10px;
+}
+
+.badge {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    padding: 6px 10px;
+
+    border-radius: 30px;
+
+    font-size: 12px;
+
+    font-weight: 700;
+}
+
+.badge-green {
+    background: #DCFCE7;
+    color: #166534;
+}
+
+.link-proposta {
+    background: #F8FAFC;
+
+    border: 1px dashed #CBD5E1;
+
+    border-radius: 12px;
+
+    padding: 12px;
+
+    font-size: 12px;
+
+    word-break: break-all;
+
+    color: #475569;
+}
+
+@media(max-width:480px) {
+
+    .app {
+        padding: 10px;
+    }
+
+    .card {
+        padding: 16px;
+    }
+
+    .parcela-detalhes {
+        grid-template-columns: 1fr;
+    }
+
+    .step {
+        font-size: 9px;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div
+    id="convitePushCliente"
+    style="display:none;position:fixed;top:16px;left:16px;right:16px;z-index:99998;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:linear-gradient(135deg,#0A2463,#0F8B8D);color:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 14px 40px rgba(10,36,99,.35)"
+>
+    <div>
+        <div style="font-weight:900;font-size:15px;margin-bottom:4px">🔔 Ativar notificações</div>
+        <div style="font-size:13px;opacity:.9;line-height:1.4">Receba avisos de parcela vencendo e pagamento confirmado, mesmo com o app fechado.</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+        <button type="button" onclick="ativarNotificacaoCliente()" style="background:#fff;color:#0A2463;border:none;border-radius:10px;padding:11px 16px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap">Ativar</button>
+        <button type="button" onclick="document.getElementById('convitePushCliente').style.display='none'" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:10px;padding:11px 14px;font-weight:700;font-size:13px;cursor:pointer">✕</button>
+    </div>
+</div>
+
+<div class="app">
+
+<section id="telaConsulta">
+
+    <div class="header">
+
+        <div class="logo">
+            <i class="fas fa-building-columns"></i>
+        </div>
+
+        <div class="text-xs opacity-70">
+            FLASHCRED
+        </div>
+
+        <h1 class="text-2xl font-bold">
+            Acompanhe sua proposta
+        </h1>
+
+        <p class="text-sm opacity-80 mt-1">
+            Consulte sua proposta utilizando seu CPF.
+        </p>
+
+    </div>
+
+    <div class="card">
+
+        <h2 class="text-xl font-bold mb-2">
+            Consultar proposta
+        </h2>
+
+        <p class="text-sm text-slate-500 mb-5">
+            Digite seu CPF para acessar sua proposta.
+        </p>
+
+        <input
+            id="cpfConsulta"
+            class="input mb-3"
+            maxlength="14"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="CPF"
+        >
+
+        <button
+            id="btnConsultar"
+            class="btn btn-primary"
+            onclick="executarConsulta()"
+        >
+            <i class="fas fa-search"></i>
+            Consultar proposta
+        </button>
+
+    </div>
+
+</section>
+
+
+<section id="telaProposta" class="hidden">
+
+    <div class="header">
+
+        <div class="flex items-center justify-between">
+
+            <div>
+
+                <div class="text-xs opacity-70">
+                    FLASHCRED
+                </div>
+
+                <h1 class="text-2xl font-bold">
+                    Minha Proposta
+                </h1>
+
+            </div>
+
+            <i class="fas fa-file-contract text-3xl opacity-80"></i>
+
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <div id="barraEtapas" class="stepper"></div>
+
+    </div>
+
+    <div class="card" id="cardFormaPagamento" style="border:1.5px solid #DCE6F5"></div>
+
+    <div id="conteudoProposta"></div>
+
+    <button
+        onclick="voltarInicio()"
+        class="btn btn-secondary"
+    >
+        <i class="fas fa-arrow-left"></i>
+        Consultar outro CPF
+    </button>
+
+</section>
+
+</div>
+
+
+<script>
+
+/* ==========================================================
+   SUPABASE
+========================================================== */
+
+const SUPABASE_URL =
+    'https://rgcclordmqjmwuzrrfbd.supabase.co';
+
+const SUPABASE_KEY =
+    'sb_publishable_g5Tcimge2aiMX8JE3ml1dg_6zbR3uXi';
+
+const supabase =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY,
+        {
+            realtime: true
+        }
+    );
+
+
+/* ==========================================================
+   VARIÁVEIS
+========================================================== */
+
+let propostaAtual = null;
+
+let canalRealtime = null;
+let intervaloAtualizacaoCliente = null;
+
+let webcamStream = null;
+
+let modoAssinatura = 'texto';
+
+
+/* ==========================================================
+   INICIALIZAÇÃO
+========================================================== */
+
+document.addEventListener(
+    'DOMContentLoaded',
+    iniciar
+);
+
+
+async function iniciar() {
+
+    const campo =
+        document.getElementById(
+            'cpfConsulta'
+        );
+
+    /*
+     * Enter também executa a consulta.
+     */
+    campo.addEventListener(
+        'keydown',
+        function(e) {
+
+            if(e.key === 'Enter') {
+
+                e.preventDefault();
+
+                executarConsulta();
+            }
+
+        }
+    );
+
+
+    /*
+     * Formatação automática do CPF.
+     */
+    campo.addEventListener(
+        'input',
+        function() {
+
+            let valor =
+                campo.value
+                .replace(/\D/g,'')
+                .slice(0,11);
+
+            if(valor.length > 9) {
+
+                valor =
+                    valor.replace(
+                        /(\d{3})(\d{3})(\d{3})(\d{0,2})/,
+                        '$1.$2.$3-$4'
+                    );
+
+            } else if(valor.length > 6) {
+
+                valor =
+                    valor.replace(
+                        /(\d{3})(\d{3})(\d{0,3})/,
+                        '$1.$2.$3'
+                    );
+
+            } else if(valor.length > 3) {
+
+                valor =
+                    valor.replace(
+                        /(\d{3})(\d{0,3})/,
+                        '$1.$2'
+                    );
+            }
+
+            campo.value = valor;
+        }
+    );
+
+
+    /*
+     * ======================================================
+     * CORREÇÃO PRINCIPAL:
+     *
+     * Se o cliente recebeu:
+     *
+     * proposta.html?id=UUID
+     *
+     * a proposta é carregada automaticamente.
+     * ======================================================
+     */
+
+    const parametros =
+        new URLSearchParams(
+            window.location.search
+        );
+
+    const id =
+        parametros.get('id');
+
+
+    if(id) {
+
+        const botao =
+            document.getElementById(
+                'btnConsultar'
+            );
+
+        botao.disabled = true;
+
+        botao.innerHTML =
+            '<i class="fas fa-spinner fa-spin"></i> Carregando proposta...';
+
+
+        await carregarPorId(id);
+
+
+        botao.disabled = false;
+
+        botao.innerHTML =
+            '<i class="fas fa-search"></i> Consultar proposta';
+
+
+        return;
+    }
+
+
+    /*
+     * Vindo do botão "Pagar Parcelas" do index.html:
+     * consultar.html?cpf=NUMEROS
+     * busca automaticamente.
+     */
+
+    const cpfUrl =
+        parametros.get('cpf');
+
+    if(cpfUrl) {
+
+        campo.value =
+            formatarCPF(cpfUrl);
+
+        await executarConsulta(cpfUrl);
+
+        return;
+    }
+
+
+    /*
+     * Não abre automaticamente a proposta antiga.
+     * Apenas preenche o CPF salvo.
+     */
+    const cpfSalvo =
+        localStorage.getItem(
+            'flashcred_cpf'
+        );
+
+
+    if(cpfSalvo) {
+
+        campo.value =
+            formatarCPF(cpfSalvo);
+    }
+}
+
+
+/* ==========================================================
+   FORMATAR CPF
+========================================================== */
+
+function somenteNumeros(valor) {
+
+    return String(
+        valor || ''
+    ).replace(
+        /\D/g,
+        ''
+    );
+}
+
+
+function formatarCPF(cpf) {
+
+    cpf =
+        somenteNumeros(cpf)
+        .slice(0,11);
+
+
+    if(cpf.length <= 3)
+        return cpf;
+
+
+    if(cpf.length <= 6) {
+
+        return cpf.replace(
+            /(\d{3})(\d+)/,
+            '$1.$2'
+        );
+    }
+
+
+    if(cpf.length <= 9) {
+
+        return cpf.replace(
+            /(\d{3})(\d{3})(\d+)/,
+            '$1.$2.$3'
+        );
+    }
+
+
+    return cpf.replace(
+        /(\d{3})(\d{3})(\d{3})(\d{2})/,
+        '$1.$2.$3-$4'
+    );
+}
+
+
+/* ==========================================================
+   CONSULTA CPF
+========================================================== */
+
+async function executarConsulta(
+    cpfInformado = null
+) {
+
+    let cpf =
+        cpfInformado ||
+        document
+            .getElementById('cpfConsulta')
+            .value;
+
+
+    cpf =
+        somenteNumeros(cpf);
+
+
+    if(cpf.length !== 11) {
+
+        alert(
+            'Digite os 11 números do CPF.'
+        );
+
+        return;
+    }
+
+
+    const botao =
+        document.getElementById(
+            'btnConsultar'
+        );
+
+
+    botao.disabled = true;
+
+    botao.innerHTML =
+        '<i class="fas fa-spinner fa-spin"></i> Consultando...';
+
+
+    try {
+
+        /*
+         * Primeira tentativa:
+         * CPF somente números.
+         */
+        let resultado =
+            await supabase
+                .from('propostas')
+                .select('*')
+                .eq('cpf', cpf)
+                .limit(1);
+
+
+        /*
+         * Se não encontrou,
+         * tenta CPF formatado.
+         */
+        if(
+            !resultado.error &&
+            (!resultado.data ||
+             resultado.data.length === 0)
+        ) {
+
+            const cpfFormatado =
+                formatarCPF(cpf);
+
+
+            resultado =
+                await supabase
+                    .from('propostas')
+                    .select('*')
+                    .eq(
+                        'cpf',
+                        cpfFormatado
+                    )
+                    .limit(1);
+        }
+
+
+        if(resultado.error) {
+
+            throw new Error(
+                resultado.error.message
+            );
+        }
+
+
+        if(
+            !resultado.data ||
+            resultado.data.length === 0
+        ) {
+
+            throw new Error(
+                'Nenhuma proposta encontrada para este CPF.'
+            );
+        }
+
+
+        /*
+         * Se existir mais de uma proposta
+         * para o CPF, atualmente pegamos
+         * a primeira.
+         */
+        propostaAtual =
+            resultado.data[0];
+
+
+        salvarSessao();
+
+        abrirProposta();
+
+        configurarRealtime();
+
+
+    } catch(error) {
+
+        console.error(
+            'Erro consulta CPF:',
+            error
+        );
+
+
+        alert(
+            error.message ||
+            'Não foi possível consultar a proposta.'
+        );
+
+
+    } finally {
+
+        botao.disabled = false;
+
+        botao.innerHTML =
+            '<i class="fas fa-search"></i> Consultar proposta';
+    }
+}
+
+
+/* ==========================================================
+   CARREGAR PROPOSTA POR ID
+========================================================== */
+
+async function carregarPorId(id) {
+
+    try {
+
+        if(!id) {
+
+            throw new Error(
+                'ID da proposta não informado.'
+            );
+        }
+
+
+        const { data, error } =
+            await supabase
+                .from('propostas')
+                .select('*')
+                .eq('id', id)
+                .maybeSingle();
+
+
+        if(error) {
+
+            throw new Error(
+                error.message
+            );
+        }
+
+
+        if(!data) {
+
+            throw new Error(
+                'Proposta não encontrada.'
+            );
+        }
+
+
+        propostaAtual =
+            data;
+
+
+        salvarSessao();
+
+        abrirProposta();
+
+        configurarRealtime();
+
+
+    } catch(error) {
+
+        console.error(
+            'Erro ao carregar proposta:',
+            error
+        );
+
+
+        document
+            .getElementById(
+                'telaProposta'
+            )
+            .classList
+            .add('hidden');
+
+
+        document
+            .getElementById(
+                'telaConsulta'
+            )
+            .classList
+            .remove('hidden');
+
+
+        alert(
+            error.message ||
+            'Não foi possível recuperar a proposta.'
+        );
+    }
+}
+
+
+/* ==========================================================
+   SESSÃO
+========================================================== */
+
+function salvarSessao() {
+
+    if(!propostaAtual)
+        return;
+
+
+    if(propostaAtual.id) {
+
+        localStorage.setItem(
+            'flashcred_proposta_id',
+            propostaAtual.id
+        );
+    }
+
+
+    if(propostaAtual.cpf) {
+
+        localStorage.setItem(
+            'flashcred_cpf',
+            propostaAtual.cpf
+        );
+    }
+}
+
+
+/* ==========================================================
+   LINK INDIVIDUAL DA PROPOSTA
+========================================================== */
+
+function gerarLinkProposta() {
+
+    if(
+        !propostaAtual ||
+        !propostaAtual.id
+    ) {
+
+        alert(
+            'Proposta não encontrada.'
+        );
+
+        return null;
+    }
+
+
+    /*
+     * Usa a própria página atual.
+     *
+     * Exemplo:
+     *
+     * https://seudominio.com/proposta.html?id=UUID
+     */
+
+    const url =
+        new URL(
+            window.location.href
+        );
+
+
+    url.search = '';
+
+    url.hash = '';
+
+
+    url.searchParams.set(
+        'id',
+        propostaAtual.id
+    );
+
+
+    return url.toString();
+}
+
+
+/* ==========================================================
+   COPIAR LINK DA PROPOSTA
+========================================================== */
+
+async function copiarLinkProposta() {
+
+    const link =
+        gerarLinkProposta();
+
+
+    if(!link)
+        return;
+
+
+    try {
+
+        await navigator.clipboard.writeText(
+            link
+        );
+
+
+        alert(
+            'Link da proposta copiado!'
+        );
+
+
+    } catch(error) {
+
+        prompt(
+            'Copie o link da proposta:',
+            link
+        );
+    }
+}
+
+
+/* ==========================================================
+   WHATSAPP
+========================================================== */
+
+function enviarLinkWhatsApp(){
+    window.open('https://wa.me/5511973294235','_blank','noopener,noreferrer');
+}
+
+function abrirSuporteWhatsApp() {
+    const numeroSuporte = '5511973294235';
+    const nome = (propostaAtual && propostaAtual.nome) || 'cliente';
+    const mensagem = `Olá, suporte FlashCred! Sou ${nome} e preciso de ajuda com minha proposta.`;
+    window.open(
+        'https://wa.me/' + numeroSuporte + '?text=' + encodeURIComponent(mensagem),
+        '_blank',
+        'noopener,noreferrer'
+    );
+}
+
+
+/* ==========================================================
+   BOOLEANO
+========================================================== */
+
+/* ==========================================================
+   SCORE DO CLIENTE
+========================================================== */
+
+async function calcularScoreClienteRemoto(cpf){
+
+    try{
+        const {data, error} = await supabase
+            .from('propostas')
+            .select('entrada_paga,parcelas_pagas,quantidade_parcelas,datas_parcelas,valor_desejado,valor_entrada,juros_mensal')
+            .eq('cpf', cpf);
+
+        if(error || !data || !data.length){
+            return null;
+        }
+
+        const hoje = new Date();
+        let somaPontualidade = 0;
+        let bonusQuitada = 0;
+        let usado = 0;
+
+        data.forEach(p => {
+            const datas = Array.isArray(p.datas_parcelas) ? p.datas_parcelas : [];
+            const dueSoFar = datas.filter(d => new Date(d+'T00:00:00') <= hoje).length;
+            const pagas = Number(p.parcelas_pagas) || 0;
+            const atraso = Math.max(0, dueSoFar - pagas);
+
+            const pontualidade = dueSoFar > 0 ? Math.max(0, 100 - (atraso * 20)) : 100;
+            somaPontualidade += pontualidade;
+
+            const quantidade = Number(p.quantidade_parcelas) || 0;
+            const quitada = p.entrada_paga && quantidade > 0 && pagas >= quantidade;
+
+            if(quitada && atraso === 0){
+                bonusQuitada += 5;
+            }
+
+            const restantes = Math.max(0, quantidade - pagas);
+            const principal = Math.max(0, (Number(p.valor_desejado)||0) - (Number(p.valor_entrada)||0));
+            const valorParcela = calcularParcela(principal, p.juros_mensal, quantidade);
+            usado += restantes * valorParcela;
+        });
+
+        const score = Math.min(100, Math.round((somaPontualidade / data.length) + bonusQuitada));
+
+        let label = 'Regular', cor = '#F59E0B';
+        if(score >= 85){ label = 'Excelente'; cor = '#10B981'; }
+        else if(score >= 65){ label = 'Bom'; cor = '#3B82F6'; }
+        else if(score < 40){ label = 'Atenção'; cor = '#EF4444'; }
+
+        let limite = 0;
+        try{
+            const {data: dl} = await supabase.from('limites_cliente').select('limite').eq('cpf', cpf).maybeSingle();
+            limite = dl ? Number(dl.limite)||0 : 0;
+        }catch(e){ console.warn('Sem limite cadastrado para este CPF.'); }
+
+        return {score, label, cor, limite, usado, disponivel: limite - usado};
+
+    }catch(e){
+        console.error('Erro ao calcular score:', e);
+        return null;
+    }
+}
+
+function animarBannerScoreLimite(){
+
+    const barra = document.getElementById('bannerScoreBarra');
+    const valorLimite = document.getElementById('bannerLimiteValor');
+
+    if(!barra && !valorLimite){ return; }
+
+    requestAnimationFrame(() => {
+
+        if(barra){
+            const alvoScore = Number(barra.dataset.alvo) || 0;
+            barra.style.width = Math.max(0, Math.min(100, alvoScore)) + '%';
+        }
+
+        if(valorLimite){
+            const alvo = Number(valorLimite.dataset.alvo) || 0;
+            const inicio = Date.now();
+            const duracao = 1200;
+            const passo = () => {
+                const t = Math.min(1, (Date.now()-inicio)/duracao);
+                const atual = alvo * t;
+                valorLimite.textContent = (alvo < 0 ? 'Estourado em R$ ' : 'R$ ') + moeda(Math.abs(atual));
+                valorLimite.style.color = alvo < 0 ? '#FCA5A5' : '#fff';
+                if(t < 1) requestAnimationFrame(passo);
+            };
+            requestAnimationFrame(passo);
+        }
+    });
+}
+
+async function mostrarAnimacaoScore(cpf){
+
+    const info = await calcularScoreClienteRemoto(cpf);
+    if(!info){ return; }
+
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(7,27,77,.78);display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML = `
+        <div style="background:#fff;border-radius:22px;padding:30px 26px;max-width:340px;width:100%;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.35)">
+            <div style="font-size:14px;font-weight:700;color:#64748B;margin-bottom:6px">✅ Pagamento confirmado!</div>
+            <div style="font-size:18px;font-weight:800;color:#0A2463;margin-bottom:18px">Seu score atual</div>
+
+            <div id="scoreAnelCliente" style="width:150px;height:150px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;background:conic-gradient(${info.cor} 0%, #E2E8F0 0%);transition:background 1.6s cubic-bezier(.4,0,.2,1)">
+                <div style="width:118px;height:118px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                    <span id="scoreNumeroCliente" style="font-size:34px;font-weight:900;color:#1E293B">0</span>
+                    <span style="font-size:11px;color:#94A3B8;font-weight:700">de 100</span>
+                </div>
+            </div>
+
+            <div style="font-size:16px;font-weight:800;color:${info.cor};margin-bottom:6px">${info.label}</div>
+            <p style="font-size:12.5px;color:#64748B;line-height:1.5;margin-bottom:14px">
+                Pagando suas parcelas em dia, seu score continua subindo — e isso conta pra você conseguir mais crédito no futuro.
+            </p>
+
+            ${info.limite > 0 ? `
+                <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:14px;margin-bottom:20px;text-align:left">
+                    <div style="font-size:11px;color:#94A3B8;font-weight:700;text-transform:uppercase;margin-bottom:4px">Seu limite de crédito</div>
+                    <div style="font-size:13px;color:#64748B">Liberado: <strong style="color:#1E293B">R$ ${moeda(info.limite)}</strong> · Usado: R$ ${moeda(info.usado)}</div>
+                    <div style="font-size:16px;font-weight:800;color:${info.disponivel < 0 ? '#EF4444' : '#10B981'};margin-top:2px">
+                        ${info.disponivel < 0 ? 'Estourado em' : 'Disponível'}: R$ ${moeda(Math.abs(info.disponivel))}
+                    </div>
+                </div>
+            ` : ''}
+
+            <button type="button" id="fecharScoreCliente" style="width:100%;padding:13px;border:none;border-radius:12px;background:#0A2463;color:#fff;font-weight:800;font-size:14px">Continuar</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Anima o anel e o número contando até o score final.
+    requestAnimationFrame(() => {
+        const anel = document.getElementById('scoreAnelCliente');
+        const numero = document.getElementById('scoreNumeroCliente');
+        if(anel){
+            anel.style.background = `conic-gradient(${info.cor} ${info.score}%, #E2E8F0 0)`;
+        }
+        if(numero){
+            const inicio = Date.now();
+            const duracao = 1400;
+            const passo = () => {
+                const t = Math.min(1, (Date.now()-inicio)/duracao);
+                numero.textContent = Math.round(info.score * t);
+                if(t < 1) requestAnimationFrame(passo);
+            };
+            requestAnimationFrame(passo);
+        }
+    });
+
+    modal.querySelector('#fecharScoreCliente').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', e => { if(e.target === modal) modal.remove(); });
+}
+
+function booleano(valor) {
+
+    if(
+        valor === true ||
+        valor === 1
+    ) {
+
+        return true;
+    }
+
+
+    if(
+        typeof valor === 'string'
+    ) {
+
+        const v =
+            valor
+            .trim()
+            .toLowerCase();
+
+
+        return (
+            v === 'true' ||
+            v === '1' ||
+            v === 'sim' ||
+            v === 'pago'
+        );
+    }
+
+
+    return false;
+}
+
+
+/* ==========================================================
+   REALTIME
+========================================================== */
+
+function configurarRealtime() {
+
+    if(!propostaAtual)
+        return;
+
+
+    if(intervaloAtualizacaoCliente){ clearInterval(intervaloAtualizacaoCliente); intervaloAtualizacaoCliente=null; }
+
+    if(canalRealtime) {
+
+        supabase.removeChannel(
+            canalRealtime
+        );
+
+        canalRealtime = null;
+    }
+
+
+    canalRealtime =
+        supabase
+            .channel(
+                'flashcred_' +
+                String(
+                    propostaAtual.id
+                ) +
+                '_' +
+                Date.now()
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'propostas',
+                    filter:
+                        `id=eq.${propostaAtual.id}`
+                },
+                function(payload) {
+
+                    console.log(
+                        'Atualização recebida:',
+                        payload.new
+                    );
+
+
+                    if(payload.new) {
+
+                        const jaEstavaPago =
+                            booleano(propostaAtual.entrada_paga);
+
+                        propostaAtual = {
+                            ...propostaAtual,
+                            ...payload.new
+                        };
+
+
+                        salvarSessao();
+
+
+                        mostrarProposta(
+                            propostaAtual
+                        );
+
+
+                        if(
+                            booleano(
+                                propostaAtual.entrada_paga
+                            )
+                        ) {
+
+                            pararCamera();
+
+                            if(!jaEstavaPago && propostaAtual.cpf){
+                                mostrarAnimacaoScore(propostaAtual.cpf);
+                            }
+                        }
+                    }
+                }
+            )
+            .subscribe(
+                function(status) {
+                    console.log('Realtime:', status);
+                }
+            );
+
+    // ✅ Polling de 5s removido — o Realtime acima já cobre a atualização automática
+    // sem re-renderizar a tela toda hora (o que causava o piscar).
+    if(intervaloAtualizacaoCliente) clearInterval(intervaloAtualizacaoCliente);
+}
+
+
+function obterQuantidadeParcelasOficial(p){
+    const n = Number(p?.quantidade_parcelas || p?.qtd_parcelas || 0);
+    // quantidade_parcelas é definida no painel pelo admin, que já controla
+    // livremente esse valor (inclusive acima de 6x pra "na entrega", quando
+    // há acordo com o cliente). O valor salvo é sempre a fonte da verdade
+    // aqui — o limite padrão de 6x pra "na entrega" fica só no simulador
+    // público (index.html) e no painel do funcionário, antes de existir
+    // uma proposta com valor definido pelo admin.
+    return Math.min(48, Math.max(0, Math.floor(n)));
+}
+
+function sincronizarQuantidadeParcelas(p){ return p; }
+
+/* ==========================================================
+   ABRIR PROPOSTA
+========================================================== */
+
+function abrirProposta() {
+
+    document
+        .getElementById(
+            'telaConsulta'
+        )
+        .classList
+        .add('hidden');
+
+
+    document
+        .getElementById(
+            'telaProposta'
+        )
+        .classList
+        .remove('hidden');
+
+
+    mostrarProposta(
+        propostaAtual
+    );
+}
+
+
+/* ==========================================================
+   VOLTAR
+========================================================== */
+
+function voltarInicio() {
+
+    if(canalRealtime) {
+
+        supabase.removeChannel(
+            canalRealtime
+        );
+
+        canalRealtime = null;
+    }
+
+
+    pararCamera();
+
+
+    propostaAtual = null;
+
+
+    localStorage.removeItem(
+        'flashcred_cpf'
+    );
+
+
+    localStorage.removeItem(
+        'flashcred_proposta_id'
+    );
+
+
+    /*
+     * Remove o ?id= da URL.
+     */
+    const url =
+        new URL(
+            window.location.href
+        );
+
+
+    url.search = '';
+
+    url.hash = '';
+
+
+    window.history.replaceState(
+        {},
+        document.title,
+        url.toString()
+    );
+
+
+    document
+        .getElementById(
+            'telaProposta'
+        )
+        .classList
+        .add('hidden');
+
+
+    document
+        .getElementById(
+            'telaConsulta'
+        )
+        .classList
+        .remove('hidden');
+
+
+    document
+        .getElementById(
+            'cpfConsulta'
+        )
+        .value = '';
+}
+
+
+/* ==========================================================
+   ETAPA
+========================================================== */
+
+function determinarEtapa(p) {
+
+    if(!p)
+        return 1;
+
+
+    const status =
+        String(
+            p.status || ''
+        )
+        .trim()
+        .toLowerCase();
+
+
+    const aprovado =
+        status === 'aprovada' ||
+        status === 'aprovado';
+
+
+    const parcelas =
+        Number(
+            p.qtd_parcelas_escolhida || 0
+        );
+
+
+    const assinado =
+        booleano(
+            p.contrato_assinado
+        );
+
+
+    const entradaPaga =
+        booleano(
+            p.entrada_paga
+        );
+
+
+    if(entradaPaga) {
+
+        return 5;
+    }
+
+
+    if(!aprovado) {
+
+        return 1;
+    }
+
+
+    if(!parcelas) {
+
+        return 2;
+    }
+
+
+    if(!assinado) {
+
+        return 3;
+    }
+
+
+    return 4;
+}
+
+
+/* ==========================================================
+   ETAPAS
+========================================================== */
+
+function montarEtapas(etapa) {
+
+    const etapas = [
+
+        ['Análise','fa-magnifying-glass'],
+
+        ['Parcelas','fa-list-check'],
+
+        ['Contrato','fa-file-signature'],
+
+        ['Pix','fa-qrcode'],
+
+        ['Entrega','fa-truck-fast']
+
+    ];
+
+
+    document.getElementById(
+        'barraEtapas'
+    ).innerHTML =
+
+        etapas.map(
+            function(item,index) {
+
+                const numero =
+                    index + 1;
+
+
+                let classe = '';
+
+
+                if(numero < etapa) {
+
+                    classe = 'done';
+
+                } else if(
+                    numero === etapa
+                ) {
+
+                    classe = 'active';
+                }
+
+
+                return `
+
+                    <div class="step ${classe}">
+
+                        <div class="step-circle">
+
+                            ${
+                                numero < etapa
+                                ? '<i class="fas fa-check"></i>'
+                                : numero
+                            }
+
+                        </div>
+
+                        <span>
+                            ${item[0]}
+                        </span>
+
+                    </div>
+
+                `;
+            }
+        )
+        .join('');
+}
+
+
+/* ==========================================================
+   UTILITÁRIOS
+========================================================== */
+
+/**
+ * Calcula os dados pra mostrar a barra de "dias até vencer" a próxima
+ * parcela em aberto. Considera um ciclo de 30 dias entre parcelas pra
+ * saber o quanto da barra já "andou".
+ */
+function calcularInfoProximoVencimento(p){
+    try{
+        const quantidade = Number(p.qtd_parcelas_escolhida || (booleano(p.entrada_paga) ? p.quantidade_parcelas : 0)) || 0;
+        const pagas = Number(p.parcelas_pagas) || 0;
+        const datas = Array.isArray(p.datas_parcelas) ? p.datas_parcelas : [];
+
+        if(pagas >= quantidade || !datas[pagas]) return null;
+
+        const hoje = new Date(); hoje.setHours(0,0,0,0);
+        const vencimento = new Date(datas[pagas]+'T00:00:00');
+        const diasRestantes = Math.round((vencimento - hoje) / 86400000);
+
+        const principal = Math.max(0, (Number(p.valor_desejado)||0) - (Number(p.valor_entrada)||0));
+        const valorParcela = calcularParcela(principal, p.juros_mensal, quantidade);
+
+        let valorAPagar = valorParcela;
+        if(diasRestantes < 0){
+            const diasAtraso = Math.abs(diasRestantes);
+            const valorMulta = valorParcela * 0.02;
+            const valorMora = (valorParcela * 0.01 / 30) * diasAtraso;
+            valorAPagar = valorParcela + valorMulta + valorMora;
+        }
+
+        const cicloDias = 30;
+        const diasDecorridos = cicloDias - diasRestantes;
+        const percentual = Math.max(4, Math.min(100, Math.round((diasDecorridos / cicloDias) * 100)));
+
+        let texto, cor;
+        if(diasRestantes < 0){
+            texto = `Vencida há ${Math.abs(diasRestantes)} dia(s)`;
+            cor = '#F87171';
+        } else if(diasRestantes === 0){
+            texto = 'Vence hoje';
+            cor = '#FBBF24';
+        } else if(diasRestantes <= 3){
+            texto = `Faltam ${diasRestantes} dia(s)`;
+            cor = '#FBBF24';
+        } else {
+            texto = `Faltam ${diasRestantes} dia(s)`;
+            cor = '#34D399';
+        }
+
+        return {
+            numeroParcela: pagas + 1,
+            dataFormatada: vencimento.toLocaleDateString('pt-BR'),
+            diasRestantes,
+            percentual,
+            texto,
+            cor,
+            valorAPagar: Number(valorAPagar.toFixed(2))
+        };
+    }catch(e){ return null; }
+}
+
+function moeda(valor) {
+
+    return Number(
+        valor || 0
+    ).toLocaleString(
+        'pt-BR',
+        {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }
+    );
+}
+
+
+function escapar(valor) {
+
+    return String(
+        valor ?? ''
+    )
+    .replace(
+        /&/g,
+        '&amp;'
+    )
+    .replace(
+        /</g,
+        '&lt;'
+    )
+    .replace(
+        />/g,
+        '&gt;'
+    )
+    .replace(
+        /"/g,
+        '&quot;'
+    )
+    .replace(
+        /'/g,
+        '&#039;'
+    );
+}
+
+
+let pedidoLimiteContexto = null;
+
+function abrirPedidoAumentoLimite(botao){
+    pedidoLimiteContexto = {
+        propostaId: botao.dataset.propostaId,
+        cpf: botao.dataset.cpf,
+        nome: botao.dataset.nome,
+        valorAtual: Number(botao.dataset.valor) || 0
+    };
+    const overlay = document.getElementById('overlayPedidoLimite');
+    if(!overlay) return;
+    document.getElementById('pedidoLimiteValor').value = '';
+    document.getElementById('pedidoLimiteMotivo').value = '';
+    overlay.style.display = 'flex';
+}
+
+function fecharPedidoAumentoLimite(){
+    const overlay = document.getElementById('overlayPedidoLimite');
+    if(overlay) overlay.style.display = 'none';
+    pedidoLimiteContexto = null;
+}
+
+async function enviarPedidoAumentoLimite(){
+    if(!pedidoLimiteContexto) return;
+
+    const novoValor = Number(document.getElementById('pedidoLimiteValor').value);
+    const motivo = document.getElementById('pedidoLimiteMotivo').value.trim();
+
+    if(isNaN(novoValor) || novoValor <= pedidoLimiteContexto.valorAtual){
+        alert('Digite um valor maior que o seu limite atual (R$ ' + moeda(pedidoLimiteContexto.valorAtual) + ').');
+        return;
+    }
+
+    try{
+        const { error } = await supabase.from('pedidos_limite').insert([{
+            proposta_id: pedidoLimiteContexto.propostaId,
+            cpf: pedidoLimiteContexto.cpf,
+            nome: pedidoLimiteContexto.nome,
+            valor_atual: pedidoLimiteContexto.valorAtual,
+            valor_solicitado: novoValor,
+            motivo: motivo || null,
+            status: 'Pendente'
+        }]);
+        if(error) throw error;
+
+        alert('✅ Pedido enviado! Assim que analisarmos, seu limite é atualizado automaticamente aqui.');
+        fecharPedidoAumentoLimite();
+    }catch(e){
+        alert('❌ Erro ao enviar pedido: ' + (e.message||e));
+    }
+}
+
+function numero(valor) {
+
+    return Number(
+        valor || 0
+    ).toLocaleString(
+        'pt-BR',
+        {
+            maximumFractionDigits: 2
+        }
+    );
+}
+
+
+/* ==========================================================
+   PRODUTOS (MÓVEIS) DA PROPOSTA
+========================================================== */
+
+function listaProdutosDaProposta(p) {
+
+    if (Array.isArray(p.produtos) && p.produtos.length) {
+        return p.produtos.filter(prod =>
+            prod && (prod.nome || prod.cor || prod.espelho || prod.quantidade || prod.valor)
+        );
+    }
+
+    return [];
+}
+
+function descreverProduto(prod) {
+
+    const partes = [
+        prod.nome ? escapar(prod.nome) : 'Móvel'
+    ];
+
+    if (prod.quantidade) partes.push(`Quantidade: ${Number(prod.quantidade)}`);
+    if (prod.cor) partes.push(`Cor: ${escapar(prod.cor)}`);
+    if (prod.espelho === 'com_espelho') partes.push('Com espelho');
+    if (prod.espelho === 'sem_espelho') partes.push('Sem espelho');
+    if (prod.valor) partes.push(`Valor: R$ ${moeda(Number(prod.valor))}`);
+
+    return partes.join(' — ');
+}
+
+
+/* ==========================================================
+   CÁLCULO PARCELA
+========================================================== */
+
+/* ==========================================================
+   LOJINHA PÓS-APROVAÇÃO — catálogo + carrinho
+========================================================== */
+
+/* ==========================================================
+   PÓS-APROVAÇÃO — escolher móveis (redireciona pra loja.html)
+   ou continuar sem escolher (já combinado com atendente)
+========================================================== */
+
+function produtosJaEscolhidos(p){
+    return Boolean(p.produtos_confirmados_cliente) || (Array.isArray(p.produtos) && p.produtos.length > 0);
+}
+
+async function continuarSemEscolherProdutos(propostaId){
+    try{
+        const {error} = await supabase
+            .from('propostas')
+            .update({ produtos_confirmados_cliente: true })
+            .eq('id', propostaId);
+
+        if(error) throw error;
+
+        location.reload();
+
+    }catch(e){
+        alert('Erro ao continuar: ' + (e.message || e));
+    }
+}
+
+function calcularParcela(
+    principal,
+    juros,
+    quantidade
+) {
+
+    principal =
+        Number(
+            principal || 0
+        );
+
+
+    juros =
+        Number(
+            juros || 0
+        ) / 100;
+
+
+    quantidade =
+        Number(
+            quantidade || 0
+        );
+
+
+    if(
+        principal <= 0 ||
+        quantidade <= 0
+    ) {
+
+        return 0;
+    }
+
+
+    if(juros <= 0) {
+
+        return principal /
+            quantidade;
+    }
+
+
+    return (
+        principal *
+        (
+            juros *
+            Math.pow(
+                1 + juros,
+                quantidade
+            )
+        )
+    )
+    /
+    (
+        Math.pow(
+            1 + juros,
+            quantidade
+        ) - 1
+    );
+}
+
+
+/* ==========================================================
+   DATAS
+========================================================== */
+
+function adicionarMeses(
+    data,
+    meses
+) {
+
+    const d =
+        new Date(data);
+
+
+    d.setMonth(
+        d.getMonth() + meses
+    );
+
+
+    return d;
+}
+
+
+function dataBR(data) {
+
+    if(!data)
+        return '--';
+
+
+    const d =
+        new Date(data);
+
+
+    if(
+        isNaN(
+            d.getTime()
+        )
+    ) {
+
+        return '--';
+    }
+
+
+    return d.toLocaleDateString(
+        'pt-BR'
+    );
+}
+
+
+/* ==========================================================
+   DIAS ÚTEIS
+========================================================== */
+
+function calcularDiasUteis(
+    inicio,
+    totalDias
+) {
+
+    totalDias =
+        Number(
+            totalDias || 0
+        );
+
+
+    if(
+        !inicio ||
+        totalDias <= 0
+    ) {
+
+        return {
+
+            decorridos: 0,
+
+            restantes:
+                totalDias,
+
+            porcentagem: 0
+        };
+    }
+
+
+    const inicioData =
+        new Date(inicio);
+
+
+    const hoje =
+        new Date();
+
+
+    inicioData.setHours(
+        0,0,0,0
+    );
+
+
+    hoje.setHours(
+        0,0,0,0
+    );
+
+
+    if(
+        hoje <= inicioData
+    ) {
+
+        return {
+
+            decorridos: 0,
+
+            restantes:
+                totalDias,
+
+            porcentagem: 0
+        };
+    }
+
+
+    let decorridos = 0;
+
+
+    let atual =
+        new Date(
+            inicioData
+        );
+
+
+    while(
+        atual < hoje
+    ) {
+
+        const dia =
+            atual.getDay();
+
+
+        if(
+            dia !== 0 &&
+            dia !== 6
+        ) {
+
+            decorridos++;
+        }
+
+
+        atual.setDate(
+            atual.getDate() + 1
+        );
+    }
+
+
+    decorridos =
+        Math.min(
+            decorridos,
+            totalDias
+        );
+
+
+    const restantes =
+        Math.max(
+            totalDias -
+            decorridos,
+            0
+        );
+
+
+    const porcentagem =
+        Math.min(
+            100,
+            Math.round(
+                (
+                    decorridos /
+                    totalDias
+                ) * 100
+            )
+        );
+
+
+    return {
+
+        decorridos,
+
+        restantes,
+
+        porcentagem
+    };
+}
+
+
+/* ==========================================================
+   MOSTRAR PROPOSTA
+========================================================== */
+
+async function mostrarProposta(p) {
+
+    if(p && p.id){ localStorage.setItem('flashcred_proposta_id', String(p.id)); }
+
+    if(!p)
+        return;
+
+
+    const entradaPaga =
+        booleano(
+            p.entrada_paga
+        );
+
+    if(entradaPaga && !localStorage.getItem('flashcred_push_inscrito_' + p.cpf) && Notification?.permission !== 'denied'){
+        setTimeout(() => mostrarConvitePushCliente(p.cpf), 800);
+    }
+
+    let bannerScoreLimiteHTML = '';
+
+    if(entradaPaga && p.cpf){
+
+        const infoScoreLimite = await calcularScoreClienteRemoto(p.cpf);
+        const infoVencimento = calcularInfoProximoVencimento(p);
+
+        if(infoScoreLimite){
+
+            bannerScoreLimiteHTML = `
+
+                <div class="card" style="background:linear-gradient(135deg,#0A2463,#153A80);color:#fff;margin-bottom:16px">
+
+                    <div style="font-size:12px;font-weight:700;opacity:.8;text-transform:uppercase;letter-spacing:.03em">
+                        Seu limite disponível
+                    </div>
+
+                    <div id="bannerLimiteValor" style="font-size:30px;font-weight:900;margin:2px 0 10px" data-alvo="${infoScoreLimite.disponivel}">
+                        Carregando...
+                    </div>
+
+                    ${infoScoreLimite.limite > 0 ? `
+                        <div style="font-size:12.5px;opacity:.85;margin-bottom:14px">
+                            Liberado: R$ ${moeda(infoScoreLimite.limite)} · Usado: R$ ${moeda(infoScoreLimite.usado)}
+                        </div>
+                    ` : ''}
+
+                    <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.12);border-radius:12px;padding:10px 14px">
+                        <div id="bannerScoreBarraFundo" style="flex:1;height:8px;background:rgba(255,255,255,.25);border-radius:99px;overflow:hidden">
+                            <div id="bannerScoreBarra" style="height:100%;width:0%;background:#fff;border-radius:99px;transition:width 1.2s cubic-bezier(.4,0,.2,1)" data-alvo="${infoScoreLimite.score}"></div>
+                        </div>
+                        <div style="font-size:13px;font-weight:800;white-space:nowrap">
+                            Score: ${infoScoreLimite.score}/100
+                        </div>
+                    </div>
+
+                    ${infoVencimento ? `
+                        <div style="margin-top:14px;background:rgba(255,255,255,.12);border-radius:12px;padding:12px 14px">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px;flex-wrap:wrap">
+                                <span style="font-size:12px;font-weight:700;opacity:.9">
+                                    ${infoVencimento.numeroParcela}ª parcela — ${infoVencimento.dataFormatada}
+                                </span>
+                                <div style="display:flex;align-items:center;gap:8px">
+                                    <span style="font-size:12.5px;font-weight:900;color:${infoVencimento.cor}">
+                                        ${infoVencimento.texto}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onclick="pagarProximaParcelaBanner(${infoVencimento.valorAPagar}, ${infoVencimento.numeroParcela})"
+                                        style="background:#FBBF24;color:#78350F;border:none;border-radius:999px;padding:6px 12px;font-weight:800;font-size:11.5px;cursor:pointer;white-space:nowrap"
+                                    >
+                                        💸 Pagar parcela
+                                    </button>
+                                </div>
+                            </div>
+                            <div style="height:8px;background:rgba(255,255,255,.25);border-radius:99px;overflow:hidden">
+                                <div style="height:100%;width:${infoVencimento.percentual}%;background:${infoVencimento.cor};border-radius:99px;transition:width 1.2s cubic-bezier(.4,0,.2,1)"></div>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <p style="font-size:11.5px;opacity:.8;margin-top:10px;line-height:1.4">
+                        Pagando suas parcelas em dia, seu limite e seu score continuam subindo.
+                    </p>
+
+                </div>
+
+            `;
+        }
+    }
+
+
+    const etapa =
+        determinarEtapa(p);
+
+
+    montarEtapas(
+        etapa
+    );
+
+
+    renderCardFormaPagamento(
+        p,
+        etapa
+    );
+
+
+
+    const nome =
+        escapar(
+            p.nome ||
+            'Cliente'
+        );
+
+
+    const cpf =
+        escapar(
+            p.cpf ||
+            ''
+        );
+
+
+    const telefone =
+        p.telefone ||
+        p.celular ||
+        p.whatsapp ||
+        p.numero_whatsapp ||
+        '';
+
+
+    const valor =
+        Number(
+            p.valor_desejado ||
+            0
+        );
+
+
+    const entrada =
+        Number(
+            p.valor_entrada ||
+            0
+        );
+
+
+    const juros =
+        Number(
+            p.juros_mensal ||
+            0
+        );
+
+
+    const quantidadeOficial =
+        obterQuantidadeParcelasOficial(p);
+
+    const limiteParcelas = quantidadeOficial;
+
+    const escolhida = Number(p.qtd_parcelas_escolhida || 0);
+
+    const formaPagamentoAtual = p.forma_pagamento_entrada || 'pix_antecipado';
+    const semParcelamento = (formaPagamentoAtual === 'cartao_entrega' || formaPagamentoAtual === 'pix_total_entrega');
+
+
+    const principal =
+        Math.max(
+            valor -
+            entrada,
+            0
+        );
+
+
+    const valorParcela =
+        calcularParcela(
+            principal,
+            juros,
+            escolhida
+        );
+
+
+    const status =
+        String(
+            p.status || ''
+        )
+        .trim()
+        .toLowerCase();
+
+
+    const aprovado =
+        status === 'aprovada' ||
+        status === 'aprovado';
+
+
+    const assinado =
+        booleano(
+            p.contrato_assinado
+        );
+
+
+    let html = bannerScoreLimiteHTML + `
+
+        <div class="card">
+
+            <div class="flex items-center justify-between mb-4">
+
+                <div>
+
+                    <div class="text-xs text-slate-400">
+                        CLIENTE
+                    </div>
+
+                    <h2 class="text-xl font-bold">
+                        ${nome}
+                    </h2>
+
+                    ${p.created_at ? `
+                        <div class="text-xs text-slate-400 mt-1">
+                            <i class="fas fa-calendar-days"></i>
+                            Proposta enviada em ${new Date(p.created_at).toLocaleDateString('pt-BR')} às ${new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
+                        </div>
+                    ` : ''}
+
+                </div>
+
+                <span class="badge badge-green">
+
+                    <i class="fas fa-shield-halved"></i>
+
+                    FlashCred
+
+                </span>
+
+            </div>
+
+
+            <div class="row">
+
+                <span class="label">
+                    CPF
+                </span>
+
+                <span class="value">
+                    ${cpf}
+                </span>
+
+            </div>
+
+
+            ${
+                telefone
+                ? `
+
+                    <div class="row">
+
+                        <span class="label">
+                            WhatsApp
+                        </span>
+
+                        <span class="value">
+                            ${escapar(telefone)}
+                        </span>
+
+                    </div>
+
+                `
+                : ''
+            }
+
+
+            <div class="row">
+
+                <span class="label">
+                    Valor solicitado
+                </span>
+
+                <span class="value">
+                    R$ ${moeda(valor)}
+                </span>
+
+            </div>
+
+
+            <div class="row">
+
+                <span class="label">
+                    Entrada
+                </span>
+
+                <span class="value">
+                    R$ ${moeda(entrada)}
+                </span>
+
+            </div>
+
+
+            <div class="row">
+
+                <span class="label">
+                    Juros
+                </span>
+
+                <span class="value">
+                    ${numero(juros)}% a.m.
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <h3 class="font-bold text-lg mb-1">
+
+                <i class="fas fa-receipt"></i>
+
+                Resumo financeiro transparente
+
+            </h3>
+
+
+            <p class="text-sm text-slate-500 mb-3">
+
+                Confira exatamente quanto será pago
+                na entrada, nas parcelas e no total.
+
+            </p>
+
+
+            <div class="resumo">
+
+                <div class="resumo-item">
+
+                    <span>
+                        Valor da compra
+                    </span>
+
+                    <strong>
+                        R$ ${moeda(valor)}
+                    </strong>
+
+                </div>
+
+
+                <div class="resumo-item">
+
+                    <span>
+                        Entrada
+                    </span>
+
+                    <strong>
+                        R$ ${moeda(entrada)}
+                    </strong>
+
+                </div>
+
+
+                <div class="resumo-item">
+
+                    <span>
+                        Valor financiado
+                    </span>
+
+                    <strong>
+                        R$ ${moeda(principal)}
+                    </strong>
+
+                </div>
+
+
+                <div class="resumo-item">
+
+                    <span>
+                        Juros
+                    </span>
+
+                    <strong>
+                        ${numero(juros)}% a.m.
+                    </strong>
+
+                </div>
+
+
+                ${
+                    escolhida > 0
+
+                    ? `
+
+                        <div class="resumo-item">
+
+                            <span>
+                                Parcelamento
+                            </span>
+
+                            <strong>
+                                ${escolhida}x de
+                                R$ ${moeda(valorParcela)}
+                            </strong>
+
+                        </div>
+
+
+                        <div class="resumo-item">
+
+                            <span>
+                                Total das parcelas
+                            </span>
+
+                            <strong>
+                                R$
+                                ${moeda(
+                                    valorParcela *
+                                    escolhida
+                                )}
+                            </strong>
+
+                        </div>
+
+
+                        <div class="resumo-item total-final">
+
+                            <span>
+                                TOTAL FINAL A PAGAR
+                            </span>
+
+                            <strong>
+                                R$
+                                ${moeda(
+                                    entrada +
+                                    (
+                                        valorParcela *
+                                        escolhida
+                                    )
+                                )}
+                            </strong>
+
+                        </div>
+
+
+                        <div class="resumo-explicacao">
+
+                            <strong>
+                                Como esse valor é formado:
+                            </strong>
+
+                            <br>
+
+                            R$ ${moeda(entrada)}
+                            de entrada +
+
+                            R$
+                            ${moeda(
+                                valorParcela *
+                                escolhida
+                            )}
+
+                            em parcelas =
+
+                            <strong>
+                                R$
+                                ${moeda(
+                                    entrada +
+                                    (
+                                        valorParcela *
+                                        escolhida
+                                    )
+                                )}
+                            </strong>
+
+                            no total.
+
+                        </div>
+
+                    `
+
+                    : `
+
+                        <div class="resumo-explicacao">
+
+                            <strong>
+                                O total final será calculado após
+                                a escolha da quantidade de parcelas.
+                            </strong>
+
+                            O valor da entrada e o valor financiado
+                            já estão demonstrados acima.
+
+                        </div>
+
+                    `
+                }
+
+            </div>
+
+        </div>
+
+    `;
+
+
+    /* ======================================================
+       ENTRADA PAGA
+    ====================================================== */
+
+    if(entradaPaga) {
+
+        html += `
+
+            <div class="sucesso">
+
+                <i class="fas fa-circle-check"></i>
+
+                <h3 class="text-xl font-bold">
+
+                    ENTRADA CONFIRMADA
+
+                </h3>
+
+                <p class="text-sm text-slate-600 mt-2">
+
+                    O pagamento da entrada foi confirmado.
+
+                </p>
+
+                <p class="text-sm text-slate-600 mt-1">
+
+                    Sua proposta avançou para a etapa
+                    de parcelas e entrega.
+
+                </p>
+
+            </div>
+
+        `;
+
+
+        html +=
+            montarEntrega(p);
+
+
+        html +=
+            montarParcelas(p);
+
+
+        document.getElementById(
+            'conteudoProposta'
+        ).innerHTML = html;
+
+        animarBannerScoreLimite();
+
+        return;
+    }
+
+
+    /* ======================================================
+       EM ANÁLISE
+    ====================================================== */
+
+    if(!aprovado) {
+
+        html += `
+
+            <div class="card">
+
+                <div class="info info-yellow text-center">
+
+                    <i class="fas fa-clock text-3xl text-alerta"></i>
+
+                    <h3 class="font-bold text-lg mt-3">
+
+                        Proposta em análise
+
+                    </h3>
+
+                    <p class="text-sm text-slate-500 mt-2">
+
+                        Sua proposta está sendo analisada.
+                        Aguarde a atualização.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        `;
+
+
+        document.getElementById(
+            'conteudoProposta'
+        ).innerHTML = html;
+
+
+        return;
+    }
+
+
+    /* ======================================================
+       APROVADA — ESCOLHER MÓVEIS OU CONTINUAR SEM ESCOLHER
+    ====================================================== */
+
+    if(
+        aprovado &&
+        !produtosJaEscolhidos(p)
+    ) {
+
+        html += `
+
+            <div class="card">
+                <div class="text-xs text-slate-400">CLIENTE</div>
+                <h2 class="text-xl font-bold mb-1">${nome}</h2>
+
+                <div style="background:linear-gradient(135deg,#0A2463,#153A80);color:#fff;border-radius:14px;padding:16px;margin-top:14px">
+                    <div style="font-size:12px;font-weight:700;opacity:.8;text-transform:uppercase">Valor aprovado</div>
+                    <div style="font-size:28px;font-weight:900">R$ ${moeda(valor)}</div>
+                </div>
+
+                <p class="text-sm text-slate-600 mt-3">🎉 Sua proposta foi aprovada! O que você quer fazer agora?</p>
+
+                <a
+                    href="loja.html?cpf=${encodeURIComponent(cpf)}"
+                    class="btn btn-primary mt-4"
+                    style="width:100%;display:block;text-align:center;text-decoration:none"
+                >
+                    🛋️ Escolher meus móveis agora
+                </a>
+
+                <button
+                    type="button"
+                    onclick="continuarSemEscolherProdutos(${p.id})"
+                    class="btn mt-3"
+                    style="width:100%;background:#F1F5F9;color:#334155;border:1px solid #E2E8F0"
+                >
+                    Continuar sem escolher agora
+                </button>
+
+                <p class="text-xs text-slate-400 mt-3" style="line-height:1.5">
+                    A segunda opção é pra quem <strong>já escolheu os móveis com um atendente</strong> — nesse caso, é só continuar que a proposta segue com o que já foi combinado.
+                </p>
+
+                <button
+                    type="button"
+                    data-proposta-id="${escapar(p.id)}"
+                    data-cpf="${escapar(cpf)}"
+                    data-nome="${escapar(nome)}"
+                    data-valor="${escapar(valor)}"
+                    onclick="abrirPedidoAumentoLimite(this)"
+                    class="btn mt-3"
+                    style="width:100%;background:#fff;color:#0A2463;border:2px solid #0A2463"
+                >
+                    📈 Pedir aumento de limite
+                </button>
+            </div>
+
+            <div id="overlayPedidoLimite" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;padding:20px;background:rgba(3,15,42,.72);backdrop-filter:blur(10px)">
+                <div style="width:min(420px,100%);background:#fff;border-radius:22px;padding:28px 24px;box-shadow:0 30px 90px rgba(0,0,0,.28)">
+                    <h2 class="text-xl font-bold mb-1" style="color:#0A2463">📈 Pedir aumento de limite</h2>
+                    <p class="text-sm text-slate-500 mb-4">Seu limite atual é <strong>R$ ${moeda(valor)}</strong>. Diga quanto você precisa e por quê — nossa equipe analisa e libera se for possível.</p>
+
+                    <label class="text-xs font-bold text-slate-600 uppercase" style="display:block;margin-bottom:6px">Novo valor desejado (R$)</label>
+                    <input type="number" id="pedidoLimiteValor" min="${valor}" step="1" placeholder="Ex.: 1500" style="width:100%;padding:13px 14px;border:1px solid #d7e0eb;border-radius:12px;font-size:15px;margin-bottom:14px">
+
+                    <label class="text-xs font-bold text-slate-600 uppercase" style="display:block;margin-bottom:6px">Motivo (opcional)</label>
+                    <textarea id="pedidoLimiteMotivo" placeholder="Ex.: quero comprar um guarda-roupa maior" style="width:100%;padding:13px 14px;border:1px solid #d7e0eb;border-radius:12px;font-size:14px;margin-bottom:16px;min-height:80px"></textarea>
+
+                    <button type="button" onclick="enviarPedidoAumentoLimite()" class="btn btn-primary" style="width:100%;margin-bottom:10px">Enviar pedido</button>
+                    <button type="button" onclick="fecharPedidoAumentoLimite()" class="btn" style="width:100%;background:#F1F5F9;color:#334155;border:1px solid #E2E8F0">Cancelar</button>
+                </div>
+            </div>
+
+        `;
+
+        document.getElementById(
+            'conteudoProposta'
+        ).innerHTML = html;
+
+        return;
+    }
+
+
+    /* ======================================================
+       APROVADA — ESCOLHER PARCELAS
+    ====================================================== */
+
+    if(
+        aprovado &&
+        !escolhida &&
+        !semParcelamento
+    ) {
+
+        if(
+            limiteParcelas <= 0
+        ) {
+
+            html += `
+
+                <div class="info info-red">
+
+                    <strong>
+                        Parcelamento indisponível
+                    </strong>
+
+                    <p class="text-sm mt-2">
+
+                        O limite de parcelas ainda não
+                        foi configurado para esta proposta.
+
+                    </p>
+
+                </div>
+
+            `;
+
+        } else {
+
+            html += `
+
+                <div class="card">
+
+                    <div class="info info-green">
+
+                        <div class="text-center">
+
+                            <i class="fas fa-circle-check text-3xl text-sucesso"></i>
+
+                            <h3 class="font-bold text-lg mt-2">
+
+                                PROPOSTA APROVADA!
+
+                            </h3>
+
+                            <p class="text-sm text-slate-600 mt-1">
+
+                                Escolha a quantidade de parcelas.
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="resumo">
+
+                        <div class="resumo-item">
+
+                            <span>
+                                Valor solicitado
+                            </span>
+
+                            <strong>
+                                R$ ${moeda(valor)}
+                            </strong>
+
+                        </div>
+
+
+                        <div class="resumo-item">
+
+                            <span>
+                                Entrada
+                            </span>
+
+                            <strong>
+                                R$ ${moeda(entrada)}
+                            </strong>
+
+                        </div>
+
+
+                        <div class="resumo-item">
+
+                            <span>
+                                Juros mensais
+                            </span>
+
+                            <strong>
+                                ${numero(juros)}%
+                            </strong>
+
+                        </div>
+
+
+                        <div class="resumo-item">
+
+                            <span>
+                                Parcelamento máximo
+                            </span>
+
+                            <strong>
+                                ${limiteParcelas}x
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <label class="block text-sm font-bold mb-2">
+
+                        Escolha suas parcelas
+
+                    </label>
+
+
+                    <select
+                        id="qtdEscolhida"
+                        class="select mb-4"
+                    >
+
+                        <option value="" selected disabled>Selecione a quantidade de parcelas</option>
+
+                        ${
+                            Array.from(
+                                {
+                                    length:
+                                        limiteParcelas
+                                },
+                                function(_,i) {
+
+                                    const n =
+                                        i + 1;
+
+
+                                    const parcela =
+                                        calcularParcela(
+                                            principal,
+                                            juros,
+                                            n
+                                        );
+
+
+                                    return `
+
+                                        <option
+                                            value="${n}"
+                                        >
+
+                                            ${n}x de
+                                            R$ ${moeda(parcela)}
+
+                                        </option>
+
+                                    `;
+                                }
+                            ).join('')
+                        }
+
+                    </select>
+
+
+                    <button
+                        id="btnConfirmarParcelas"
+                        onclick="confirmarParcelas()"
+                        class="btn btn-success"
+                    >
+
+                        <i class="fas fa-arrow-right"></i>
+
+                        Continuar para o contrato
+
+                    </button>
+
+                </div>
+
+            `;
+
+        }
+
+
+        document.getElementById(
+            'conteudoProposta'
+        ).innerHTML = html;
+
+
+        return;
+    }
+
+
+    /* ======================================================
+       CONTRATO
+    ====================================================== */
+
+    if(
+        aprovado &&
+        (escolhida || semParcelamento) &&
+        !assinado
+    ) {
+
+        const totalParcelasContrato =
+            valorParcela *
+            escolhida;
+
+
+        const formaPagamentoContrato = p.forma_pagamento_entrada || 'pix_antecipado';
+        const semEntradaContrato = (formaPagamentoContrato === 'cartao_entrega' || formaPagamentoContrato === 'pix_total_entrega');
+
+        const total =
+            semEntradaContrato
+            ? valor
+            : (entrada + totalParcelasContrato);
+
+
+        const dias =
+            Number(
+                p.dias_entrega ||
+                0
+            );
+
+        const numClausula9 = semEntradaContrato ? 6 : 9;
+        const temSeguro = !!p.seguro_contratado;
+        const temMontagem = !!p.montagem_contratada;
+        const numAtraso = numClausula9 + (temSeguro?1:0) + (temMontagem?1:0);
+        const numEntrega = numAtraso + 1;
+        const numArrependimento = numEntrega + 1;
+        const numAssinatura = numArrependimento + 1;
+        const numDeclaracao = numAssinatura + 1;
+        const numForo = numDeclaracao + 1;
+
+
+        html += `
+
+            <div class="card">
+
+                <div class="info info-blue">
+
+                    <div class="text-center">
+
+                        <i class="fas fa-file-signature text-3xl text-primary"></i>
+
+                        <h3 class="font-bold text-lg mt-2">
+
+                            Contrato da proposta
+
+                        </h3>
+
+                        <p class="text-sm text-slate-500 mt-1">
+
+                            Confira os dados e assine
+                            para continuar.
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="resumo">
+
+                    <div class="resumo-item">
+
+                        <span>
+                            Valor total
+                        </span>
+
+                        <strong>
+                            R$ ${moeda(total)}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="resumo-item">
+
+                        <span>
+                            Entrada
+                        </span>
+
+                        <strong>
+                            R$ ${moeda(entrada)}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="resumo-item">
+
+                        <span>
+                            Parcelamento
+                        </span>
+
+                        <strong>
+
+                            ${escolhida}x de
+                            R$ ${moeda(valorParcela)}
+
+                        </strong>
+
+                    </div>
+
+
+                    <div class="resumo-item">
+
+                        <span>
+                            Juros
+                        </span>
+
+                        <strong>
+                            ${numero(juros)}% a.m.
+                        </strong>
+
+                    </div>
+
+
+                    <div class="resumo-item">
+
+                        <span>
+                            Prazo de entrega
+                        </span>
+
+                        <strong>
+
+                            Inicia após assinatura +
+                            entrada paga
+
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="contrato">
+
+                    <h3>
+                        CONTRATO DE CRÉDITO / COMPRA
+                    </h3>
+
+
+                    <p>
+
+                        Pelo presente instrumento particular,
+                        de um lado
+                        <strong>DISTRIBUIDORA FLASH POINT MÓVEIS</strong>,
+                        inscrita no CNPJ nº
+                        <strong>35.560.220/0001-54</strong>,
+                        doravante denominada CONTRATADA, e de
+                        outro lado o cliente identificado abaixo,
+                        doravante denominado CONTRATANTE, têm entre
+                        si justo e acordado o presente contrato de
+                        crédito para compra de móveis, mediante as
+                        condições a seguir.
+
+                    </p>
+
+
+                    <p>
+                        <strong>1. Cliente (CONTRATANTE):</strong>
+                        ${nome}
+                    </p>
+
+
+                    <p>
+                        <strong>2. CPF:</strong>
+                        ${cpf}
+                    </p>
+
+
+                    <p>
+                        <strong>3. Valor da compra:</strong>
+                        R$ ${moeda(valor)}
+                    </p>
+
+
+                    ${listaProdutosDaProposta(p).length ? `
+                        <p>
+                            <strong>3.1. Descrição do(s) bem(ns) financiado(s):</strong>
+                        </p>
+                        <div style="display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 4px">
+                            ${listaProdutosDaProposta(p).map(prod => `
+                                <div style="display:flex;align-items:center;gap:8px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:6px 10px 6px 6px;max-width:100%">
+                                    ${prod.slug ? `<img src="/${escapar(prod.slug)}.jpg" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;background:#EEF2F7;flex-shrink:0">` : ''}
+                                    <span style="font-size:13px">${descreverProduto(prod)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
+
+                    ${semEntradaContrato ? `
+                        <p>
+                            <strong>4. Forma de pagamento:</strong>
+                            ${formaPagamentoContrato === 'cartao_entrega'
+                                ? 'Sem entrada. O valor total será cobrado por link de cartão de crédito no ato da entrega dos móveis, com parcelamento a critério do CONTRATANTE junto à operadora do cartão.'
+                                : 'Sem entrada e sem parcelamento. O valor total será pago integralmente via Pix no ato da entrega dos móveis.'
+                            }
+                        </p>
+
+
+                        <p>
+                            <strong>5. Valor total do contrato:</strong>
+                            R$ ${moeda(total)}
+                        </p>
+                    ` : `
+                        <p>
+                            <strong>4. Entrada (via Pix):</strong>
+                            R$ ${moeda(entrada)}
+                        </p>
+
+
+                        <p>
+                            <strong>5. Saldo financiado:</strong>
+                            R$ ${moeda(Math.max(0, valor - entrada))}
+                        </p>
+
+
+                        <p>
+                            <strong>6. Parcelamento:</strong>
+                            ${escolhida}x de
+                            R$ ${moeda(valorParcela)},
+                            com vencimentos conforme cronograma
+                            apresentado na consulta da proposta.
+                        </p>
+
+
+                        <p>
+                            <strong>7. Juros e Custo Efetivo Total (CET):</strong>
+                            Juros de ${numero(juros)}% ao mês sobre o
+                            saldo financiado. O Custo Efetivo Total
+                            aproximado desta operação, considerando
+                            os juros incidentes sobre todas as
+                            parcelas, é de
+                            ${numero(valor > 0 ? ((total - valor) / valor) * 100 : 0)}%
+                            sobre o valor da compra.
+                        </p>
+
+
+                        <p>
+                            <strong>8. Valor total do contrato:</strong>
+                            R$ ${moeda(total)}
+                            (entrada + soma de todas as parcelas).
+                        </p>
+                    `}
+
+
+                    ${p.seguro_contratado ? `
+                        <p>
+                            <strong>${numClausula9}. Proteção do Móvel (contratada):</strong>
+                            O CONTRATANTE optou por contratar a
+                            Proteção do Móvel, no valor de
+                            R$ ${moeda(p.valor_seguro || 0)},
+                            já incluído no valor total desta compra.
+                            A Proteção cobre danos acidentais e
+                            manchas no(s) móvel(is) adquirido(s)
+                            durante a vigência deste contrato,
+                            não cobrindo desgaste natural de uso,
+                            mau uso evidente ou danos causados por
+                            terceiros. O acionamento deve ser feito
+                            diretamente com a CONTRATADA, pelo
+                            WhatsApp de suporte, mediante descrição
+                            e, se possível, fotos do ocorrido.
+                        </p>
+                    ` : ''}
+
+
+                    ${p.montagem_contratada ? `
+                        <p>
+                            <strong>${temSeguro ? numClausula9+1 : numClausula9}. Montagem (contratada):</strong>
+                            O CONTRATANTE optou por contratar o
+                            serviço de Montagem, no valor de
+                            R$ ${moeda(p.valor_montagem || 0)},
+                            já incluído no valor total desta compra.
+                            A CONTRATADA se compromete a enviar um
+                            montador para deixar o(s) móvel(is)
+                            adquirido(s) devidamente montado(s) no
+                            endereço de entrega informado.
+                        </p>
+                    ` : ''}
+
+
+                    <p>
+                        <strong>${numAtraso}. Atraso no pagamento das parcelas:</strong>
+                        Em caso de atraso no pagamento de qualquer
+                        parcela, incidirão sobre o valor em atraso:
+                        multa fixa de 2% (dois por cento) e juros
+                        de mora de 1% (um por cento) ao mês,
+                        calculados proporcionalmente aos dias de
+                        atraso, nos termos do Código de Defesa do
+                        Consumidor. O valor atualizado com a multa
+                        é exibido automaticamente na tela de
+                        pagamento da parcela em atraso.
+                    </p>
+
+
+                    <p>
+                        <strong>${numEntrega}. Entrega:</strong>
+                        O prazo de entrega é de
+                        ${dias || '--'}
+                        dias úteis, contados a partir da
+                        confirmação do pagamento da entrada e da
+                        assinatura deste contrato.
+                    </p>
+
+
+                    <p>
+                        <strong>${numArrependimento}. Direito de arrependimento:</strong>
+                        Por se tratar de contratação realizada
+                        fora do estabelecimento comercial (site),
+                        o CONTRATANTE tem o direito de desistir
+                        desta contratação no prazo de até 7 (sete)
+                        dias corridos, contados da assinatura deste
+                        contrato, nos termos do art. 49 do Código
+                        de Defesa do Consumidor, mediante contato
+                        com a CONTRATADA pelo WhatsApp de suporte,
+                        sem qualquer ônus, exceto por eventuais
+                        valores já processados e não reembolsáveis
+                        por terceiros (ex: taxas de meio de
+                        pagamento já efetivadas).
+                    </p>
+
+
+                    <p>
+                        <strong>${numAssinatura}. Assinatura eletrônica:</strong>
+                        A assinatura eletrônica realizada pelo
+                        CONTRATANTE (nome digitado e selfie),
+                        associada à data e horário do registro,
+                        representa sua manifestação livre e
+                        informada de concordância com a íntegra
+                        deste contrato e com os dados apresentados
+                        na proposta.
+                    </p>
+
+
+                    <p>
+                        <strong>${numDeclaracao}. Declaração do cliente:</strong>
+                        O CONTRATANTE declara que conferiu seus
+                        dados pessoais, o valor, a quantidade de
+                        parcelas e as demais condições descritas
+                        acima antes de confirmar a assinatura.
+                    </p>
+
+
+                    <p>
+                        <strong>${numForo}. Foro:</strong>
+                        Fica eleito o foro da comarca do domicílio
+                        do CONTRATANTE para dirimir quaisquer
+                        dúvidas ou litígios oriundos deste
+                        contrato, conforme prevê o Código de Defesa
+                        do Consumidor.
+                    </p>
+
+                </div>
+
+                <div style="background:#FEF2F2;border:2px solid #FCA5A5;border-radius:14px;padding:16px;margin-bottom:14px">
+                    <p style="color:#991B1B;font-weight:800;font-size:14px;margin-bottom:6px">⚠️ Atenção antes de assinar</p>
+                    <p style="color:#991B1B;font-size:13px;line-height:1.6">
+                        Assine este contrato <strong>somente se você realmente vai realizar o pagamento</strong> — seja na entrega (Pix, Cartão) ou pelo Pix parcelado, em qualquer uma das 4 formas combinadas nesta proposta.
+                    </p>
+                    <p style="color:#991B1B;font-size:13px;line-height:1.6;margin-top:6px">
+                        Assim que você assinar, <strong>seu pedido é liberado para produção e entrega</strong>. Assinar sem intenção de pagar gera prejuízo pra gente e pode te trazer problemas.
+                    </p>
+                </div>
+
+
+                <label class="flex items-start gap-3 mt-4 mb-4">
+
+                    <input
+                        type="checkbox"
+                        id="aceitoContrato"
+                        class="mt-1"
+                    >
+
+                    <span class="text-sm">
+
+                        Li, conferi e concordo com os termos
+                        apresentados neste contrato, e confirmo
+                        que vou realizar o pagamento combinado.
+
+                    </span>
+
+                </label>
+
+
+                <div class="modo-botoes" style="display:none">
+
+                    <button
+                        type="button"
+                        onclick="alternarModo('texto')"
+                        id="btnModoTexto"
+                        class="btn btn-primary"
+                    >
+
+                        <i class="fas fa-signature"></i>
+
+                        Assinar com nome
+
+                    </button>
+
+
+                    <button
+                        type="button"
+                        onclick="alternarModo('selfie')"
+                        id="btnModoSelfie"
+                        class="btn btn-secondary"
+                    >
+
+                        <i class="fas fa-camera"></i>
+
+                        Selfie
+
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="areaTextoAssinatura"
+                    class="assinatura-area"
+                >
+
+                    <label class="block text-sm font-bold mb-2">
+
+                        1. Nome completo (assinatura)
+
+                    </label>
+
+
+                    <input
+                        id="assTxt"
+                        class="input"
+                        placeholder="Digite seu nome completo"
+                        autocomplete="name"
+                    >
+
+                </div>
+
+
+                <div
+                    id="areaSelfie"
+                    class="assinatura-area"
+                >
+
+                    <label class="block text-sm font-bold mb-2">
+
+                        2. Selfie (obrigatória, confirma sua identidade)
+
+                    </label>
+
+
+                    <video
+                        id="videoAssinatura"
+                        autoplay
+                        playsinline
+                    ></video>
+
+
+                    <button
+                        type="button"
+                        onclick="tirarFoto()"
+                        class="btn btn-primary mt-3"
+                    >
+
+                        <i class="fas fa-camera"></i>
+
+                        Capturar foto
+
+                    </button>
+
+
+                    <div
+                        id="fotoCapturada"
+                        class="hidden mt-3"
+                    >
+
+                        <img
+                            id="imagemAssinatura"
+                            alt="Foto da assinatura"
+                        >
+
+
+                        <button
+                            type="button"
+                            onclick="refazerFoto()"
+                            class="btn btn-secondary mt-3"
+                        >
+
+                            Refazer foto
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    id="btnAssinar"
+                    onclick="assinarContrato()"
+                    class="btn btn-success mt-4"
+                >
+
+                    <i class="fas fa-file-signature"></i>
+
+                    Assinar contrato
+
+                </button>
+
+            </div>
+
+        `;
+
+
+        document.getElementById(
+            'conteudoProposta'
+        ).innerHTML = html;
+
+        await iniciarCamera();
+
+        return;
+    }
+
+
+    /* ======================================================
+       CONTRATO ASSINADO
+    ====================================================== */
+
+    if(
+        assinado &&
+        !entradaPaga
+    ) {
+
+        const total =
+            principal +
+            entrada;
+
+
+        html += `
+
+            <div class="sucesso">
+
+                <i class="fas fa-circle-check"></i>
+
+                <h3 class="text-xl font-bold">
+
+                    CONTRATO ASSINADO
+
+                </h3>
+
+                <p class="text-sm text-slate-600 mt-2">
+
+                    Sua assinatura foi registrada
+                    com sucesso.
+
+                </p>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="resumo">
+
+                    <div class="resumo-item">
+
+                        <span>
+                            Entrada
+                        </span>
+
+                        <strong>
+                            R$ ${moeda(entrada)}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="resumo-item">
+
+                        <span>
+                            Valor total
+                        </span>
+
+                        <strong>
+                            R$ ${moeda(total)}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="resumo-item">
+
+                        <span>
+                            Parcelamento
+                        </span>
+
+                        <strong>
+
+                            ${escolhida}x de
+                            R$ ${moeda(valorParcela)}
+
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                ${(p.seguro_contratado || p.montagem_contratada) ? `
+                    <div class="card" style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:14px 16px;margin-bottom:12px">
+                        <p style="color:#0A2463;font-weight:700;font-size:13.5px;margin-bottom:8px">🧾 Detalhamento do que está sendo cobrado</p>
+                        <div style="font-size:13px;color:#334155;display:flex;flex-direction:column;gap:4px">
+                            <div style="display:flex;justify-content:space-between">
+                                <span>Valor do(s) móvel(is)</span>
+                                <strong>R$ ${moeda(Math.max(0, total - Number(p.valor_seguro||0) - Number(p.valor_montagem||0)))}</strong>
+                            </div>
+                            ${p.seguro_contratado ? `
+                            <div style="display:flex;justify-content:space-between">
+                                <span>🛡️ Proteção do Móvel</span>
+                                <strong>+ R$ ${moeda(p.valor_seguro||0)}</strong>
+                            </div>
+                            ` : ''}
+                            ${p.montagem_contratada ? `
+                            <div style="display:flex;justify-content:space-between">
+                                <span>🔧 Montagem</span>
+                                <strong>+ R$ ${moeda(p.valor_montagem||0)}</strong>
+                            </div>
+                            ` : ''}
+                            <div style="display:flex;justify-content:space-between;border-top:1px dashed #CBD5E1;margin-top:4px;padding-top:4px">
+                                <span>Valor total da compra</span>
+                                <strong>R$ ${moeda(total)}</strong>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <div class="card" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:14px;padding:14px 16px;margin-bottom:12px">
+                    <p style="color:#1D4ED8;font-weight:700;font-size:13.5px;margin-bottom:4px">
+                        💳 Forma de pagamento: ${
+                            p.forma_pagamento_entrada === 'na_entrega' ? 'Pix na entrega'
+                            : p.forma_pagamento_entrada === 'cartao_entrega' ? 'Cartão de crédito na entrega'
+                            : p.forma_pagamento_entrada === 'pix_total_entrega' ? 'Pix total na entrega'
+                            : 'Pix agora (antecipado)'
+                        }
+                    </p>
+                    <p style="color:#1D4ED8;font-size:12.5px;line-height:1.5">
+                        ${
+                            p.forma_pagamento_entrada === 'cartao_entrega'
+                            ? 'Sem entrada — você paga o valor total por um link de cartão de crédito quando o móvel chegar.'
+                            : p.forma_pagamento_entrada === 'pix_total_entrega'
+                            ? 'Sem entrada e sem parcelamento — você paga o valor total no Pix quando o móvel chegar.'
+                            : `Entrada de ${numero(total > 0 ? (entrada/total*100) : 0)}% do valor total (R$ ${moeda(entrada)})${p.forma_pagamento_entrada === 'na_entrega' ? ', paga somente na entrega' : ', paga agora'}. O restante é parcelado em ${escolhida}x de R$ ${moeda(valorParcela)}.`
+                        }
+                    </p>
+                    <p style="margin-top:10px;color:#92400E;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:8px 12px;font-size:12px">
+                        🔒 Seu contrato já está assinado — a forma de pagamento não pode mais ser trocada por aqui. Se precisar mudar, fale com a gente pelo WhatsApp de suporte.
+                    </p>
+                </div>
+
+
+                ${
+                    entrada > 0
+
+                    ? `
+
+                        ${p.forma_pagamento_entrada === 'na_entrega' ? `
+                        <div class="card" style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:14px;padding:14px 16px;margin-bottom:12px">
+                            <p style="color:#92400E;font-weight:700;font-size:13.5px;margin-bottom:4px">📦 Combinado para pagar na entrega</p>
+                            <p style="color:#92400E;font-size:12.5px;line-height:1.5">Você escolheu pagar a entrada só quando o móvel chegar. O Pix abaixo continua valendo pra esse momento — gere e pague quando a entrega acontecer.</p>
+                        </div>
+                        ` : ''}
+
+                        <button
+                            onclick="gerarPixEntrada(${entrada})"
+                            class="btn btn-pix"
+                        >
+
+                            <i class="fas fa-qrcode"></i>
+
+                            Gerar Pix da entrada
+
+                        </button>
+
+
+                        <div
+                            id="areaPixEntrada"
+                            class="hidden mt-4"
+                        ></div>
+
+                    `
+
+                    : (p.forma_pagamento_entrada === 'cartao_entrega' || p.forma_pagamento_entrada === 'pix_total_entrega')
+
+                    ? `
+
+                        <div class="card" style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:14px;padding:14px 16px">
+                            <p style="color:#92400E;font-weight:700;font-size:13.5px;margin-bottom:4px">${p.forma_pagamento_entrada === 'cartao_entrega' ? '💳 Combinado para pagar no cartão na entrega' : '💰 Combinado para pagar tudo no Pix na entrega'}</p>
+                            <p style="color:#92400E;font-size:12.5px;line-height:1.5">Não precisa pagar nada agora. ${p.forma_pagamento_entrada === 'cartao_entrega' ? 'Quando o móvel chegar, você recebe um link de cobrança no cartão pra pagar o valor total.' : 'Quando o móvel chegar, você paga o valor total de uma vez só, no Pix.'} Você pode acompanhar o andamento do seu pedido aqui a qualquer momento.</p>
+                        </div>
+
+                    `
+
+                    : `
+
+                        <div class="info info-green">
+
+                            Entrada configurada como
+                            R$ 0,00.
+
+                        </div>
+
+                    `
+                }
+
+            </div>
+
+        `;
+
+
+        document.getElementById(
+            'conteudoProposta'
+        ).innerHTML = html;
+
+
+        return;
+    }
+}
+
+
+/* ==========================================================
+   CONFIRMAR PARCELAS
+========================================================== */
+
+async function confirmarParcelas() {
+
+    const select =
+        document.getElementById(
+            'qtdEscolhida'
+        );
+
+
+    if(!select)
+        return;
+
+
+    const quantidade = Number(select.value || 0);
+
+
+    if(
+        !quantidade ||
+        quantidade < 1 ||
+        quantidade > obterQuantidadeParcelasOficial(propostaAtual)
+    ) {
+
+        alert(
+            'A quantidade de parcelas ainda não foi configurada no painel.'
+        );
+
+        return;
+    }
+
+
+    const botao =
+        document.getElementById(
+            'btnConfirmarParcelas'
+        );
+
+
+    botao.disabled = true;
+
+
+    botao.innerHTML =
+        '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+
+
+    try {
+
+        const { data, error } =
+            await supabase
+                .from('propostas')
+                .update({
+
+                    qtd_parcelas_escolhida: quantidade,
+                    datas_parcelas: (() => {
+                        const atuais = Array.isArray(propostaAtual.datas_parcelas) ? propostaAtual.datas_parcelas : [];
+                        if(atuais.length >= quantidade) return atuais.slice(0, quantidade);
+                        const base = new Date();
+                        const out = [];
+                        for(let i=1;i<=quantidade;i++){ const d=new Date(base); d.setMonth(d.getMonth()+i); out.push(d.toISOString().slice(0,10)); }
+                        return out;
+                    })()
+
+                })
+                .eq(
+                    'id',
+                    propostaAtual.id
+                )
+                .select()
+                .single();
+
+
+        if(error) {
+
+            throw new Error(
+                error.message
+            );
+        }
+
+
+        propostaAtual = {
+
+            ...propostaAtual,
+
+            ...data,
+
+            qtd_parcelas_escolhida:
+                quantidade
+        };
+
+
+        salvarSessao();
+
+
+        mostrarProposta(
+            propostaAtual
+        );
+
+
+    } catch(error) {
+
+        console.error(
+            error
+        );
+
+
+        alert(
+            'Não foi possível salvar a quantidade de parcelas.\n\n' +
+            error.message
+        );
+
+
+        botao.disabled = false;
+
+
+        botao.innerHTML =
+            '<i class="fas fa-arrow-right"></i> Continuar para o contrato';
+    }
+}
+
+
+/* ==========================================================
+   MODO ASSINATURA
+========================================================== */
+
+async function alternarModo(modo) {
+
+    modoAssinatura =
+        modo;
+
+
+    const texto =
+        document.getElementById(
+            'areaTextoAssinatura'
+        );
+
+
+    const selfie =
+        document.getElementById(
+            'areaSelfie'
+        );
+
+
+    const btnTexto =
+        document.getElementById(
+            'btnModoTexto'
+        );
+
+
+    const btnSelfie =
+        document.getElementById(
+            'btnModoSelfie'
+        );
+
+
+    if(modo === 'texto') {
+
+        texto.classList.remove(
+            'hidden'
+        );
+
+
+        selfie.classList.add(
+            'hidden'
+        );
+
+
+        btnTexto.className =
+            'btn btn-primary';
+
+
+        btnSelfie.className =
+            'btn btn-secondary';
+
+
+        pararCamera();
+
+        return;
+    }
+
+
+    texto.classList.add(
+        'hidden'
+    );
+
+
+    selfie.classList.remove(
+        'hidden'
+    );
+
+
+    btnTexto.className =
+        'btn btn-secondary';
+
+
+    btnSelfie.className =
+        'btn btn-primary';
+
+
+    await iniciarCamera();
+}
+
+
+/* ==========================================================
+   CÂMERA
+========================================================== */
+
+async function iniciarCamera() {
+
+    try {
+
+        pararCamera();
+
+
+        if(
+            !navigator.mediaDevices ||
+            !navigator.mediaDevices.getUserMedia
+        ) {
+
+            throw new Error(
+                'Câmera não disponível neste navegador.'
+            );
+        }
+
+
+        webcamStream =
+            await navigator.mediaDevices.getUserMedia({
+
+                video: {
+                    facingMode: 'user'
+                },
+
+                audio: false
+            });
+
+
+        const video =
+            document.getElementById(
+                'videoAssinatura'
+            );
+
+
+        if(video) {
+
+            video.srcObject =
+                webcamStream;
+        }
+
+
+    } catch(error) {
+
+        console.error(
+            error
+        );
+
+
+        alert(
+            'Não foi possível acessar a câmera. ' +
+            'A selfie é obrigatória para assinar o contrato — ' +
+            'verifique se você permitiu o acesso à câmera nas configurações do navegador e tente novamente.'
+        );
+    }
+}
+
+
+function pararCamera() {
+
+    if(webcamStream) {
+
+        webcamStream
+            .getTracks()
+            .forEach(
+                track => track.stop()
+            );
+
+
+        webcamStream =
+            null;
+    }
+}
+
+
+/* ==========================================================
+   FOTO
+========================================================== */
+
+function tirarFoto() {
+
+    const video =
+        document.getElementById(
+            'videoAssinatura'
+        );
+
+
+    if(
+        !video ||
+        !video.videoWidth
+    ) {
+
+        alert(
+            'A câmera ainda não está pronta.'
+        );
+
+        return;
+    }
+
+
+    const canvas =
+        document.createElement(
+            'canvas'
+        );
+
+
+    canvas.width =
+        video.videoWidth;
+
+
+    canvas.height =
+        video.videoHeight;
+
+
+    const contexto =
+        canvas.getContext(
+            '2d'
+        );
+
+
+    contexto.drawImage(
+        video,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    const imagem =
+        document.getElementById(
+            'imagemAssinatura'
+        );
+
+
+    imagem.src =
+        canvas.toDataURL(
+            'image/jpeg',
+            .85
+        );
+
+
+    document
+        .getElementById(
+            'fotoCapturada'
+        )
+        .classList
+        .remove(
+            'hidden'
+        );
+
+
+    pararCamera();
+}
+
+
+function refazerFoto() {
+
+    document
+        .getElementById(
+            'fotoCapturada'
+        )
+        .classList
+        .add(
+            'hidden'
+        );
+
+
+    iniciarCamera();
+}
+
+
+/* ==========================================================
+   ASSINAR CONTRATO
+========================================================== */
+
+async function assinarContrato() {
+
+    try {
+
+        const aceite =
+            document.getElementById(
+                'aceitoContrato'
+            );
+
+
+        if(
+            !aceite ||
+            !aceite.checked
+        ) {
+
+            alert(
+                'Marque a opção de concordância com o contrato.'
+            );
+
+            return;
+        }
+
+
+        const campoNome =
+            document.getElementById(
+                'assTxt'
+            );
+
+
+        const assinatura =
+            campoNome
+            ? campoNome.value.trim()
+            : '';
+
+
+        if(!assinatura) {
+
+            alert(
+                'Digite seu nome completo para assinar.'
+            );
+
+            return;
+        }
+
+
+        const imagem =
+            document.getElementById(
+                'imagemAssinatura'
+            );
+
+
+        if(
+            !imagem ||
+            !imagem.src ||
+            imagem.src.length < 100
+        ) {
+
+            alert(
+                'Tire a selfie antes de assinar — ela é obrigatória para confirmar sua identidade.'
+            );
+
+            return;
+        }
+
+
+        const selfie =
+            imagem.src;
+
+
+        if(
+            !propostaAtual ||
+            !propostaAtual.id
+        ) {
+
+            alert(
+                'Proposta não encontrada.'
+            );
+
+            return;
+        }
+
+
+        const botao =
+            document.getElementById(
+                'btnAssinar'
+            );
+
+
+        if(!botao){ alert('Não foi possível localizar o botão de assinatura. Atualize a página.'); return; }
+
+        botao.disabled = true;
+
+
+        botao.innerHTML =
+            '<i class="fas fa-spinner fa-spin"></i> Salvando assinatura...';
+
+
+        const { data, error } =
+            await supabase
+                .from('propostas')
+                .update({
+
+                    contrato_assinado:
+                        true,
+
+                    assinatura:
+                        assinatura,
+
+                    selfie_url:
+                        selfie,
+
+                    data_assinatura:
+                        new Date()
+                            .toISOString()
+
+                })
+                .eq(
+                    'id',
+                    propostaAtual.id
+                )
+                .select()
+                .single();
+
+
+        if(error) {
+
+            throw new Error(
+                error.message ||
+                'Erro ao salvar assinatura.'
+            );
+        }
+
+
+        if(!data) {
+
+            throw new Error(
+                'O banco não confirmou o salvamento da assinatura.'
+            );
+        }
+
+
+        propostaAtual = {
+
+            ...propostaAtual,
+
+            ...data,
+
+            contrato_assinado:
+                true,
+
+            assinatura:
+                assinatura,
+
+            selfie_url:
+                selfie
+        };
+
+
+        salvarSessao();
+
+
+        pararCamera();
+
+
+        mostrarProposta(
+            propostaAtual
+        );
+
+
+    } catch(error) {
+
+        console.error(
+            'Erro assinatura:',
+            error
+        );
+
+
+        alert(
+            'Não foi possível assinar o contrato.\n\n' +
+            'Motivo:\n' +
+            (
+                error.message ||
+                error
+            )
+        );
+
+
+        const botao =
+            document.getElementById(
+                'btnAssinar'
+            );
+
+
+        if(botao) {
+
+            botao.disabled =
+                false;
+
+
+            botao.innerHTML =
+                '<i class="fas fa-file-signature"></i> Assinar contrato';
+        }
+    }
+}
+
+
+/* ==========================================================
+   PIX
+========================================================== */
+
+async function buscarPix(
+    valor,
+    descricao,
+    dadosExtras
+) {
+
+    const resposta =
+        await fetch(
+            '/api/gerar-pix',
+            {
+
+                method: 'POST',
+
+                headers: {
+
+                    'Content-Type':
+                        'application/json'
+
+                },
+
+                body:
+                    JSON.stringify({
+
+                        valor:
+                            Number(valor)
+                            .toFixed(2),
+
+                        descricao:
+                            descricao,
+
+                        ...(dadosExtras || {})
+
+                    })
+            }
+        );
+
+
+    if(!resposta.ok) {
+
+        let mensagem =
+            'Erro ao gerar Pix.';
+
+
+        try {
+
+            const erro =
+                await resposta.json();
+
+
+            mensagem =
+                erro.message ||
+                erro.error ||
+                mensagem;
+
+        } catch(e) {}
+
+
+        throw new Error(
+            mensagem
+        );
+    }
+
+
+    const dados =
+        await resposta.json();
+
+
+    const codigo =
+        dados.qr_code ||
+        dados.copia_cola ||
+        dados.pixCopiaECola ||
+        dados.codigo ||
+        dados.qrCode ||
+        dados.payload;
+
+
+    if(!codigo) {
+
+        throw new Error(
+            'A API não retornou o código Pix.'
+        );
+    }
+
+
+    return codigo;
+}
+
+
+/* ==========================================================
+   SELEÇÃO DA FORMA DE PAGAMENTO (ENTRADA)
+========================================================== */
+
+const OPCOES_FORMA_PAGAMENTO = [
+    {
+        id: 'pix_antecipado',
+        icone: '⚡',
+        titulo: 'Pagar a entrada agora, no Pix',
+        subtitulo: 'Entrada de 40% do valor via Pix agora. O restante fica parcelado.'
+    },
+    {
+        id: 'na_entrega',
+        icone: '📦',
+        titulo: 'Pagar a entrada só na entrega',
+        subtitulo: 'Entrada de 55% do valor, mas você só paga quando o móvel chegar.'
+    },
+    {
+        id: 'cartao_entrega',
+        icone: '💳',
+        titulo: 'Cartão de crédito na entrega',
+        subtitulo: 'Sem entrada. Você paga o valor total no cartão quando o móvel chegar.'
+    },
+    {
+        id: 'pix_total_entrega',
+        icone: '💰',
+        titulo: 'Pix total na entrega',
+        subtitulo: 'Sem entrada e sem parcelamento. Valor total via Pix quando o móvel chegar.'
+    }
+];
+
+function renderCardFormaPagamento(p, etapa) {
+
+    const el =
+        document.getElementById(
+            'cardFormaPagamento'
+        );
+
+    if(!el)
+        return;
+
+    /*
+     * Antes da proposta ser aprovada ainda não faz sentido
+     * escolher a forma de pagamento da entrada.
+     */
+    if(!p || etapa === 1) {
+        el.style.display = 'none';
+        el.innerHTML = '';
+        return;
+    }
+
+    el.style.display = '';
+
+    const assinado =
+        booleano(p.contrato_assinado);
+
+    const entradaPaga =
+        booleano(p.entrada_paga);
+
+    const emRota =
+        booleano(p.em_rota_entrega);
+
+    const travado =
+        assinado ||
+        entradaPaga ||
+        emRota;
+
+    const formaAtual =
+        p.forma_pagamento_entrada ||
+        'pix_antecipado';
+
+
+    let html = `
+
+        <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px">
+            <i class="fas fa-hand-holding-dollar" style="color:#0A2463;font-size:19px;margin-top:2px"></i>
+            <div>
+                <h3 style="font-weight:800;color:#0A2463;font-size:15px;margin-bottom:3px">
+                    Como você prefere pagar?
+                </h3>
+                <p style="font-size:12.5px;color:#64748B;line-height:1.5">
+                    Escolha a forma de pagamento da entrada que funciona melhor para você.
+                </p>
+            </div>
+        </div>
+
+    `;
+
+    OPCOES_FORMA_PAGAMENTO.forEach(function(op) {
+
+        const selecionada =
+            formaAtual === op.id;
+
+        html += `
+
+            <div
+                ${travado ? '' : `onclick="selecionarFormaPagamento('${op.id}')"`}
+                style="
+                    display:flex;
+                    align-items:flex-start;
+                    gap:12px;
+                    border:2px solid ${selecionada ? '#0F8B8D' : '#E2E8F0'};
+                    background:${selecionada ? 'rgba(15,139,141,.07)' : '#fff'};
+                    border-radius:14px;
+                    padding:13px 15px;
+                    margin-bottom:10px;
+                    cursor:${travado ? 'default' : 'pointer'};
+                    transition:.2s;
+                "
+            >
+
+                <div style="
+                    width:20px;height:20px;
+                    border-radius:50%;
+                    border:2px solid ${selecionada ? '#0F8B8D' : '#CBD5E1'};
+                    display:flex;align-items:center;justify-content:center;
+                    flex-shrink:0;margin-top:2px;
+                ">
+                    ${selecionada ? '<div style="width:10px;height:10px;border-radius:50%;background:#0F8B8D"></div>' : ''}
+                </div>
+
+                <div style="flex:1">
+                    <div style="font-weight:800;font-size:13.5px;color:#0A2463">
+                        ${op.icone} ${op.titulo}
+                    </div>
+                    <div style="font-size:12px;color:#475569;margin-top:2px;line-height:1.45">
+                        ${op.subtitulo}
+                    </div>
+                </div>
+
+            </div>
+
+        `;
+    });
+
+    html += `
+
+        <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:12px 14px;margin-top:6px;display:flex;gap:10px;align-items:flex-start">
+            <i class="fas fa-circle-info" style="color:#92400E;margin-top:2px"></i>
+            <p style="font-size:12px;color:#92400E;line-height:1.55;margin:0">
+                <strong>Importante:</strong> não é obrigatório pagar a entrada agora.
+                Pagar só na entrega (ou sem entrada) é uma opção pensada para o seu
+                benefício e comodidade — escolha o jeito que for melhor pra você.
+            </p>
+        </div>
+
+    `;
+
+    if(travado) {
+
+        html += `
+
+            <p style="margin-top:10px;color:#64748B;font-size:11.5px;line-height:1.5">
+                🔒 ${
+                    emRota
+                    ? 'Seu pedido já está a caminho — a forma de pagamento não pode mais ser trocada por aqui.'
+                    : 'A forma de pagamento já foi confirmada e não pode mais ser trocada por aqui. Se precisar mudar, fale com a gente pelo WhatsApp de suporte.'
+                }
+            </p>
+
+        `;
+    }
+
+    el.innerHTML = html;
+}
+
+
+async function selecionarFormaPagamento(novaForma) {
+
+    if(!propostaAtual)
+        return;
+
+    const formaAtual =
+        propostaAtual.forma_pagamento_entrada ||
+        'pix_antecipado';
+
+    if(novaForma === formaAtual)
+        return;
+
+    await trocarFormaEntrada(novaForma);
+}
+
+
+/* ==========================================================
+   PIX ENTRADA
+========================================================== */
+
+async function trocarFormaEntrada(novaForma) {
+
+    if(!propostaAtual)
+        return;
+
+    if(propostaAtual.em_rota_entrega) {
+        alert('Seu pedido já está a caminho — não é mais possível trocar a forma de pagamento da entrada.');
+        return;
+    }
+
+    const nomesForma = {
+        pix_antecipado: 'pagar agora no Pix (40% de entrada)',
+        na_entrega: 'pagar a entrada só na entrega (55% do valor)',
+        cartao_entrega: 'pagar no cartão de crédito na entrega (sem entrada)',
+        pix_total_entrega: 'pagar o valor total no Pix na entrega (sem entrada, sem parcelamento)'
+    };
+
+    const nomeNova = nomesForma[novaForma] || novaForma;
+
+    const confirmar =
+        confirm(
+            `Tem certeza que quer trocar e ${nomeNova}? O valor da entrada e das parcelas vai ser recalculado.`
+        );
+
+    if(!confirmar)
+        return;
+
+    const valorTotal = Number(propostaAtual.valor_desejado || 0);
+
+    const percentuaisPorForma = {
+        pix_antecipado: 0.40,
+        na_entrega: 0.55,
+        cartao_entrega: 0,
+        pix_total_entrega: 0
+    };
+
+    const novoPercentual = percentuaisPorForma[novaForma] ?? 0.40;
+
+    const novaEntrada =
+        Math.round(valorTotal * novoPercentual * 100) / 100;
+
+    try {
+
+        const { error } =
+            await supabase
+                .from('propostas')
+                .update({
+                    forma_pagamento_entrada: novaForma,
+                    valor_entrada: novaEntrada
+                })
+                .eq('id', propostaAtual.id);
+
+        if(error)
+            throw new Error(error.message);
+
+        await carregarPorId(propostaAtual.id);
+
+    } catch(e) {
+
+        alert(
+            'Não foi possível trocar a forma de pagamento: ' +
+            e.message
+        );
+    }
+}
+
+
+async function gerarPixEntrada(
+    valor
+) {
+
+    const area =
+        document.getElementById(
+            'areaPixEntrada'
+        );
+
+
+    if(!area)
+        return;
+
+
+    area.classList.remove(
+        'hidden'
+    );
+
+
+    area.innerHTML = `
+
+        <div class="text-center p-4">
+
+            <i class="fas fa-spinner fa-spin text-2xl"></i>
+
+            <p class="mt-2">
+                Gerando Pix...
+            </p>
+
+        </div>
+
+    `;
+
+
+    try {
+
+        const codigo =
+            await buscarPix(
+                valor,
+                `Entrada - Proposta ${propostaAtual.id}`,
+                {
+                    proposta_id: propostaAtual.id,
+                    tipo: 'entrada'
+                }
+            );
+
+
+        area.innerHTML = `
+
+            <div class="pix-box">
+
+                <h3 class="font-bold text-lg">
+                    Pix da entrada
+                </h3>
+
+
+                <p class="text-sm text-slate-500 mt-1">
+
+                    Valor:
+
+                    <strong>
+                        R$ ${moeda(valor)}
+                    </strong>
+
+                </p>
+
+
+                <div
+                    id="qrEntrada"
+                    class="qrcode-area"
+                ></div>
+
+
+                <div class="codigo-pix">
+
+                    ${escapar(codigo)}
+
+                </div>
+
+
+                <button
+                    onclick='copiarPix(${JSON.stringify(codigo)})'
+                    class="btn-copy mt-3"
+                >
+
+                    <i class="fas fa-copy"></i>
+
+                    Copiar Pix
+
+                </button>
+
+            </div>
+
+        `;
+
+
+        setTimeout(
+            function() {
+
+                const qr =
+                    document.getElementById(
+                        'qrEntrada'
+                    );
+
+
+                if(qr) {
+
+                    new QRCode(
+                        qr,
+                        {
+
+                            text:
+                                codigo,
+
+                            width:
+                                210,
+
+                            height:
+                                210
+                        }
+                    );
+                }
+
+            },
+            100
+        );
+
+
+    } catch(error) {
+
+        area.innerHTML = `
+
+            <div class="info info-red">
+
+                <strong>
+
+                    Não foi possível gerar o Pix.
+
+                </strong>
+
+
+                <p class="text-sm mt-2">
+
+                    ${escapar(
+                        error.message ||
+                        error
+                    )}
+
+                </p>
+
+
+                <button
+                    onclick="gerarPixEntrada(${Number(valor)})"
+                    class="btn btn-danger mt-3"
+                >
+
+                    Tentar novamente
+
+                </button>
+
+            </div>
+
+        `;
+    }
+}
+
+
+/* ==========================================================
+   PIX PARCELA
+========================================================== */
+
+function pagarProximaParcelaBanner(valor, numeroParcela){
+    const alvo = document.getElementById(`parcela-${numeroParcela}`);
+    if(alvo){
+        alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    gerarPixParcela(valor, numeroParcela);
+}
+
+async function gerarPixParcela(
+    valor,
+    numeroParcela
+) {
+
+    const area =
+        document.getElementById(
+            `pixParcela${numeroParcela}`
+        );
+
+
+    if(!area)
+        return;
+
+
+    area.classList.remove(
+        'hidden'
+    );
+
+
+    area.innerHTML = `
+
+        <div class="text-center p-3">
+
+            <i class="fas fa-spinner fa-spin"></i>
+
+            <span class="ml-2">
+
+                Gerando Pix...
+
+            </span>
+
+        </div>
+
+    `;
+
+
+    try {
+
+        const codigo =
+            await buscarPix(
+                valor,
+                `Parcela ${numeroParcela} - Proposta ${propostaAtual.id}`,
+                {
+                    proposta_id: propostaAtual.id,
+                    tipo: 'parcela',
+                    numero_parcela: numeroParcela
+                }
+            );
+
+
+        area.innerHTML = `
+
+            <div class="pix-parcela">
+
+                <div
+                    id="qrParcela${numeroParcela}"
+                    class="qrcode-area"
+                ></div>
+
+
+                <div class="codigo-pix">
+
+                    ${escapar(codigo)}
+
+                </div>
+
+
+                <button
+                    onclick='copiarPix(${JSON.stringify(codigo)})'
+                    class="btn-copy mt-2"
+                >
+
+                    <i class="fas fa-copy"></i>
+
+                    Copiar Pix
+
+                </button>
+
+            </div>
+
+        `;
+
+
+        setTimeout(
+            function() {
+
+                const qr =
+                    document.getElementById(
+                        `qrParcela${numeroParcela}`
+                    );
+
+
+                if(qr) {
+
+                    new QRCode(
+                        qr,
+                        {
+
+                            text:
+                                codigo,
+
+                            width:
+                                190,
+
+                            height:
+                                190
+                        }
+                    );
+                }
+
+            },
+            100
+        );
+
+
+    } catch(error) {
+
+        area.innerHTML = `
+
+            <div class="info info-red">
+
+                <strong>
+                    Erro ao gerar Pix
+                </strong>
+
+
+                <p class="text-sm mt-1">
+
+                    ${escapar(
+                        error.message ||
+                        error
+                    )}
+
+                </p>
+
+            </div>
+
+        `;
+    }
+}
+
+
+/* ==========================================================
+   COPIAR PIX
+========================================================== */
+
+async function copiarPix(
+    codigo
+) {
+
+    try {
+
+        await navigator
+            .clipboard
+            .writeText(
+                codigo
+            );
+
+
+        alert(
+            'Código Pix copiado!'
+        );
+
+
+    } catch(error) {
+
+        alert(
+            'Não foi possível copiar automaticamente.'
+        );
+    }
+}
+
+
+/* ==========================================================
+   IMPRIMIR CONTRATO
+========================================================== */
+
+function imprimirContrato() {
+
+    const p =
+        propostaAtual;
+
+
+    if(!p)
+        return;
+
+
+    const entradaPaga =
+        booleano(
+            p.entrada_paga
+        );
+
+
+    const assinado =
+        booleano(
+            p.contrato_assinado
+        );
+
+
+    if(
+        !entradaPaga ||
+        !assinado
+    ) {
+
+        alert(
+            'O contrato só pode ser impresso após a assinatura e a confirmação do pagamento da entrada.'
+        );
+
+        return;
+    }
+
+
+    const nome =
+        escapar(
+            p.nome ||
+            'Cliente'
+        );
+
+
+    const cpf =
+        escapar(
+            p.cpf ||
+            ''
+        );
+
+
+    const valor =
+        Number(
+            p.valor_desejado ||
+            0
+        );
+
+
+    const entrada =
+        Number(
+            p.valor_entrada ||
+            0
+        );
+
+
+    const juros =
+        Number(
+            p.juros_mensal ||
+            0
+        );
+
+
+    const qtd =
+        Number(
+            p.qtd_parcelas_escolhida ||
+            0
+        );
+
+
+    const principal =
+        Math.max(
+            valor -
+            entrada,
+            0
+        );
+
+
+    const parcela =
+        calcularParcela(
+            principal,
+            juros,
+            qtd
+        );
+
+
+    const totalParcelas =
+        parcela *
+        qtd;
+
+    const formaPagamentoImp = p.forma_pagamento_entrada || 'pix_antecipado';
+    const semParcelamentoImp = (formaPagamentoImp === 'cartao_entrega' || formaPagamentoImp === 'pix_total_entrega');
+
+    const temSeguroImp = !!p.seguro_contratado;
+    const temMontagemImp = !!p.montagem_contratada;
+    const clausula4Imp = 4;
+    const clausulaEntregaImp = clausula4Imp + (temSeguroImp?1:0) + (temMontagemImp?1:0);
+    const clausulaArrependimentoImp = clausulaEntregaImp + 1;
+    const clausulaAssinaturaImp = clausulaArrependimentoImp + 1;
+    const clausulaConferenciaImp = clausulaAssinaturaImp + 1;
+    const clausulaForoImp = clausulaConferenciaImp + 1;
+
+
+    const totalFinal =
+        semParcelamentoImp
+        ? valor
+        : entrada +
+          totalParcelas;
+
+
+    const dias =
+        Number(
+            p.dias_entrega ||
+            0
+        );
+
+
+    const inicio =
+        p.data_pagamento_entrada ||
+        p.entrada_pago_em ||
+        p.data_entrada_paga;
+
+
+    const previsao =
+        calcularDataEntregaUtil(
+            inicio,
+            dias
+        );
+
+
+    const win =
+        window.open(
+            '',
+            '_blank'
+        );
+
+
+    if(!win) {
+
+        alert(
+            'Permita pop-ups no navegador para imprimir o contrato.'
+        );
+
+        return;
+    }
+
+
+    win.document.write(`
+
+        <!DOCTYPE html>
+
+        <html lang="pt-BR">
+
+        <head>
+
+            <meta charset="UTF-8">
+
+            <title>
+                Contrato FlashCred - ${nome}
+            </title>
+
+            <style>
+
+                body {
+                    font-family: Arial, sans-serif;
+                    color: #111827;
+                    padding: 35px;
+                    max-width: 850px;
+                    margin: auto;
+                }
+
+                h1 {
+                    text-align: center;
+                    font-size: 22px;
+                }
+
+                h2 {
+                    font-size: 16px;
+                    margin-top: 25px;
+                }
+
+                .cab {
+                    border-bottom:
+                        2px solid #0A2463;
+
+                    padding-bottom: 15px;
+
+                    margin-bottom: 20px;
+                }
+
+                .linha {
+                    display: flex;
+                    justify-content: space-between;
+                    border-bottom: 1px solid #ddd;
+                    padding: 8px 0;
+                    gap: 20px;
+                }
+
+                .valor-final {
+                    font-size: 18px;
+                    font-weight: bold;
+                    background: #eef6ff;
+                    padding: 12px;
+                    margin-top: 10px;
+                }
+
+                .assinatura {
+                    margin-top: 70px;
+                    display: flex;
+                    justify-content: space-between;
+                    gap: 50px;
+                }
+
+                .assinatura div {
+                    width: 45%;
+                    text-align: center;
+                    border-top: 1px solid #111;
+                    padding-top: 8px;
+                }
+
+                @media print {
+                    button {
+                        display: none;
+                    }
+                }
+
+            </style>
+
+        </head>
+
+
+        <body>
+
+            <div class="cab">
+
+                <h1>
+                    FLASHCRED
+                </h1>
+
+                <p style="text-align:center">
+                    Distribuidora Flash Point Móveis — CNPJ 35.560.220/0001-54
+                </p>
+
+                <p style="text-align:center">
+
+                    CONTRATO DE CRÉDITO / COMPRA
+
+                </p>
+
+            </div>
+
+
+            <h2>
+                Dados do cliente
+            </h2>
+
+
+            <div class="linha">
+
+                <span>
+                    Cliente
+                </span>
+
+                <strong>
+                    ${nome}
+                </strong>
+
+            </div>
+
+
+            <div class="linha">
+
+                <span>
+                    CPF
+                </span>
+
+                <strong>
+                    ${cpf}
+                </strong>
+
+            </div>
+
+
+            <h2>
+                Resumo financeiro
+            </h2>
+
+
+            <div class="linha">
+
+                <span>
+                    Valor da compra
+                </span>
+
+                <strong>
+                    R$ ${moeda(valor)}
+                </strong>
+
+            </div>
+
+            ${semParcelamentoImp ? `
+
+            <div class="linha">
+
+                <span>
+                    Forma de pagamento
+                </span>
+
+                <strong>
+                    ${formaPagamentoImp === 'cartao_entrega' ? 'Cartão de crédito na entrega' : 'Pix total na entrega'}
+                </strong>
+
+            </div>
+
+            ` : `
+
+            <div class="linha">
+
+                <span>
+                    Entrada paga
+                </span>
+
+                <strong>
+                    R$ ${moeda(entrada)}
+                </strong>
+
+            </div>
+
+
+            <div class="linha">
+
+                <span>
+                    Valor financiado
+                </span>
+
+                <strong>
+                    R$ ${moeda(principal)}
+                </strong>
+
+            </div>
+
+
+            <div class="linha">
+
+                <span>
+                    Juros
+                </span>
+
+                <strong>
+                    ${numero(juros)}% a.m.
+                </strong>
+
+            </div>
+
+
+            <div class="linha">
+
+                <span>
+                    Parcelamento
+                </span>
+
+                <strong>
+                    ${qtd}x de
+                    R$ ${moeda(parcela)}
+                </strong>
+
+            </div>
+
+            `}
+
+            ${!semParcelamentoImp ? `
+            <div class="linha">
+
+                <span>
+                    Total das parcelas
+                </span>
+
+                <strong>
+                    R$ ${moeda(totalParcelas)}
+                </strong>
+
+            </div>
+            ` : ''}
+
+
+            <div class="valor-final">
+
+                <div class="linha">
+
+                    <span>
+                        Total final a pagar
+                    </span>
+
+                    <strong>
+                        R$ ${moeda(totalFinal)}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            ${listaProdutosDaProposta(p).length ? `
+            <h2>
+                Produtos (móveis) financiados
+            </h2>
+
+            ${listaProdutosDaProposta(p).map((prod, idx) => `
+            <div class="linha" style="align-items:center">
+                <span style="display:flex;align-items:center;gap:8px">
+                    ${prod.slug ? `<img src="/${escapar(prod.slug)}.jpg" alt="" style="width:38px;height:38px;object-fit:cover;border-radius:6px;background:#EEF2F7">` : ''}
+                    Produto ${idx + 1}
+                </span>
+                <strong>${descreverProduto(prod)}</strong>
+            </div>
+            `).join('')}
+            ` : ''}
+
+
+            <h2>
+                Entrega
+            </h2>
+
+
+            <div class="linha">
+
+                <span>
+                    Início do prazo
+                </span>
+
+                <strong>
+                    ${dataBR(inicio)}
+                </strong>
+
+            </div>
+
+
+            <div class="linha">
+
+                <span>
+                    Prazo
+                </span>
+
+                <strong>
+                    ${dias || '--'} dias úteis
+                </strong>
+
+            </div>
+
+
+            <div class="linha">
+
+                <span>
+                    Previsão
+                </span>
+
+                <strong>
+                    ${dataBR(previsao)}
+                </strong>
+
+            </div>
+
+
+            <h2>Cláusulas do contrato</h2>
+
+            <p><strong>Partes.</strong><br>
+            DISTRIBUIDORA FLASH POINT MÓVEIS, CNPJ nº 35.560.220/0001-54, doravante CONTRATADA, e o cliente identificado acima, doravante CONTRATANTE.</p>
+
+            <p><strong>Cláusula 1 – Condições comerciais.</strong><br>
+            O presente documento registra as condições comerciais apresentadas na proposta FlashCred, incluindo o valor da compra, o valor da entrada, a quantidade de parcelas e os respectivos valores.</p>
+
+            <p><strong>Cláusula 2 – ${semParcelamentoImp ? 'Forma de pagamento' : 'Parcelamento, juros e CET'}.</strong><br>
+            ${semParcelamentoImp
+                ? (formaPagamentoImp === 'cartao_entrega'
+                    ? 'Sem entrada. O valor total será cobrado por link de cartão de crédito no ato da entrega dos móveis, com parcelamento a critério do CONTRATANTE junto à operadora do cartão.'
+                    : 'Sem entrada e sem parcelamento. O valor total será pago integralmente via Pix no ato da entrega dos móveis.')
+                : `O saldo após a entrada será pago conforme o parcelamento registrado na proposta, com a taxa de juros mensal indicada neste documento. O Custo Efetivo Total (CET) aproximado desta operação é de ${numero(valor > 0 ? ((totalFinal - valor) / valor) * 100 : 0)}% sobre o valor da compra.`
+            }</p>
+
+            <p><strong>Cláusula 3 – Atraso no pagamento.</strong><br>
+            Em caso de atraso no pagamento de qualquer parcela, incidirão multa fixa de 2% (dois por cento) e juros de mora de 1% (um por cento) ao mês, calculados proporcionalmente aos dias de atraso, nos termos do Código de Defesa do Consumidor.</p>
+
+            ${p.seguro_contratado ? `
+            <p><strong>Cláusula 4 – Proteção do Móvel.</strong><br>
+            O CONTRATANTE contratou a Proteção do Móvel no valor de R$ ${moeda(p.valor_seguro || 0)}, já incluído no valor total desta compra. A Proteção cobre danos acidentais e manchas durante a vigência deste contrato, não cobrindo desgaste natural, mau uso evidente ou danos causados por terceiros.</p>
+            ` : ''}
+
+            ${p.montagem_contratada ? `
+            <p><strong>Cláusula ${temSeguroImp ? '5' : '4'} – Montagem.</strong><br>
+            O CONTRATANTE contratou o serviço de Montagem no valor de R$ ${moeda(p.valor_montagem || 0)}, já incluído no valor total desta compra. A CONTRATADA se compromete a enviar um montador para deixar o(s) móvel(is) devidamente montado(s) no endereço de entrega.</p>
+            ` : ''}
+
+            <p><strong>Cláusula ${clausulaEntregaImp} – Entrega.</strong><br>
+            O prazo de entrega informado na proposta será contado somente após a assinatura do contrato e a confirmação do pagamento da entrada. A previsão de entrega será calculada conforme o prazo configurado na proposta.</p>
+
+            <p><strong>Cláusula ${clausulaArrependimentoImp} – Direito de arrependimento.</strong><br>
+            Por se tratar de contratação realizada fora do estabelecimento comercial, o CONTRATANTE tem direito de desistir desta contratação em até 7 (sete) dias corridos da assinatura, nos termos do art. 49 do Código de Defesa do Consumidor, mediante contato com a CONTRATADA pelo WhatsApp de suporte.</p>
+
+            <p><strong>Cláusula ${clausulaAssinaturaImp} – Assinatura eletrônica.</strong><br>
+            A assinatura eletrônica realizada pelo cliente (nome digitado e selfie), associada à data e horário do registro, representa sua manifestação de concordância com os dados apresentados nesta proposta.</p>
+
+            <p><strong>Cláusula ${clausulaConferenciaImp} – Conferência das informações.</strong><br>
+            O cliente declara que conferiu seus dados, valores, quantidade de parcelas, juros, valor final e condições de entrega antes da confirmação.</p>
+
+            <p><strong>Cláusula ${clausulaForoImp} – Foro.</strong><br>
+            Fica eleito o foro da comarca do domicílio do CONTRATANTE para dirimir dúvidas ou litígios oriundos deste contrato, conforme prevê o Código de Defesa do Consumidor.</p>
+
+            <h2>
+                Declaração
+            </h2>
+
+
+            <p>
+
+                O cliente declara que conferiu seus dados,
+                valores, quantidade de parcelas, juros,
+                valor final e condições de entrega
+                apresentados neste contrato.
+
+            </p>
+
+
+            <div class="assinatura">
+
+                <div>
+
+                    ${nome}
+
+                    <br>
+
+                    Cliente
+
+                </div>
+
+
+                <div>
+
+                    FLASHCRED
+
+                    <br>
+
+                    Responsável
+
+                </div>
+
+            </div>
+
+
+            <script>
+
+                window.onload = function() {
+
+                    setTimeout(
+                        function() {
+                            window.print();
+                        },
+                        300
+                    );
+
+                }
+
+            <\/script>
+
+        </body>
+
+        </html>
+
+    `);
+
+
+    win.document.close();
+}
+
+
+/* ==========================================================
+   ENTREGA
+========================================================== */
+
+function montarEntrega(p) {
+
+    const dias =
+        Number(
+            p.dias_entrega ||
+            0
+        );
+
+
+    const entradaPaga =
+        booleano(
+            p.entrada_paga
+        );
+
+
+    const contratoAssinado =
+        booleano(
+            p.contrato_assinado
+        );
+
+
+    if(
+        !entradaPaga ||
+        !contratoAssinado
+    ) {
+
+        return `
+
+            <div class="card">
+
+                <div class="info info-yellow text-center">
+
+                    <i class="fas fa-hourglass-half text-3xl text-alerta"></i>
+
+                    <h3 class="font-bold text-lg mt-2">
+
+                        PRAZO DE ENTREGA
+                        AINDA NÃO INICIADO
+
+                    </h3>
+
+                    <p class="text-sm text-slate-600 mt-2">
+
+                        O prazo de entrega será iniciado
+                        somente após a assinatura do contrato
+                        e a confirmação do pagamento da entrada.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        `;
+    }
+
+
+    if(dias <= 0) {
+
+        return `
+
+            <div class="card">
+
+                <div class="entrega">
+
+                    <div class="text-center">
+
+                        <i class="fas fa-truck-fast text-3xl text-alerta"></i>
+
+                        <h3 class="font-bold text-lg mt-2">
+
+                            ENTREGA CONFIRMADA PARA INÍCIO
+
+                        </h3>
+
+                        <p class="text-sm text-slate-600 mt-2">
+
+                            O pagamento da entrada foi confirmado
+                            e o contrato está assinado.
+
+                        </p>
+
+                        <p class="text-sm text-slate-600 mt-1">
+
+                            O prazo de entrega ainda não foi
+                            configurado no painel.
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        `;
+    }
+
+
+    const inicio =
+        p.data_pagamento_entrada ||
+        p.entrada_pago_em ||
+        p.data_entrada_paga;
+
+
+    const progresso =
+        calcularDiasUteis(
+            inicio,
+            dias
+        );
+
+
+    const percentual =
+        progresso.porcentagem;
+
+
+    const concluida =
+        percentual >= 100 ||
+        booleano(
+            p.entrega_concluida
+        ) ||
+        String(
+            p.status_entrega ||
+            ''
+        )
+        .toLowerCase() ===
+        'entregue';
+
+
+    const previsao =
+        calcularDataEntregaUtil(
+            inicio,
+            dias
+        );
+
+
+    return `
+
+        <div class="card">
+
+            <div
+                class="entrega
+                ${concluida ? 'entrega-concluida' : ''}"
+            >
+
+                <div class="text-center">
+
+                    <i class="fas
+                        ${
+                            concluida
+                            ? 'fa-circle-check'
+                            : 'fa-truck-fast'
+                        }
+                        text-3xl
+                        ${
+                            concluida
+                            ? 'text-sucesso'
+                            : 'text-alerta'
+                        }
+                    "></i>
+
+
+                    <h3 class="font-bold text-lg mt-2">
+
+                        ${
+                            concluida
+                            ? 'ENTREGA CONCLUÍDA'
+                            : 'ACOMPANHAMENTO DA ENTREGA'
+                        }
+
+                    </h3>
+
+
+                    <p class="text-sm text-slate-600 mt-2">
+
+                        Prazo:
+
+                        <strong>
+                            ${dias} dias úteis
+                        </strong>
+
+                    </p>
+
+
+                    <p class="text-sm text-slate-500 mt-1">
+
+                        Início do prazo:
+
+                        <strong>
+                            ${dataBR(inicio)}
+                        </strong>
+
+                    </p>
+
+
+                    <p class="text-sm text-slate-500 mt-1">
+
+                        Previsão:
+
+                        <strong>
+                            ${dataBR(previsao)}
+                        </strong>
+
+                    </p>
+
+                </div>
+
+
+                <div class="barra-progresso">
+
+                    <div
+                        class="barra-preenchida"
+                        style="width:${percentual}%"
+                    ></div>
+
+                </div>
+
+
+                <div class="entrega-info">
+
+                    <span>
+
+                        <strong>
+                            ${percentual}%
+                        </strong>
+
+                        concluído
+
+                    </span>
+
+
+                    <span>
+
+                        ${progresso.restantes}
+                        dias úteis restantes
+
+                    </span>
+
+                </div>
+
+
+                <div class="text-center mt-3 text-sm font-semibold">
+
+                    ${
+                        concluida
+
+                        ? 'Seu prazo de entrega foi concluído.'
+
+                        : 'O prazo está sendo contado somente em dias úteis.'
+                    }
+
+                </div>
+
+            </div>
+
+        </div>
+
+    `;
+}
+
+
+/* ==========================================================
+   DATA ENTREGA
+========================================================== */
+
+function calcularDataEntregaUtil(
+    inicio,
+    totalDias
+) {
+
+    if(
+        !inicio ||
+        Number(totalDias || 0) <= 0
+    ) {
+
+        return null;
+    }
+
+
+    const d =
+        new Date(inicio);
+
+
+    d.setHours(
+        0,0,0,0
+    );
+
+
+    let contados = 0;
+
+
+    while(
+        contados <
+        Number(totalDias)
+    ) {
+
+        d.setDate(
+            d.getDate() + 1
+        );
+
+
+        const dia =
+            d.getDay();
+
+
+        if(
+            dia !== 0 &&
+            dia !== 6
+        ) {
+
+            contados++;
+        }
+    }
+
+
+    return d;
+}
+
+
+/* ==========================================================
+   PARCELAS
+========================================================== */
+
+function montarParcelas(p) {
+
+    // Normalmente o cliente escolhe a quantidade antes de pagar a entrada.
+    // Mas se a entrada já foi confirmada e por algum motivo ele nunca
+    // chegou a escolher (ex: admin confirmou manualmente), usa a
+    // quantidade que o admin configurou em vez de travar a tela.
+    const quantidade =
+        Number(
+            p.qtd_parcelas_escolhida ||
+            (booleano(p.entrada_paga) ? p.quantidade_parcelas : 0) ||
+            0
+        );
+
+
+    if(
+        quantidade <= 0
+    ) {
+
+        return `
+
+            <div class="card">
+
+                <div class="info info-yellow">
+
+                    <strong>
+
+                        Parcelas ainda não configuradas.
+
+                    </strong>
+
+                </div>
+
+            </div>
+
+        `;
+    }
+
+
+    const valor =
+        Number(
+            p.valor_desejado ||
+            0
+        );
+
+
+    const entrada =
+        Number(
+            p.valor_entrada ||
+            0
+        );
+
+
+    const juros =
+        Number(
+            p.juros_mensal ||
+            0
+        );
+
+
+    const principal =
+        Math.max(
+            valor -
+            entrada,
+            0
+        );
+
+
+    const valorParcela =
+        calcularParcela(
+            principal,
+            juros,
+            quantidade
+        );
+
+
+    const totalParcelas =
+        valorParcela *
+        quantidade;
+
+
+    const totalFinal =
+        entrada +
+        totalParcelas;
+
+
+    const datasSalvas =
+        Array.isArray(
+            p.datas_parcelas
+        )
+        ? p.datas_parcelas
+        : [];
+
+
+    const parcelasPagas =
+        Number(
+            p.parcelas_pagas ||
+            0
+        );
+
+
+    let datas = [];
+
+
+    if(
+        datasSalvas.length >=
+        quantidade
+    ) {
+
+        datas =
+            datasSalvas.slice(
+                0,
+                quantidade
+            );
+
+    } else {
+
+        const base =
+            p.data_pagamento_entrada ||
+            p.entrada_pago_em ||
+            new Date();
+
+
+        for(
+            let i = 1;
+            i <= quantidade;
+            i++
+        ) {
+
+            datas.push(
+
+                adicionarMeses(
+                    base,
+                    i
+                )
+                .toISOString()
+                .split('T')[0]
+
+            );
+        }
+    }
+
+
+    let html = `
+
+        <div class="card">
+
+            <div class="flex items-center justify-between mb-4">
+
+                <div>
+
+                    <h3 class="text-xl font-bold">
+
+                        Suas parcelas
+
+                    </h3>
+
+
+                    <p class="text-sm text-slate-500">
+
+                        ${quantidade} parcelas
+
+                    </p>
+
+                </div>
+
+
+                <i class="fas fa-calendar-days text-2xl text-primary"></i>
+
+            </div>
+
+
+            <div class="resumo">
+
+                <div class="resumo-item">
+
+                    <span>
+                        Valor da compra
+                    </span>
+
+                    <strong>
+                        R$ ${moeda(valor)}
+                    </strong>
+
+                </div>
+
+
+                <div class="resumo-item">
+
+                    <span>
+                        Entrada paga
+                    </span>
+
+                    <strong>
+                        R$ ${moeda(entrada)}
+                    </strong>
+
+                </div>
+
+
+                <div class="resumo-item">
+
+                    <span>
+                        Valor financiado
+                    </span>
+
+                    <strong>
+                        R$ ${moeda(principal)}
+                    </strong>
+
+                </div>
+
+
+                <div class="resumo-item">
+
+                    <span>
+                        Juros mensais
+                    </span>
+
+                    <strong>
+                        ${numero(juros)}% a.m.
+                    </strong>
+
+                </div>
+
+
+                <div class="resumo-item">
+
+                    <span>
+                        Parcelamento
+                    </span>
+
+                    <strong>
+
+                        ${quantidade}x de
+                        R$ ${moeda(valorParcela)}
+
+                    </strong>
+
+                </div>
+
+
+                <div class="resumo-item">
+
+                    <span>
+                        Total das parcelas
+                    </span>
+
+                    <strong>
+
+                        R$
+                        ${moeda(totalParcelas)}
+
+                    </strong>
+
+                </div>
+
+
+                <div class="resumo-item total-final">
+
+                    <span>
+                        Total final a pagar
+                    </span>
+
+                    <strong>
+
+                        R$
+                        ${moeda(totalFinal)}
+
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="btn btn-primary mb-3"
+                onclick="imprimirContrato()"
+            >
+
+                <i class="fas fa-print"></i>
+
+                Imprimir contrato
+
+            </button>
+
+
+            <button
+                type="button"
+                class="btn btn-whatsapp mb-4"
+                onclick="abrirSuporteWhatsApp()"
+            >
+
+                <i class="fab fa-whatsapp"></i>
+
+                Falar com suporte no WhatsApp
+
+            </button>
+
+    `;
+
+
+    let htmlPagas = '';
+
+    for(
+        let i = 0;
+        i < quantidade;
+        i++
+    ) {
+
+        const numeroParcela =
+            i + 1;
+
+
+        const vencimento =
+            datas[i];
+
+
+        const dataVencimento =
+            new Date(
+                vencimento +
+                'T00:00:00'
+            );
+
+
+        const hoje =
+            new Date();
+
+
+        hoje.setHours(
+            0,0,0,0
+        );
+
+
+        const paga =
+            numeroParcela <=
+            parcelasPagas;
+
+
+        const atrasada =
+            !paga &&
+            dataVencimento <
+            hoje;
+
+
+        /*
+         * MULTA POR ATRASO:
+         * 2% de multa fixa + 1% ao mês de mora
+         * (proporcional aos dias em atraso),
+         * dentro do limite do Código de Defesa do Consumidor.
+         */
+
+        let diasAtraso = 0;
+        let valorMulta = 0;
+        let valorMora = 0;
+        let valorComMulta = valorParcela;
+
+        if(atrasada) {
+
+            diasAtraso =
+                Math.floor(
+                    (hoje - dataVencimento) /
+                    86400000
+                );
+
+            valorMulta =
+                valorParcela * 0.02;
+
+            valorMora =
+                (valorParcela * 0.01 / 30) *
+                diasAtraso;
+
+            valorComMulta =
+                valorParcela +
+                valorMulta +
+                valorMora;
+        }
+
+
+        let statusHTML = '';
+
+
+        if(paga) {
+
+            statusHTML = `
+
+                <span class="status status-pago">
+
+                    <i class="fas fa-check"></i>
+
+                    PAGO
+
+                </span>
+
+            `;
+
+        } else if(atrasada) {
+
+            statusHTML = `
+
+                <span class="status status-atrasado">
+
+                    <i class="fas fa-triangle-exclamation"></i>
+
+                    ATRASADA
+
+                </span>
+
+            `;
+
+        } else {
+
+            statusHTML = `
+
+                <span class="status status-pendente">
+
+                    <i class="fas fa-clock"></i>
+
+                    PENDENTE
+
+                </span>
+
+            `;
+        }
+
+
+        const blocoParcela = `
+
+            <div class="parcela" id="parcela-${numeroParcela}">
+
+                <div class="parcela-topo">
+
+                    <div>
+
+                        <div class="parcela-numero">
+
+                            ${numeroParcela}ª parcela
+
+                        </div>
+
+
+                        <div class="text-xs text-slate-500 mt-1">
+
+                            Vencimento:
+
+                            ${dataBR(vencimento)}
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="text-right">
+
+                        <div class="parcela-valor">
+
+                            R$
+                            ${moeda(atrasada ? valorComMulta : valorParcela)}
+
+                        </div>
+
+                        ${
+                            atrasada
+                            ? `
+                                <div class="text-xs text-red-600 mt-1" style="font-weight:700">
+                                    Inclui multa de 2% + mora
+                                    (${diasAtraso} dia${diasAtraso === 1 ? '' : 's'} de atraso)
+                                </div>
+                            `
+                            : ''
+                        }
+
+
+                        <div class="mt-1">
+
+                            ${statusHTML}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="parcela-detalhes">
+
+                    <div class="parcela-info">
+
+                        <small>
+                            Parcela
+                        </small>
+
+                        <strong>
+
+                            ${numeroParcela}
+                            de
+                            ${quantidade}
+
+                        </strong>
+
+                    </div>
+
+
+                    <div class="parcela-info">
+
+                        <small>
+                            Vencimento
+                        </small>
+
+                        <strong>
+
+                            ${dataBR(vencimento)}
+
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                ${
+                    !paga
+
+                    ? `
+
+                        <button
+                            onclick="gerarPixParcela(
+                                ${Number(
+                                    (atrasada ? valorComMulta : valorParcela).toFixed(2)
+                                )},
+                                ${numeroParcela}
+                            )"
+                            class="btn btn-pix"
+                        >
+
+                            <i class="fas fa-qrcode"></i>
+
+                            Gerar Pix para pagar
+
+                        </button>
+
+
+                        <div
+                            id="pixParcela${numeroParcela}"
+                            class="hidden"
+                        ></div>
+
+                    `
+
+                    : `
+
+                        <div class="info info-green mb-0">
+
+                            <i class="fas fa-circle-check"></i>
+
+                            Esta parcela já está registrada
+                            como paga.
+
+                        </div>
+
+                    `
+                }
+
+            </div>
+
+        `;
+
+        if(paga){
+            htmlPagas += blocoParcela;
+        } else {
+            html += blocoParcela;
+        }
+    }
+
+
+    html += `
+
+        </div>
+
+    `;
+
+    if(htmlPagas){
+        html += `
+            <div class="card" style="margin-top:16px">
+                <details>
+                    <summary style="cursor:pointer;font-weight:800;color:#0A2463;font-size:15px;list-style:none;display:flex;align-items:center;gap:8px">
+                        <i class="fas fa-check-circle" style="color:#10B981"></i>
+                        Parcelas já pagas
+                    </summary>
+                    <div style="margin-top:10px">
+                        ${htmlPagas}
+                    </div>
+                </details>
+            </div>
+        `;
+    }
+
+    return html;
+}
+
+/* ============================================================
+   PWA — INSTALAR COMO APP + AVISO DE VENCIMENTO PRÓXIMO
+============================================================ */
+
+if('serviceWorker' in navigator){
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw-cliente.js').catch(e => console.warn('Service worker não registrado:', e));
+    });
+}
+
+let eventoInstalarPWACliente = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    eventoInstalarPWACliente = e;
+});
+
+function instalarAppCliente(){
+    if(eventoInstalarPWACliente){
+        eventoInstalarPWACliente.prompt();
+        eventoInstalarPWACliente.userChoice.then(() => { eventoInstalarPWACliente = null; });
+        return;
+    }
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(7,27,77,.75);display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML = `
+        <div style="background:#fff;border-radius:20px;padding:26px 22px;max-width:360px;width:100%">
+            <div style="font-size:17px;font-weight:900;color:#0A2463;margin-bottom:14px">📲 Como instalar o app</div>
+            <div style="font-size:13.5px;color:#334155;line-height:1.6;margin-bottom:14px">
+                <strong>No Android (Chrome):</strong><br>
+                Toca nos <strong>três pontinhos (⋮)</strong> → toque em <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>.
+            </div>
+            <div style="font-size:13.5px;color:#334155;line-height:1.6;margin-bottom:18px">
+                <strong>No iPhone (Safari):</strong><br>
+                Toca no ícone de <strong>compartilhar</strong> → <strong>"Adicionar à Tela de Início"</strong>.
+            </div>
+            <button type="button" onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;padding:13px;border:none;border-radius:12px;background:#0A2463;color:#fff;font-weight:800;font-size:14px;cursor:pointer">Entendi</button>
+        </div>
+    `;
+    modal.addEventListener('click', e => { if(e.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
+}
+
+window.addEventListener('appinstalled', () => {
+    const botao = document.getElementById('botaoInstalarAppCliente');
+    if(botao) botao.style.display = 'none';
+});
+
+function pedirPermissaoNotificacaoCliente(){
+    if(!('Notification' in window)) return Promise.resolve('unsupported');
+    if(Notification.permission === 'default'){
+        return Notification.requestPermission();
+    }
+    return Promise.resolve(Notification.permission);
+}
+
+function urlBase64ParaUint8Array(base64String){
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+}
+
+// Inscreve o dispositivo pra receber notificação push de verdade — chega
+// mesmo com o app fechado (vencimento de parcela, entrada confirmada etc).
+// Só inscreve uma vez por dispositivo (evita repetir a cada visita).
+function mostrarConvitePushCliente(cpf){
+    const el = document.getElementById('convitePushCliente');
+    if(!el) return;
+    el.dataset.cpf = cpf;
+    el.style.display = 'flex';
+}
+
+async function ativarNotificacaoCliente(){
+    const el = document.getElementById('convitePushCliente');
+    const cpf = el?.dataset?.cpf;
+
+    await pedirPermissaoNotificacaoCliente();
+
+    setTimeout(async () => {
+        await inscreverPushCliente(cpf, true);
+        if(el && Notification.permission === 'granted') el.style.display = 'none';
+    }, 300);
+}
+
+async function inscreverPushCliente(cpf, modoDiagnostico){
+    try{
+        if(!cpf){
+            if(modoDiagnostico) alert('❌ CPF não identificado nesta tela.');
+            return;
+        }
+        if(!('serviceWorker' in navigator) || !('PushManager' in window)){
+            if(modoDiagnostico) alert('❌ Esse navegador não suporta notificações push.');
+            return;
+        }
+        if(Notification.permission !== 'granted'){
+            if(modoDiagnostico) alert('❌ Permissão de notificação não está concedida (status: ' + Notification.permission + '). Permita notificações para este site/app.');
+            return;
+        }
+        if(!modoDiagnostico && localStorage.getItem('flashcred_push_inscrito_' + cpf)) return;
+
+        const registration = await navigator.serviceWorker.ready;
+
+        let subscription = await registration.pushManager.getSubscription();
+        if(!subscription){
+            const resp = await fetch('/api/push/chave-publica');
+            const { chave } = await resp.json();
+            if(!chave){
+                if(modoDiagnostico) alert('❌ O servidor não retornou a chave pública (VAPID).');
+                return;
+            }
+
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ParaUint8Array(chave)
+            });
+        }
+
+        const respRegistrar = await fetch('/api/push/registrar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ papel: 'cliente', referencia: cpf, subscription })
+        });
+
+        const resultado = await respRegistrar.json().catch(() => null);
+
+        if(!respRegistrar.ok || (resultado && resultado.sucesso === false)){
+            if(modoDiagnostico) alert('❌ O servidor recusou o cadastro: ' + (resultado?.mensagem || respRegistrar.status));
+            return;
+        }
+
+        localStorage.setItem('flashcred_push_inscrito_' + cpf, '1');
+        if(modoDiagnostico) alert('✅ Inscrito com sucesso! Notificações push devem chegar a partir de agora.');
+
+    }catch(e){
+        console.warn('Não foi possível inscrever notificações push:', e);
+        if(modoDiagnostico) alert('❌ Erro ao inscrever: ' + (e.message || e));
+    }
+}
+
+</script>
+
+<button
+    id="botaoInstalarAppCliente"
+    onclick="instalarAppCliente()"
+    style="display:flex;position:fixed;bottom:20px;right:20px;z-index:9999;align-items:center;gap:8px;background:linear-gradient(135deg,#0A2463,#0F8B8D);color:#fff;border:none;border-radius:999px;padding:14px 20px;font-weight:800;font-size:14px;box-shadow:0 10px 30px rgba(10,36,99,.35);cursor:pointer"
+>
+    📲 Instalar App
+</button>
+
+<button
+    onclick="inscreverPushCliente(propostaAtual?.cpf, true)"
+    title="Testar notificação"
+    style="display:flex;position:fixed;bottom:82px;right:24px;z-index:9999;align-items:center;justify-content:center;width:36px;height:36px;background:rgba(124,58,237,.85);color:#fff;border:none;border-radius:50%;font-size:15px;box-shadow:0 6px 16px rgba(124,58,237,.3);cursor:pointer"
+>
+    🔔
+</button>
+
+</body>
+</html>

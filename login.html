@@ -1,0 +1,60 @@
+<!-- 🔒 TELA DE LOGIN - CORRIGIDA -->
+<div id="telaLogin" class="area-login">
+    <div class="card w-full max-w-md">
+        <h2 class="text-xl font-bold text-center text-primary mb-6">🔐 Acesso Administrativo</h2>
+        <label class="font-medium">Senha de Acesso</label>
+        <input type="password" id="senhaAdmin" class="input" placeholder="Digite sua senha" maxlength="20" onkeydown="if(event.key === 'Enter') fazerLogin()">
+        <div id="erroLogin" class="text-red-500 text-sm mt-2 mb-4 hidden text-center">Senha incorreta! Tente novamente.</div>
+        <button class="btn btn-primary" onclick="fazerLogin()">Entrar no Sistema</button>
+    </div>
+</div>
+
+<script>
+// Senha padrão: flashcred2026
+let senhaCorreta = localStorage.getItem('senhaAdmin') || 'flashcred2026';
+
+// Verifica sessão automaticamente ao abrir
+document.addEventListener('DOMContentLoaded', () => {
+    if (sessionStorage.getItem('logado') === 'sim') {
+        document.getElementById('telaLogin').classList.add('hidden');
+        document.getElementById('painel').classList.remove('hidden');
+        carregarPropostas();
+        iniciarTempoReal();
+    }
+});
+
+function fazerLogin() {
+    const senha = document.getElementById('senhaAdmin').value.trim();
+    if (senha === senhaCorreta) {
+        sessionStorage.setItem('logado', 'sim');
+        document.getElementById('erroLogin').classList.add('hidden');
+        document.getElementById('telaLogin').classList.add('hidden');
+        document.getElementById('painel').classList.remove('hidden');
+        carregarPropostas();
+        iniciarTempoReal();
+    } else {
+        document.getElementById('erroLogin').classList.remove('hidden');
+        document.getElementById('senhaAdmin').value = '';
+        document.getElementById('senhaAdmin').focus();
+    }
+}
+
+function sairDoSistema() {
+    sessionStorage.removeItem('logado');
+    document.getElementById('painel').classList.add('hidden');
+    document.getElementById('telaLogin').classList.remove('hidden');
+    document.getElementById('senhaAdmin').value = '';
+}
+
+function alterarSenhaAdmin() {
+    const atual = prompt('Digite a senha atual:');
+    if (atual !== senhaCorreta) return alert('Senha atual incorreta!');
+    
+    const nova = prompt('Digite a nova senha (mínimo 4 caracteres):');
+    if (!nova || nova.length < 4) return alert('Nova senha inválida!');
+    
+    senhaCorreta = nova;
+    localStorage.setItem('senhaAdmin', nova);
+    alert('✅ Senha alterada com sucesso!');
+}
+</script>

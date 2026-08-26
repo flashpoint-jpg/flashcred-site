@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nossa Loja | FlashCred</title>
+<link rel="manifest" href="manifest-cliente.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0A2463">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FlashCred">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.1"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:Inter,system-ui,-apple-system,sans-serif;background:radial-gradient(circle at 8% 8%,rgba(37,99,235,.10),transparent 28%),radial-gradient(circle at 92% 22%,rgba(16,185,129,.09),transparent 25%),linear-gradient(180deg,#f8fbff 0%,#f8fafc 55%,#eef4fb 100%);color:#1e293b;line-height:1.6}
+nav{background:rgba(255,255,255,.88);backdrop-filter:blur(18px);border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:50;box-shadow:0 8px 30px rgba(7,27,77,.07)}
+nav>div{min-height:72px;display:flex;align-items:center;justify-content:space-between;gap:14px;max-width:1200px;margin:0 auto;padding:14px 16px;flex-wrap:wrap}
+.logo-nome{font-weight:900;font-size:20px;color:#0A2463;text-decoration:none}
+.nav-link{font-weight:700;font-size:13px;color:#334155;text-decoration:none;background:#f1f5f9;border:1px solid #e2e8f0;padding:9px 16px;border-radius:999px}
+.card{background:#fff;border:1px solid #E2E8F0;border-radius:18px;padding:20px;box-shadow:0 6px 20px rgba(10,36,99,.06)}
+.vitrine-card{background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden;box-shadow:0 4px 14px rgba(10,36,99,.06);transition:.25s}
+.vitrine-card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(15,139,141,.16);border-color:#0F8B8D}
+.vitrine-card img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:#F1F5F9}
+.vitrine-info{padding:12px 14px}
+.vitrine-nome{font-size:13px;font-weight:700;color:#1E293B;line-height:1.35;margin-bottom:6px;min-height:35px}
+.vitrine-preco{font-size:16px;font-weight:900;color:#0A2463;margin-bottom:8px}
+.vitrine-controle{display:flex;align-items:center;justify-content:space-between;background:#F8FAFC;border-radius:999px;padding:5px 10px}
+.vitrine-controle button{width:28px;height:28px;border:none;border-radius:50%;font-weight:900;cursor:pointer}
+.secao-titulo{font-size:20px;font-weight:800;color:#0A2463;margin:34px 0 4px}
+.secao-sub{color:#64748B;font-size:13.5px;margin-bottom:18px}
+</style>
+</head>
+<body class="min-h-screen">
+
+<nav>
+  <div>
+    <a href="index.html" class="logo-nome">FlashCred</a>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a href="index.html" class="nav-link">← Início</a>
+      <a href="consultar.html" class="nav-link">Acompanhar Proposta</a>
+    </div>
+  </div>
+</nav>
+
+<div style="max-width:1200px;margin:0 auto;padding:24px 16px 60px">
+
+  <div class="card" style="margin-bottom:24px">
+    <h1 style="font-size:22px;font-weight:900;color:#0A2463;margin-bottom:6px">🛋️ Nossa Loja</h1>
+    <p style="color:#64748B;font-size:14px;margin-bottom:18px">Navegue por todos os nossos móveis. Se você já tem uma proposta aprovada, digite seu CPF abaixo pra liberar a compra dentro do seu limite.</p>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <input id="cpfInput" type="text" inputmode="numeric" placeholder="Digite seu CPF" maxlength="14"
+        style="flex:1;min-width:220px;padding:13px 16px;border:1.5px solid #E2E8F0;border-radius:12px;font-size:15px">
+      <button onclick="verificarCpfLoja()" id="btnVerificarCpf"
+        style="background:linear-gradient(135deg,#0A2463,#0F8B8D);color:#fff;border:none;border-radius:12px;padding:13px 22px;font-weight:800;font-size:14px;cursor:pointer">
+        Verificar CPF
+      </button>
+    </div>
+
+    <div id="areaResultadoCpf" style="margin-top:16px"></div>
+  </div>
+
+  <div class="card" style="background:#FFFBEB;border:1px solid #FDE68A;margin-bottom:24px">
+    <div style="display:flex;align-items:flex-start;gap:10px">
+      <span style="font-size:20px">🎨</span>
+      <div>
+        <div style="font-weight:800;color:#92400E;font-size:14px;margin-bottom:4px">As fotos são ilustrativas — a cor final é combinada à parte</div>
+        <p style="font-size:13px;color:#92400E;line-height:1.5;margin-bottom:10px">Aqui você escolhe o modelo e o valor. A cor específica do móvel é combinada direto com o atendente depois. Ficou com dúvida sobre cores disponíveis?</p>
+        <a href="https://wa.me/5511973294235" target="_blank" rel="noopener"
+          style="display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;border-radius:10px;padding:9px 16px;font-weight:800;font-size:13px;text-decoration:none">
+          📲 Falar com o atendente
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="secao-titulo">🛋️ Móveis Completos</div>
+  <div class="secao-sub">Guarda-roupas, cômodas, multiuso e aparadores</div>
+  <div id="gridMoveisCompletos" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+
+  <div class="secao-titulo">🍽️ Kits de Cozinha Avulsos</div>
+  <div class="secao-sub">Armários compactos prontos, ideais pra cozinhas pequenas</div>
+  <div id="gridModulos" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+
+  <div id="containerSecoesQD"></div>
+
+</div>
+
+<script>
+const SUPABASE_URL='https://rgcclordmqjmwuzrrfbd.supabase.co';
+const SUPABASE_KEY='sb_publishable_g5Tcimge2aiMX8JE3ml1dg_6zbR3uXi';
+let supabase=null;
+
+function inicializarSupabase(){
+  if(supabase) return supabase;
+  try{
+    if(window.supabase && window.supabase.createClient){
+      supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    }
+  }catch(e){console.error('Erro ao iniciar Supabase:',e)}
+  return supabase;
+}
+
+// Tenta iniciar assim que o script roda (não espera imagens carregarem, como o evento 'load' faria)
+inicializarSupabase();
+// Fallback: se a biblioteca ainda não chegou (conexão lenta), tenta de novo por alguns segundos
+let tentativasSupabase=0;
+const intervaloSupabase=setInterval(()=>{
+  tentativasSupabase++;
+  if(inicializarSupabase() || tentativasSupabase>20) clearInterval(intervaloSupabase);
+},300);
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const params = new URLSearchParams(location.search);
+  const cpfUrl = params.get('cpf');
+  if(cpfUrl){
+    document.getElementById('cpfInput').value = cpfUrl;
+    verificarCpfLoja();
+  }
+});
+
+function moeda(v){ return Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+const CATALOGO_MOVEIS = [
+    {slug:'gr-canada', nome:'Guarda-Roupa Canadá 6 Portas 8 Gavetas', preco:2126.70},
+    {slug:'gr-dubai', nome:'Guarda-Roupa Dubai 8 Portas 4 Gavetas', preco:1390.00},
+    {slug:'guarda-roupa-230', nome:'Guarda-Roupa 230 (6 Portas 2 Gavetas Internas)', preco:1413.63},
+    {slug:'guarda-roupa-0240', nome:'Guarda-Roupa 0240 (4 Portas 2 Gavetas)', preco:1023.04},
+    {slug:'gr-napole', nome:'Guarda-Roupa Nápole 8 Portas 4 Gavetas', preco:1401.12},
+    {slug:'gr-monaco', nome:'Guarda-Roupa Mônaco 10 Portas 3 Gavetas', preco:1013.31},
+    {slug:'gr-07-portas', nome:'Guarda-Roupa 07 Portas 2 Gavetas', preco:746.43},
+    {slug:'gr-paris', nome:'Guarda-Roupa Paris', preco:904.89},
+    {slug:'gr-coimbra', nome:'Guarda-Roupa Coimbra 6 Portas 2 Gavetas', preco:668.59},
+    {slug:'gr-marrocos', nome:'Guarda-Roupa Marrocos 6 Portas 6 Gavetas', preco:1034.16},
+    {slug:'gr-04-portas', nome:'Guarda-Roupa 04 Portas 2 Gavetas', preco:494.84},
+    {slug:'gr-03-portas', nome:'Guarda-Roupa 03 Portas 2 Gavetas', preco:422.56},
+    {slug:'comoda-sevilha', nome:'Cômoda Sevilha com Porta-Joias', preco:671.37},
+    {slug:'comoda-05-gavetas', nome:'Cômoda 05 Gavetas', preco:315.53},
+    {slug:'comoda-milao', nome:'Cômoda Milão', preco:394.76},
+    {slug:'comoda-08-gavetas', nome:'Cômoda 08 Gavetas', preco:594.92},
+    {slug:'comoda-londres', nome:'Cômoda Londres', preco:482.33},
+    {slug:'multiuso-04-portas', nome:'Multiuso 04 Portas', preco:512.91},
+    {slug:'multiuso-02-portas', nome:'Multiuso 02 Portas', preco:326.65},
+    {slug:'aparador', nome:'Aparador 04 Portas', preco:254.37},
+];
+
+const CATALOGO_MODULOS = [
+    {slug:'kit-roma', nome:'Kit Cozinha Roma', preco:380.86},
+    {slug:'kit-04-portas-correr', nome:'Kit 04 Portas (02 de Correr) 01 Gaveta', preco:353.06},
+    {slug:'kit-berlim', nome:'Kit Cozinha Berlim', preco:489.28},
+    {slug:'kit-cleo-8-portas', nome:'Kit Cleo 08 Portas', preco:489.28},
+    {slug:'kit-04-portas-1210', nome:'Kit 04 Portas 01 Gaveta (1,21m)', preco:446.19},
+    {slug:'kit-siena', nome:'Kit Cozinha Siena', preco:636.62},
+    {slug:'kit-selena', nome:'Kit Cozinha Selena', preco:742.26},
+    {slug:'kit-camila', nome:'Kit Cozinha Camila', preco:786.74},
+    {slug:'kit-mega', nome:'Kit Cozinha Mega', preco:902.11},
+    {slug:'balcao-denver', nome:'Balcão Denver', preco:173.75},
+    {slug:'fruteira', nome:'Fruteira 02 Portas 01 Gaveta', preco:275.22},
+];
+
+// ==== Catálogo Quarta Divisão (tabela 289, valor final + 39%) ====
+const CATALOGO_QD_GUARDA_ROUPAS = [
+    {slug:'qd-gr-capri-2p-correr-6-gav', nome:'GR Capri 2P Correr 6 Gav', preco:746.43},
+    {slug:'qd-gr-capri-2p-correr-6-gav-c-esp', nome:'GR Capri 2P Correr 6 Gav C/Esp', preco:806.20},
+    {slug:'qd-gr-capri-3p-correr-9-gav', nome:'GR Capri 3P Correr 9 Gav', preco:1041.11},
+    {slug:'qd-gr-capri-3p-correr-9-gav-c-esp', nome:'GR Capri 3P Correr 9 Gav C/Esp', preco:1105.05},
+    {slug:'qd-gr-kioto-3p', nome:'GR Kioto 3P', preco:514.30},
+    {slug:'qd-gr-kioto-4p', nome:'GR Kioto 4P', preco:644.96},
+    {slug:'qd-gr-kioto-6p', nome:'GR Kioto 6P', preco:834.00},
+    {slug:'qd-gr-lisboa-4p', nome:'GR Lisboa 4P', preco:701.95},
+    {slug:'qd-gr-lisboa-6p', nome:'GR Lisboa 6P', preco:1009.14},
+    {slug:'qd-gr-lisboa-8p', nome:'GR Lisboa 8P', preco:1295.48},
+    {slug:'qd-gr-paris-3p-2-gav', nome:'GR Paris 3P 2 Gav', preco:950.76},
+    {slug:'qd-gr-paris-3p-2-gav-c-esp', nome:'GR Paris 3P 2 Gav C/Esp', preco:1067.52},
+    {slug:'qd-gr-roma-2p', nome:'GR Roma 2P', preco:682.49},
+    {slug:'qd-gr-roma-2p-c-esp', nome:'GR Roma 2P C/Esp', preco:799.25},
+    {slug:'qd-gr-sevilha-3p-correr', nome:'GR Sevilha 3P Correr', preco:1862.60},
+    {slug:'qd-gr-sevilha-3p-correr-c-esp', nome:'GR Sevilha 3P Correr C/Esp', preco:2026.62},
+    {slug:'qd-gr-sevilha-3p-correr-c-esp-nas-3-portas', nome:'GR Sevilha 3P Correr C/Esp nas 3 Portas', preco:2406.09},
+    {slug:'qd-gr-valencia-6p-6-gav', nome:'GR Valência 6P 6 Gav', preco:1608.23},
+    {slug:'qd-gr-valencia-6p-6-gav-c-esp', nome:'GR Valência 6P 6 Gav C/Esp', preco:1781.98},
+    {slug:'qd-gr-valencia-6p-6-gav-c-vidro-reflecta', nome:'GR Valência 6P 6 Gav C/Vidro Reflecta', preco:2564.55},
+];
+
+const CATALOGO_QD_COMODAS = [
+    {slug:'qd-comoda-flavia-4-gav', nome:'Cômoda Flávia 4 Gav', preco:239.08},
+    {slug:'qd-comoda-gisele-4-gav-2p', nome:'Cômoda Gisele 4 Gav 2P', preco:379.47},
+    {slug:'qd-comoda-helena-6-gav', nome:'Cômoda Helena 6 Gav', preco:326.65},
+    {slug:'qd-comoda-isabele-5-gav-2p', nome:'Cômoda Isabele 5 Gav 2P', preco:524.03},
+    {slug:'qd-comoda-laura-4-gav-1p', nome:'Cômoda Laura 4 Gav 1P', preco:323.87},
+    {slug:'qd-comoda-mariah-4-gav-2p', nome:'Cômoda Mariah 4 Gav 2P', preco:476.77},
+    {slug:'qd-comoda-monique-8-gav', nome:'Cômoda Monique 8 Gav', preco:539.32},
+    {slug:'qd-comoda-raissa-8-gav', nome:'Cômoda Raíssa 8 Gav', preco:423.95},
+];
+
+const CATALOGO_QD_MULTIUSO_SAPATEIRAS = [
+    {slug:'qd-multiuso-manuela-2p-1-80m', nome:'Multiuso Manuela 2P 1,80m', preco:373.91},
+    {slug:'qd-multiuso-marcela-2p-1-40m', nome:'Multiuso Marcela 2P 1,40m', preco:304.41},
+    {slug:'qd-multiuso-michele-2p-1-10m', nome:'Multiuso Michele 2P 1,10m', preco:258.54},
+    {slug:'qd-multiuso-miriam', nome:'Multiuso Miriam', preco:315.53},
+    {slug:'qd-sapateira-safira-2p', nome:'Sapateira Safira 2P', preco:172.36},
+    {slug:'qd-sapateira-safira-3p', nome:'Sapateira Safira 3P', preco:233.52},
+    {slug:'qd-sapateira-safira-4p', nome:'Sapateira Safira 4P', preco:296.07},
+];
+
+const CATALOGO_QD_CABECEIRA = [
+    {slug:'qd-criado-mudo-bruna', nome:'Criado Mudo Bruna', preco:120.93},
+];
+
+const CATALOGO_QD_MODULOS_COZINHA = [
+    {slug:'qd-aereo-basculante-2p', nome:'Aéreo Basculante 2P', preco:301.63},
+    {slug:'qd-aereo-basculante-c-vidro', nome:'Aéreo Basculante C/Vidro', preco:425.34},
+    {slug:'qd-aereo-geladeira-700mm', nome:'Aéreo Geladeira 700mm', preco:126.49},
+    {slug:'qd-balcao-duplo-2p-2-gav', nome:'Balcão Duplo 2P 2 Gav', preco:421.17},
+    {slug:'qd-balcao-triplo-s-tampo', nome:'Balcão Triplo S/Tampo', preco:394.76},
+    {slug:'qd-paneleiro-cozinha-compacta', nome:'Paneleiro Cozinha Compacta', preco:383.64},
+    {slug:'qd-paneleiro-duplo-2100mm', nome:'Paneleiro Duplo 2100mm', preco:610.21},
+    {slug:'qd-tampo-25mm-p-balcao', nome:'Tampo 25mm p/Balcão', preco:104.25},
+];
+
+const CATALOGO_QD_COZINHAS_MODULADAS = [
+    {slug:'qd-cozinha-cristal', nome:'Cozinha Cristal', preco:1659.66},
+    {slug:'qd-cozinha-estrela', nome:'Cozinha Estrela', preco:753.38},
+    {slug:'qd-cozinha-girassol', nome:'Cozinha Girassol', preco:1355.25},
+    {slug:'qd-cozinha-lua', nome:'Cozinha Lua', preco:576.85},
+    {slug:'qd-cozinha-perola', nome:'Cozinha Pérola', preco:1307.99},
+    {slug:'qd-cozinha-rubi', nome:'Cozinha Rubi', preco:1455.33},
+    {slug:'qd-cozinha-sol', nome:'Cozinha Sol', preco:429.51},
+];
+
+const CATALOGO_QD_GABINETES = [
+    {slug:'qd-gabinete-gemeos-1m', nome:'Gabinete Gêmeos 1m', preco:287.73},
+    {slug:'qd-gabinete-gemeos-1-20m', nome:'Gabinete Gêmeos 1,20m', preco:340.55},
+    {slug:'qd-gabinete-gemeos-1-50m', nome:'Gabinete Gêmeos 1,50m', preco:404.49},
+    {slug:'qd-gabinete-gemeos-1-80m', nome:'Gabinete Gêmeos 1,80m', preco:458.70},
+    {slug:'qd-gabinete-gemeos-2m', nome:'Gabinete Gêmeos 2m', preco:483.72},
+    {slug:'qd-gabinete-libra-1-20m', nome:'Gabinete Libra 1,20m', preco:357.23},
+    {slug:'qd-gabinete-libra-1-50m', nome:'Gabinete Libra 1,50m', preco:428.12},
+    {slug:'qd-gabinete-libra-1-80m', nome:'Gabinete Libra 1,80m', preco:482.33},
+];
+
+const CATALOGO_QD_FRUTEIRAS_LAVANDERIAS = [
+    {slug:'qd-aereo-duplo-lavanderia-1-20m', nome:'Aéreo Duplo Lavanderia 1,20m', preco:301.63},
+    {slug:'qd-aereo-lavanderia-70cm', nome:'Aéreo Lavanderia 70cm', preco:126.49},
+    {slug:'qd-balcao-bianca-1p-1-gav', nome:'Balcão Bianca 1P 1 Gav', preco:170.97},
+    {slug:'qd-balcao-lavanderia-duplo-1-20m', nome:'Balcão Lavanderia Duplo 1,20m', preco:421.17},
+    {slug:'qd-fruteira-isis-2p-1-gav', nome:'Fruteira Isis 2P 1 Gav', preco:300.24},
+    {slug:'qd-fruteira-natasha-1p-1-gav', nome:'Fruteira Natasha 1P 1 Gav', preco:272.44},
+    {slug:'qd-fruteira-talita-1-gav', nome:'Fruteira Talita 1 Gav', preco:182.09},
+    {slug:'qd-lavanderia-sheila', nome:'Lavanderia Sheila', preco:350.28},
+];
+
+const CATALOGO_QD_ARMARIO_ESCRITORIO = [
+    {slug:'qd-armario-de-escritorio-michele', nome:'Armário de Escritório Michele', preco:258.54},
+    {slug:'qd-armario-de-escritorio-marcela', nome:'Armário de Escritório Marcela', preco:262.71},
+    {slug:'qd-armario-de-escritorio-manuela', nome:'Armário de Escritório Manuela', preco:373.91},
+    {slug:'qd-armario-de-escritorio-melissa', nome:'Armário de Escritório Melissa', preco:610.21},
+];
+
+const CATALOGO_QD_MESA_PRATELEIRA = [
+    {slug:'qd-kit-3-prateleiras-545x195x15', nome:'Kit 3 Prateleiras 545x195x15', preco:77.84},
+    {slug:'qd-kit-3-prateleiras-915x195x15', nome:'Kit 3 Prateleiras 915x195x15', preco:111.20},
+    {slug:'qd-kit-3-prateleiras-1095x195x15', nome:'Kit 3 Prateleiras 1095x195x15', preco:130.66},
+    {slug:'qd-mesa-dobravel-900x385x15', nome:'Mesa Dobrável 900x385x15', preco:127.88},
+    {slug:'qd-mesa-dobravel-900x450x15', nome:'Mesa Dobrável 900x450x15', preco:137.61},
+];
+
+// Seções paginadas: cada uma mostra poucos itens por vez, com botão "Próxima"
+const SECOES_QD = [
+    {key:'qdGuardaRoupas', titulo:'🚪 Guarda-Roupas', sub:'Linha completa Quarta Divisão', catalogo: CATALOGO_QD_GUARDA_ROUPAS},
+    {key:'qdComodas', titulo:'🗄️ Cômodas', sub:'Cômodas para quarto', catalogo: CATALOGO_QD_COMODAS},
+    {key:'qdMultiuso', titulo:'👞 Multiuso e Sapateiras', sub:'Organização e entrada de casa', catalogo: CATALOGO_QD_MULTIUSO_SAPATEIRAS},
+    {key:'qdCabeceira', titulo:'🛏️ Cabeceira e Criado-Mudo', sub:'Complementos de quarto', catalogo: CATALOGO_QD_CABECEIRA},
+    {key:'qdModulosCozinha', titulo:'🍳 Módulos de Cozinha Avulsos', sub:'Aéreos, balcões e paneleiros', catalogo: CATALOGO_QD_MODULOS_COZINHA},
+    {key:'qdCozinhasModuladas', titulo:'🍽️ Cozinhas Moduladas', sub:'Conjuntos completos de cozinha', catalogo: CATALOGO_QD_COZINHAS_MODULADAS},
+    {key:'qdGabinetes', titulo:'🚰 Gabinetes', sub:'Gabinetes para pia', catalogo: CATALOGO_QD_GABINETES},
+    {key:'qdFruteiras', titulo:'🧺 Fruteiras e Lavanderia', sub:'Área de serviço e fruteiras', catalogo: CATALOGO_QD_FRUTEIRAS_LAVANDERIAS},
+    {key:'qdEscritorio', titulo:'🗂️ Armário de Escritório', sub:'Organização para home office', catalogo: CATALOGO_QD_ARMARIO_ESCRITORIO},
+    {key:'qdMesaPrateleira', titulo:'📐 Mesas e Prateleiras', sub:'Soluções dobráveis e de parede', catalogo: CATALOGO_QD_MESA_PRATELEIRA},
+];
+
+const paginacaoQD = {};
+
+const CATALOGO_PRODUTOS = [
+    ...CATALOGO_MOVEIS, ...CATALOGO_MODULOS,
+    ...CATALOGO_QD_GUARDA_ROUPAS, ...CATALOGO_QD_COMODAS, ...CATALOGO_QD_MULTIUSO_SAPATEIRAS,
+    ...CATALOGO_QD_CABECEIRA, ...CATALOGO_QD_MODULOS_COZINHA, ...CATALOGO_QD_COZINHAS_MODULADAS,
+    ...CATALOGO_QD_GABINETES, ...CATALOGO_QD_FRUTEIRAS_LAVANDERIAS, ...CATALOGO_QD_ARMARIO_ESCRITORIO,
+    ...CATALOGO_QD_MESA_PRATELEIRA,
+];
+
+let carrinhoLoja = {};
+let propostaLiberada = null; // {id, nome, cpf, valorAprovado}
+
+function montarGrids(){
+    const gridMoveis = document.getElementById('gridMoveisCompletos');
+    const gridModulos = document.getElementById('gridModulos');
+
+    gridMoveis.innerHTML = CATALOGO_MOVEIS.map(prod => cartaoProdutoHTML(prod)).join('');
+    gridModulos.innerHTML = CATALOGO_MODULOS.map(prod => cartaoProdutoHTML(prod)).join('');
+}
+
+const ITENS_POR_PAGINA_QD = 6;
+
+function montarSecoesQD(){
+    const container = document.getElementById('containerSecoesQD');
+    container.innerHTML = SECOES_QD.map(secao => `
+        <div class="secao-titulo">${secao.titulo}</div>
+        <div class="secao-sub">${secao.sub}</div>
+        <div id="grid_${secao.key}" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+        <div style="text-align:center;margin-top:14px">
+            <button type="button" id="btnProxima_${secao.key}" onclick="proximaPaginaQD('${secao.key}')"
+                style="background:#F1F5F9;border:1px solid #E2E8F0;color:#0A2463;border-radius:999px;padding:10px 22px;font-weight:800;font-size:13px;cursor:pointer">
+                Próxima →
+            </button>
+        </div>
+    `).join('');
+
+    SECOES_QD.forEach(secao => {
+        paginacaoQD[secao.key] = { mostrando: ITENS_POR_PAGINA_QD };
+        renderizarPaginaQD(secao.key);
+    });
+}
+
+function renderizarPaginaQD(key){
+    const secao = SECOES_QD.find(s => s.key === key);
+    const grid = document.getElementById('grid_' + key);
+    const btn = document.getElementById('btnProxima_' + key);
+    const mostrando = paginacaoQD[key].mostrando;
+
+    grid.innerHTML = secao.catalogo.slice(0, mostrando).map(prod => cartaoProdutoHTML(prod)).join('');
+    atualizarBotoesCarrinho();
+
+    if(mostrando >= secao.catalogo.length){
+        btn.style.display = 'none';
+    }else{
+        btn.style.display = 'inline-block';
+    }
+}
+
+function proximaPaginaQD(key){
+    paginacaoQD[key].mostrando += ITENS_POR_PAGINA_QD;
+    renderizarPaginaQD(key);
+}
+
+function cartaoProdutoHTML(prod){
+    return `
+        <div class="vitrine-card">
+            <img src="/${prod.slug}.jpg" alt="${prod.nome}">
+            <div class="vitrine-info">
+                <div class="vitrine-nome">${prod.nome}</div>
+                <div class="vitrine-preco">R$ ${moeda(prod.preco)}</div>
+                <div class="vitrine-controle">
+                    <button type="button" onclick="removerProdutoLoja('${prod.slug}')" style="background:#E2E8F0;color:#1E293B">−</button>
+                    <span id="lojaQtd_${prod.slug}" style="font-weight:800;font-size:13px">0</span>
+                    <button type="button" id="lojaMais_${prod.slug}" onclick="adicionarProdutoLoja('${prod.slug}')" style="background:#0A2463;color:#fff" disabled>+</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function verificarCpfLoja(){
+    const cpfDigitado = document.getElementById('cpfInput').value.replace(/\D/g,'');
+    const area = document.getElementById('areaResultadoCpf');
+    const btn = document.getElementById('btnVerificarCpf');
+
+    if(cpfDigitado.length !== 11){
+        area.innerHTML = `<div style="background:#FEF2F2;color:#B91C1C;padding:12px 16px;border-radius:12px;font-size:13.5px;font-weight:700">Digite um CPF válido (11 números).</div>`;
+        return;
+    }
+
+    if(!inicializarSupabase()){
+        area.innerHTML = `<div style="background:#FFFBEB;color:#92400E;padding:12px 16px;border-radius:12px;font-size:13.5px;font-weight:700">Ainda carregando o sistema... aguarde alguns segundos e toque em "Verificar CPF" de novo.</div>`;
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Verificando...';
+
+    try{
+        const { data, error } = await supabase
+            .from('propostas')
+            .select('id,nome,cpf,status,valor_desejado,produtos,produtos_confirmados_cliente')
+            .eq('cpf', cpfDigitado)
+            .order('created_at', { ascending: false });
+
+        if(error) throw error;
+
+        const aprovadaSemEscolha = (data || []).find(p => {
+            const status = String(p.status||'').trim().toLowerCase();
+            const aprovado = status === 'aprovada' || status === 'aprovado';
+            const jaEscolheu = Boolean(p.produtos_confirmados_cliente) || (Array.isArray(p.produtos) && p.produtos.length > 0);
+            return aprovado && !jaEscolheu;
+        });
+
+        if(!aprovadaSemEscolha){
+            const temAprovadaComEscolha = (data||[]).some(p => {
+                const status = String(p.status||'').trim().toLowerCase();
+                return status === 'aprovada' || status === 'aprovado';
+            });
+
+            area.innerHTML = temAprovadaComEscolha
+                ? `<div style="background:#FFFBEB;color:#92400E;padding:12px 16px;border-radius:12px;font-size:13.5px;font-weight:700">Esse CPF já concluiu a escolha de móveis em uma proposta aprovada. Continue acompanhando pelo link da sua proposta.</div>`
+                : `<div style="background:#FFFBEB;color:#92400E;padding:12px 16px;border-radius:12px;font-size:13.5px;font-weight:700">Não encontramos nenhuma proposta aprovada com esse CPF ainda. Você pode navegar pela loja, mas só é possível comprar depois que sua proposta for aprovada. <a href="index.html" style="color:#0A2463;text-decoration:underline">Solicitar proposta</a></div>`;
+            propostaLiberada = null;
+            atualizarBotoesCarrinho();
+            return;
+        }
+
+        propostaLiberada = {
+            id: aprovadaSemEscolha.id,
+            nome: aprovadaSemEscolha.nome,
+            cpf: cpfDigitado,
+            valorAprovado: Number(aprovadaSemEscolha.valor_desejado) || 0
+        };
+
+        carrinhoLoja = {};
+
+        area.innerHTML = `
+            <div style="background:linear-gradient(135deg,#0A2463,#153A80);color:#fff;border-radius:14px;padding:16px">
+                <div style="font-size:12px;font-weight:700;opacity:.8;text-transform:uppercase">Olá, ${propostaLiberada.nome}!</div>
+                <div style="font-size:26px;font-weight:900;margin-bottom:8px">Valor aprovado: R$ ${moeda(propostaLiberada.valorAprovado)}</div>
+                <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:13px;margin-bottom:14px">
+                    <div>Selecionado: <strong id="lojaTotalSelecionado">R$ 0,00</strong></div>
+                    <div>Disponível: <strong id="lojaDisponivel" style="color:#34D399">R$ ${moeda(propostaLiberada.valorAprovado)}</strong></div>
+                </div>
+                <button type="button" id="btnFinalizarLoja" disabled onclick="finalizarSelecaoProdutosLoja()"
+                    style="width:100%;background:#fff;color:#0A2463;border:none;border-radius:10px;padding:13px;font-weight:800;font-size:14px;cursor:pointer">
+                    Continuar com esses produtos
+                </button>
+            </div>
+        `;
+
+        atualizarBotoesCarrinho();
+
+    }catch(e){
+        area.innerHTML = `<div style="background:#FEF2F2;color:#B91C1C;padding:12px 16px;border-radius:12px;font-size:13.5px">Erro ao verificar: ${e.message||e}</div>`;
+    }finally{
+        btn.disabled = false;
+        btn.textContent = 'Verificar CPF';
+    }
+}
+
+function atualizarBotoesCarrinho(){
+    CATALOGO_PRODUTOS.forEach(prod => {
+        const btn = document.getElementById('lojaMais_' + prod.slug);
+        if(!btn) return;
+        if(!propostaLiberada){ btn.disabled = true; return; }
+        const disponivel = propostaLiberada.valorAprovado - totalCarrinhoLoja();
+        btn.disabled = prod.preco > disponivel + 0.009;
+    });
+}
+
+function totalCarrinhoLoja(){
+    return Object.values(carrinhoLoja).reduce((s,i) => s + i.preco*i.qtd, 0);
+}
+
+function adicionarProdutoLoja(slug){
+    if(!propostaLiberada) return;
+    const prod = CATALOGO_PRODUTOS.find(x => x.slug === slug);
+    if(!prod) return;
+
+    const disponivel = propostaLiberada.valorAprovado - totalCarrinhoLoja();
+    if(prod.preco > disponivel + 0.009){ alert('Esse produto ultrapassa o valor aprovado disponível.'); return; }
+
+    if(!carrinhoLoja[slug]) carrinhoLoja[slug] = {slug:slug, nome:prod.nome, preco:prod.preco, qtd:0};
+    carrinhoLoja[slug].qtd++;
+    document.getElementById('lojaQtd_'+slug).textContent = carrinhoLoja[slug].qtd;
+    atualizarResumoLoja();
+}
+
+function removerProdutoLoja(slug){
+    if(!carrinhoLoja[slug] || carrinhoLoja[slug].qtd<=0) return;
+    carrinhoLoja[slug].qtd--;
+    if(carrinhoLoja[slug].qtd<=0) delete carrinhoLoja[slug];
+    const el = document.getElementById('lojaQtd_'+slug);
+    if(el) el.textContent = carrinhoLoja[slug] ? carrinhoLoja[slug].qtd : 0;
+    atualizarResumoLoja();
+}
+
+function atualizarResumoLoja(){
+    if(!propostaLiberada) return;
+    const total = totalCarrinhoLoja();
+    const disponivel = propostaLiberada.valorAprovado - total;
+    const elTotal = document.getElementById('lojaTotalSelecionado');
+    const elDisp = document.getElementById('lojaDisponivel');
+    const btn = document.getElementById('btnFinalizarLoja');
+    if(elTotal) elTotal.textContent = 'R$ ' + moeda(total);
+    if(elDisp){ elDisp.textContent = 'R$ ' + moeda(Math.max(0,disponivel)); elDisp.style.color = disponivel<0 ? '#EF4444' : '#34D399'; }
+    if(btn) btn.disabled = total <= 0;
+    atualizarBotoesCarrinho();
+}
+
+async function finalizarSelecaoProdutosLoja(){
+    if(!propostaLiberada) return;
+    const total = totalCarrinhoLoja();
+    if(total <= 0){ alert('Adicione ao menos um produto antes de continuar.'); return; }
+
+    const produtosArray = Object.values(carrinhoLoja).map(item => ({
+        slug:item.slug, nome:item.nome, cor:null, espelho:null, quantidade:item.qtd, valor:item.preco
+    }));
+
+    try{
+        const { data: propostaAtual, error: erroBusca } = await supabase
+            .from('propostas')
+            .select('valor_desejado,valor_entrada')
+            .eq('id', propostaLiberada.id)
+            .single();
+        if(erroBusca) throw erroBusca;
+
+        const percentualEntradaOriginal = Number(propostaAtual.valor_desejado) > 0
+            ? Number(propostaAtual.valor_entrada) / Number(propostaAtual.valor_desejado)
+            : 0;
+
+        const novaEntrada = Number((total * percentualEntradaOriginal).toFixed(2));
+
+        const { error } = await supabase
+            .from('propostas')
+            .update({
+                produtos: produtosArray,
+                valor_desejado: total,
+                valor_entrada: novaEntrada,
+                produtos_confirmados_cliente: true
+            })
+            .eq('id', propostaLiberada.id);
+
+        if(error) throw error;
+
+        location.href = 'consultar.html?cpf=' + propostaLiberada.cpf;
+
+    }catch(e){
+        alert('Erro ao salvar sua seleção: ' + (e.message||e));
+    }
+}
+
+montarGrids();
+montarSecoesQD();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Acompanhar Flash Trocas</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.1"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body{font-family:Inter,system-ui,sans-serif;background:#f4f7fb;color:#172033}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:22px;box-shadow:0 12px 35px rgba(15,23,42,.07)}
+.dot{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#e2e8f0;font-weight:800;z-index:2}
+.step{position:relative;display:flex;gap:14px;padding-bottom:28px}.step:last-child{padding-bottom:0}
+.line{position:absolute;left:17px;top:38px;height:calc(100% - 18px);width:3px;background:#e2e8f0}.done .dot{background:#10b981;color:white}.active .dot{background:#2563eb;color:white;box-shadow:0 0 0 8px #dbeafe}
+.progress{height:9px;background:#e2e8f0;border-radius:99px;overflow:hidden}.progress>i{display:block;height:100%;background:linear-gradient(90deg,#2563eb,#10b981);transition:width .5s}
+.photo{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:16px;border:1px solid #e2e8f0;background:#f8fafc}
+</style>
+</head>
+<body>
+<div class="max-w-3xl mx-auto px-4 py-8">
+  <div class="text-center mb-7">
+    <div class="text-3xl font-black text-blue-900">FLASH <span class="text-blue-600">TROCAS</span></div>
+    <p class="text-slate-500">Acompanhe sua solicitaÃ§Ã£o</p>
+  </div>
+
+  <section id="consulta" class="card p-6">
+    <h1 class="text-2xl font-black text-blue-900">Acompanhar minha troca</h1>
+    <p class="text-slate-500 mt-2 mb-5">Digite o cÃ³digo da solicitaÃ§Ã£o.</p>
+    <div class="flex gap-2">
+      <input id="codigo" class="flex-1 border rounded-xl px-4 py-3" placeholder="FT-XXXXXXXX">
+      <button id="btn" class="bg-blue-700 text-white font-bold rounded-xl px-5" onclick="consultar()">Consultar</button>
+    </div>
+    <p id="erro" class="text-red-600 text-sm mt-3 hidden"></p>
+  </section>
+
+  <main id="resultado" class="hidden mt-5 space-y-5">
+    <section class="card p-6">
+      <div class="flex justify-between gap-3 items-start">
+        <div><p class="text-sm text-slate-500">OlÃ¡, <b id="nome"></b></p><h2 class="text-xl font-black text-blue-900">Acompanhe sua troca</h2></div>
+        <span id="status" class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-bold text-sm">Nova</span>
+      </div>
+      <div class="mt-5 flex justify-between text-sm font-bold"><span>EvoluÃ§Ã£o</span><span id="pct">0%</span></div>
+      <div class="progress mt-2"><i id="bar" style="width:0%"></i></div>
+      <div class="mt-4 text-sm text-slate-500">CÃ³digo: <b id="codigoView" class="text-slate-800"></b></div>
+    </section>
+
+    <section class="card p-6">
+      <h3 class="font-black text-blue-900 mb-5">Etapas</h3>
+      <div id="steps"></div>
+    </section>
+
+    <section class="card p-6">
+      <h3 class="font-black text-blue-900 mb-4">Equipamento enviado</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+        <div><span class="text-slate-500">Tipo</span><div id="tipo" class="font-bold"></div></div>
+        <div><span class="text-slate-500">Marca / modelo</span><div id="marca" class="font-bold"></div></div>
+        <div><span class="text-slate-500">ConservaÃ§Ã£o</span><div id="cons" class="font-bold"></div></div>
+        <div><span class="text-slate-500">MÃ³veis desejados</span><div id="moveis" class="font-bold"></div></div>
+      </div>
+      <h4 class="font-black text-blue-900 mt-6 mb-3">Fotos enviadas</h4>
+      <div id="fotos" class="grid grid-cols-3 gap-3"></div>
+    </section>
+
+    <section class="card p-6">
+      <h3 class="font-black text-blue-900 mb-4">AvaliaÃ§Ã£o</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div><span class="text-slate-500 text-sm">Valor avaliado</span><div id="valor" class="text-xl font-black mt-1">Aguardando avaliaÃ§Ã£o</div></div>
+        <div><span class="text-slate-500 text-sm">Saldo da negociaÃ§Ã£o</span><div id="saldo" class="text-xl font-black mt-1">A definir</div></div>
+      </div>
+      <div id="obsBox" class="hidden mt-5 rounded-xl bg-slate-50 p-4 text-sm"><b>ObservaÃ§Ã£o da equipe</b><div id="obs" class="mt-1"></div></div>
+    </section>
+
+    <button id="wpp" class="w-full bg-green-600 hover:bg-green-700 text-white font-black rounded-xl py-3">ðŸ“² Enviar meu acompanhamento pelo WhatsApp</button>
+    <a href="index.html#flashTrocas" class="block text-center text-blue-700 font-bold py-2">Voltar para Flash Trocas</a>
+  </main>
+</div>
+
+<script>
+const SUPABASE_URL='https://rgcclordmqjmwuzrrfbd.supabase.co';
+const SUPABASE_KEY='sb_publishable_g5Tcimge2aiMX8JE3ml1dg_6zbR3uXi';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let atual=null;
+const etapas=[['SolicitaÃ§Ã£o enviada','Recebemos seus dados e fotos.'],['Em anÃ¡lise','Nossa equipe estÃ¡ avaliando o equipamento.'],['AvaliaÃ§Ã£o do valor','Definimos o valor que poderÃ¡ entrar na negociaÃ§Ã£o.'],['NegociaÃ§Ã£o dos mÃ³veis','VocÃª acompanha a negociaÃ§Ã£o e o saldo.'],['Troca aprovada','A troca foi aprovada para finalizaÃ§Ã£o.']];
+const ordem={'Nova':0,'Em avaliaÃ§Ã£o':1,'Em avaliacao':1,'Aprovada':2,'NegociaÃ§Ã£o':3,'Negociacao':3,'ConcluÃ­da':4,'Concluida':4,'Recusada':0};
+const money=v=>v==null||v===''?'A definir':Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+function render(d){
+ atual=d;
+ document.getElementById('resultado').classList.remove('hidden');
+ document.getElementById('consulta').classList.add('hidden');
+ document.getElementById('nome').textContent=d.nome||'cliente';
+ document.getElementById('codigoView').textContent=d.codigo||d.id;
+ document.getElementById('status').textContent=d.status||'Nova';
+ const idx=ordem[d.status]??0, pct=d.status==='Recusada'?0:Math.round(idx/4*100);
+ document.getElementById('pct').textContent=pct+'%'; document.getElementById('bar').style.width=pct+'%';
+ document.getElementById('tipo').textContent=d.tipo_equipamento||'-';
+ document.getElementById('marca').textContent=[d.marca,d.modelo].filter(Boolean).join(' / ')||'-';
+ document.getElementById('cons').textContent=d.conservacao||d.estado_conservacao||'-';
+ document.getElementById('moveis').textContent=d.moveis_desejados||d.moveis_interesse||'-';
+ document.getElementById('valor').textContent=money(d.valor_avaliado);
+ document.getElementById('saldo').textContent=money(d.saldo_negociacao);
+ document.getElementById('obs').textContent=d.observacao||d.observacoes||'';
+ document.getElementById('obsBox').classList.toggle('hidden',!(d.observacao||d.observacoes));
+ let arr=d.fotos||[];
+ if(typeof arr==='string'){try{arr=JSON.parse(arr)}catch(e){arr=arr.split(',').filter(Boolean)}}
+ const fotos=document.getElementById('fotos');
+ fotos.innerHTML=arr.length?arr.map(u=>`<a href="${u}" target="_blank"><img class="photo" src="${u}" loading="lazy"></a>`).join(''):'<p class="col-span-3 text-sm text-slate-500">Nenhuma foto disponÃ­vel.</p>';
+ document.getElementById('steps').innerHTML=etapas.map((s,i)=>`<div class="step ${i<idx?'done':''} ${i===idx?'active':''}">${i<4?'<div class="line"></div>':''}<div class="dot">${i<idx?'âœ“':i+1}</div><div><b class="text-slate-800">${s[0]}</b><div class="text-sm text-slate-500">${i===idx?(d.observacao||d.observacoes||s[1]):s[1]}</div></div></div>`).join('');
+ document.getElementById('wpp').onclick=()=>{const url=location.href; const msg=`OlÃ¡! Aqui estÃ¡ o acompanhamento da minha troca Flash Trocas.\nCÃ³digo: ${d.codigo||d.id}\n${url}`; window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')};
+}
+async function consultar(){
+ const c=document.getElementById('codigo').value.trim(); if(!c)return;
+ document.getElementById('btn').disabled=true; document.getElementById('btn').textContent='Consultando...';
+ const {data,error}=await db.from('flash_trocas').select('*').eq('codigo',c).maybeSingle();
+ document.getElementById('btn').disabled=false; document.getElementById('btn').textContent='Consultar';
+ if(error||!data){document.getElementById('erro').textContent='SolicitaÃ§Ã£o nÃ£o encontrada.';document.getElementById('erro').classList.remove('hidden');return}
+ render(data);
+}
+(function(){
+ const p=new URLSearchParams(location.search), c=p.get('codigo');
+ if(c){document.getElementById('codigo').value=c;consultar();}
+})();
+</script>
+</body>
+</html>
