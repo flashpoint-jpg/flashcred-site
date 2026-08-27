@@ -6364,9 +6364,9 @@ function montarEntrega(p) {
 
                     <p class="text-sm text-slate-600 mt-2">
 
-                        O prazo de entrega será iniciado
-                        somente após a assinatura do contrato
-                        e a confirmação do pagamento da entrada.
+                        O prazo de entrega será liberado
+                        após a assinatura do contrato
+                        e a ativação da proposta no painel.
 
                     </p>
 
@@ -6423,7 +6423,10 @@ function montarEntrega(p) {
     const inicio =
         p.data_pagamento_entrada ||
         p.entrada_pago_em ||
-        p.data_entrada_paga;
+        p.data_entrada_paga ||
+        p.data_assinatura ||
+        p.updated_at ||
+        new Date().toISOString();
 
 
     const progresso =

@@ -1582,7 +1582,7 @@ select:focus-visible{
                 <input
                     type="number"
                     id="dias_entrega"
-                    value="7"
+                    value="8"
                     min="1"
                     class="campo"
                 >
@@ -3295,7 +3295,7 @@ function abrirNovo(){
 
     document.getElementById(
         'dias_entrega'
-    ).value = 7;
+    ).value = 8;
 
     document.getElementById(
         'intervalo_auto'
@@ -4929,7 +4929,7 @@ function renderizarProposta(i){
 
     const entrega =
         calcularProgressoEntrega(
-            i.dias_entrega || 7,
+            i.dias_entrega || 8,
             Boolean(i.entrega_concluida),
             i.data_pagamento_entrada || i.entrada_pago_em || i.data_entrada_paga
         );
@@ -5434,7 +5434,7 @@ function renderizarProposta(i){
 
                         <span>
                             🚚 Prazo:
-                            ${Number(i.dias_entrega)||7}
+                            ${Number(i.dias_entrega)||8}
                             dias úteis
                         </span>
 
@@ -5843,7 +5843,7 @@ function renderizarProposta(i){
                         <input
                             type="number"
                             id="edit_dias_${escapeHTML(String(i.id))}"
-                            value="${Number(i.dias_entrega)||7}"
+                            value="${Number(i.dias_entrega)||8}"
                             class="campo"
                             min="1"
                         >
@@ -6151,6 +6151,13 @@ async function alternarEntradaPaga(
     const dadosAtualizar = {
         entrada_paga: Boolean(status)
     };
+
+    if(Boolean(status)){
+        const propostaPrazo = propostasCache.find(p => String(p.id) === String(id));
+        if(!Number(propostaPrazo?.dias_entrega)){
+            dadosAtualizar.dias_entrega = 8;
+        }
+    }
 
     // Se está marcando como paga e ainda não tem a data de pagamento
     // (ex: quando o Pix não confirmou sozinho e foi marcado na mão),
