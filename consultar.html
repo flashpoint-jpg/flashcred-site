@@ -657,13 +657,145 @@ video,
 #imagemAssinatura {
     width: 100%;
 
-    max-height: 260px;
+    max-height: 360px;
 
     object-fit: cover;
 
-    border-radius: 12px;
+    border-radius: 18px;
 
     background: #0F172A;
+}
+
+.selfie-pagina {
+    margin-top: 12px;
+    border: 1px solid #DBEAFE;
+    background: linear-gradient(180deg,#EFF6FF 0%,#FFFFFF 100%);
+    border-radius: 22px;
+    padding: 16px;
+}
+
+.selfie-cabecalho {
+    text-align: center;
+    margin-bottom: 14px;
+}
+
+.selfie-icone {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 8px;
+    border-radius: 16px;
+    display: grid;
+    place-items: center;
+    background: #0A2463;
+    color: white;
+    font-size: 23px;
+    box-shadow: 0 8px 22px rgba(10,36,99,.20);
+}
+
+.selfie-titulo {
+    color: #0A2463;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.selfie-subtitulo {
+    color: #64748B;
+    font-size: 12.5px;
+    line-height: 1.5;
+    margin-top: 4px;
+}
+
+.selfie-camera-box {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    max-height: 440px;
+    overflow: hidden;
+    border-radius: 24px;
+    background: #0F172A;
+    border: 3px solid #FFFFFF;
+    box-shadow: 0 12px 30px rgba(15,23,42,.20);
+}
+
+.selfie-camera-box video,
+.selfie-camera-box #imagemAssinatura {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    object-fit: cover;
+    border-radius: 20px;
+}
+
+.selfie-camera-box video {
+    transform: scaleX(-1);
+}
+
+.selfie-guia {
+    position: absolute;
+    inset: 12% 15%;
+    border: 2px dashed rgba(255,255,255,.85);
+    border-radius: 46% 46% 42% 42%;
+    pointer-events: none;
+    box-shadow: 0 0 0 999px rgba(15,23,42,.18);
+}
+
+.selfie-camera-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    color: #E2E8F0;
+    background: radial-gradient(circle at 50% 35%,#1E3A8A 0%,#0F172A 70%);
+}
+
+.selfie-camera-placeholder i {
+    font-size: 42px;
+    margin-bottom: 12px;
+}
+
+.selfie-status {
+    min-height: 20px;
+    margin: 10px 2px 0;
+    font-size: 12.5px;
+    color: #475569;
+    text-align: center;
+}
+
+.selfie-status.erro { color:#B91C1C; }
+.selfie-status.ok { color:#047857; font-weight:700; }
+
+.selfie-acoes {
+    display: grid;
+    gap: 9px;
+    margin-top: 12px;
+}
+
+
+.selfie-fallback {
+    margin-top: 12px;
+    padding: 14px;
+    border: 1px dashed #CBD5E1;
+    border-radius: 14px;
+    background: #F8FAFC;
+    text-align: center;
+}
+.selfie-fallback strong { display:block; color:#0F172A; margin-bottom:5px; }
+.selfie-fallback p { margin:0 0 10px; font-size:12.5px; color:#64748B; line-height:1.45; }
+.selfie-fallback .btn { width:100%; }
+.selfie-fallback input[type=file] { display:none; }
+.selfie-dica {
+    margin-top: 12px;
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #FFF7ED;
+    border: 1px solid #FED7AA;
+    color: #9A3412;
+    font-size: 12px;
+    line-height: 1.45;
 }
 
 .modo-botoes {
@@ -3841,57 +3973,87 @@ async function mostrarProposta(p) {
 
                 <div
                     id="areaSelfie"
-                    class="assinatura-area"
+                    class="assinatura-area selfie-pagina"
                 >
 
-                    <label class="block text-sm font-bold mb-2">
+                    <div class="selfie-cabecalho">
+                        <div class="selfie-icone"><i class="fas fa-face-smile"></i></div>
+                        <div class="selfie-titulo">2. Confirme sua identidade</div>
+                        <div class="selfie-subtitulo">A selfie é obrigatória para assinar. Centralize o rosto, retire óculos escuros e fique em um local bem iluminado.</div>
+                    </div>
 
-                        2. Selfie (obrigatória, confirma sua identidade)
-
-                    </label>
-
-
-                    <video
-                        id="videoAssinatura"
-                        autoplay
-                        playsinline
-                    ></video>
-
-
-                    <button
-                        type="button"
-                        onclick="tirarFoto()"
-                        class="btn btn-primary mt-3"
-                    >
-
-                        <i class="fas fa-camera"></i>
-
-                        Capturar foto
-
-                    </button>
-
-
-                    <div
-                        id="fotoCapturada"
-                        class="hidden mt-3"
-                    >
+                    <div class="selfie-camera-box" id="selfieCameraBox">
+                        <video
+                            id="videoAssinatura"
+                            autoplay
+                            muted
+                            playsinline
+                            webkit-playsinline
+                            class="hidden"
+                        ></video>
 
                         <img
                             id="imagemAssinatura"
-                            alt="Foto da assinatura"
+                            class="hidden"
+                            alt="Selfie capturada"
                         >
 
+                        <div id="selfiePlaceholder" class="selfie-camera-placeholder">
+                            <i class="fas fa-camera"></i>
+                            <strong>Pronto para tirar sua selfie</strong>
+                            <span style="font-size:12px;margin-top:6px;opacity:.85">Toque em “Abrir câmera” e permita o acesso quando o celular perguntar.</span>
+                        </div>
 
+                        <div id="selfieGuia" class="selfie-guia hidden"></div>
+                    </div>
+
+                    <div id="selfieStatus" class="selfie-status">A câmera só será aberta quando você tocar no botão.</div>
+
+                    <div class="selfie-acoes">
                         <button
+                            id="btnAbrirCamera"
                             type="button"
-                            onclick="refazerFoto()"
-                            class="btn btn-secondary mt-3"
+                            onclick="abrirCameraSelfie()"
+                            class="btn btn-primary"
                         >
-
-                            Refazer foto
-
+                            <i class="fas fa-camera"></i>
+                            Abrir câmera
                         </button>
 
+                        <button
+                            id="btnCapturarSelfie"
+                            type="button"
+                            onclick="tirarFoto()"
+                            class="btn btn-success hidden"
+                        >
+                            <i class="fas fa-camera-retro"></i>
+                            Tirar selfie
+                        </button>
+
+                        <button
+                            id="btnRefazerSelfie"
+                            type="button"
+                            onclick="refazerFoto()"
+                            class="btn btn-secondary hidden"
+                        >
+                            <i class="fas fa-rotate-left"></i>
+                            Refazer selfie
+                        </button>
+                    </div>
+
+                    <div id="selfieFallback" class="selfie-fallback">
+                        <strong>📷 A câmera não abriu?</strong>
+                        <p>No notebook, você pode selecionar uma selfie já tirada. No celular, este botão também pode abrir a câmera do aparelho.</p>
+                        <input id="arquivoSelfie" type="file" accept="image/*" capture="user" onchange="usarArquivoSelfie(this)">
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('arquivoSelfie').click()">
+                            <i class="fas fa-image"></i> Usar foto/selfie
+                        </button>
+                    </div>
+
+                    <div id="fotoCapturada" class="hidden"></div>
+
+                    <div class="selfie-dica">
+                        <strong>Se a câmera não abrir:</strong> tente liberar a permissão de <b>Câmera</b>. Se ainda não funcionar, use o botão <b>“Usar foto/selfie”</b> acima. Assim a assinatura não fica travada no notebook.
                     </div>
 
                 </div>
@@ -3918,7 +4080,7 @@ async function mostrarProposta(p) {
             'conteudoProposta'
         ).innerHTML = html;
 
-        await iniciarCamera();
+        prepararTelaSelfie();
 
         return;
     }
@@ -4336,94 +4498,162 @@ async function alternarModo(modo) {
    CÂMERA
 ========================================================== */
 
-async function iniciarCamera() {
+function atualizarStatusSelfie(mensagem, tipo='') {
+    const el = document.getElementById('selfieStatus');
+    if(!el) return;
+    el.textContent = mensagem || '';
+    el.className = 'selfie-status' + (tipo ? ' ' + tipo : '');
+}
+
+function prepararTelaSelfie() {
+    pararCamera();
+    const video = document.getElementById('videoAssinatura');
+    const img = document.getElementById('imagemAssinatura');
+    const placeholder = document.getElementById('selfiePlaceholder');
+    const guia = document.getElementById('selfieGuia');
+    const abrir = document.getElementById('btnAbrirCamera');
+    const capturar = document.getElementById('btnCapturarSelfie');
+    const refazer = document.getElementById('btnRefazerSelfie');
+    if(video) { video.classList.add('hidden'); video.srcObject = null; }
+    if(img && !img.src) img.classList.add('hidden');
+    if(placeholder) placeholder.classList.remove('hidden');
+    if(guia) guia.classList.add('hidden');
+    if(abrir) abrir.classList.remove('hidden');
+    if(capturar) capturar.classList.add('hidden');
+    if(refazer) refazer.classList.add('hidden');
+    atualizarStatusSelfie('A câmera só será aberta quando você tocar no botão.');
+}
+
+async function abrirCameraSelfie() {
+    const btn = document.getElementById('btnAbrirCamera');
+    if(btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Abrindo câmera...'; }
+    const ok = await iniciarCamera(true);
+    if(btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-camera"></i> Abrir câmera';
+        if(ok) btn.classList.add('hidden');
+    }
+}
+
+async function iniciarCamera(mostrarErro=true) {
     try {
         pararCamera();
 
+        if(!window.isSecureContext) {
+            throw new Error('A câmera só funciona em conexão segura (HTTPS).');
+        }
+
         if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            throw new Error('Câmera não disponível neste navegador.');
+            throw new Error('Este navegador não oferece acesso à câmera.');
         }
 
         const video = document.getElementById('videoAssinatura');
-        if(!video) {
-            throw new Error('Elemento de vídeo da assinatura não encontrado.');
-        }
+        if(!video) throw new Error('Área da câmera não encontrada.');
 
-        webcamStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                facingMode: { ideal: 'user' },
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-            },
-            audio: false
-        });
+        atualizarStatusSelfie('Solicitando permissão da câmera...');
+
+        // Primeiro tenta a câmera frontal. Se algum Android rejeitar as
+        // preferências de resolução/facingMode, tenta novamente com configuração simples.
+        try {
+            webcamStream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: 'user',
+                    width: { ideal: 720 },
+                    height: { ideal: 960 }
+                },
+                audio: false
+            });
+        } catch(primeiroErro) {
+            webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        }
 
         video.srcObject = webcamStream;
         video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
         video.muted = true;
+        video.autoplay = true;
 
-        // Em celulares, getUserMedia pode retornar antes de o vídeo possuir
-        // dimensões. Esperamos loadedmetadata/canplay antes de liberar a foto.
         await new Promise((resolve, reject) => {
-            if(video.videoWidth > 0 && video.videoHeight > 0) {
-                resolve();
-                return;
-            }
-
-            let finalizado = false;
-            const concluir = () => {
-                if(finalizado) return;
-                if(video.videoWidth > 0 && video.videoHeight > 0) {
-                    finalizado = true;
-                    clearTimeout(limite);
+            let terminou = false;
+            const pronto = () => {
+                if(terminou) return;
+                if(video.readyState >= 2 || (video.videoWidth > 0 && video.videoHeight > 0)) {
+                    terminou = true;
+                    clearTimeout(timer);
                     resolve();
                 }
             };
-
-            video.addEventListener('loadedmetadata', concluir);
-            video.addEventListener('canplay', concluir);
-
-            const limite = setTimeout(() => {
-                if(finalizado) return;
-                finalizado = true;
+            const timer = setTimeout(() => {
+                if(terminou) return;
+                terminou = true;
                 if(video.videoWidth > 0 && video.videoHeight > 0) resolve();
-                else reject(new Error('Tempo excedido ao preparar a câmera.'));
-            }, 8000);
+                else reject(new Error('A câmera abriu, mas o vídeo não ficou pronto.'));
+            }, 10000);
+            video.addEventListener('loadedmetadata', pronto, { once:false });
+            video.addEventListener('canplay', pronto, { once:false });
+            video.addEventListener('playing', pronto, { once:false });
+            try { const playPromise = video.play(); if(playPromise) playPromise.catch(()=>{}); } catch(e) {}
+            pronto();
         });
 
         try { await video.play(); } catch(e) {}
 
-        return video.videoWidth > 0 && video.videoHeight > 0;
+        const placeholder = document.getElementById('selfiePlaceholder');
+        const guia = document.getElementById('selfieGuia');
+        const img = document.getElementById('imagemAssinatura');
+        const capturar = document.getElementById('btnCapturarSelfie');
+        const refazer = document.getElementById('btnRefazerSelfie');
+        if(placeholder) placeholder.classList.add('hidden');
+        if(img) img.classList.add('hidden');
+        video.classList.remove('hidden');
+        if(guia) guia.classList.remove('hidden');
+        if(capturar) capturar.classList.remove('hidden');
+        if(refazer) refazer.classList.add('hidden');
+        atualizarStatusSelfie('Câmera pronta. Centralize o rosto dentro da marcação.', 'ok');
+
+        return true;
 
     } catch(error) {
         console.error('Erro ao iniciar câmera:', error);
         pararCamera();
 
-        alert(
-            'Não foi possível acessar a câmera. Verifique a permissão da câmera no navegador. ' +
-            'Você também pode usar a assinatura por nome.'
-        );
+        let mensagem = 'Não foi possível abrir a câmera.';
+        const nome = error && error.name ? error.name : '';
+        if(nome === 'NotAllowedError' || nome === 'PermissionDeniedError') {
+            mensagem = 'Permissão da câmera bloqueada. Libere a câmera nas permissões deste site e tente novamente.';
+        } else if(nome === 'NotFoundError' || nome === 'DevicesNotFoundError') {
+            mensagem = 'Nenhuma câmera foi encontrada neste aparelho.';
+        } else if(nome === 'NotReadableError' || nome === 'TrackStartError') {
+            mensagem = 'A câmera está sendo usada por outro aplicativo. Feche o outro app e tente novamente.';
+        } else if(error && error.message) {
+            mensagem = error.message;
+        }
 
-        modoAssinatura = 'texto';
-        alternarModo('texto');
+        atualizarStatusSelfie(mensagem + ' Você também pode usar o botão “Usar foto/selfie”.', 'erro');
+        const abrir = document.getElementById('btnAbrirCamera');
+        const capturar = document.getElementById('btnCapturarSelfie');
+        const placeholder = document.getElementById('selfiePlaceholder');
+        const guia = document.getElementById('selfieGuia');
+        if(abrir) abrir.classList.remove('hidden');
+        if(capturar) capturar.classList.add('hidden');
+        if(placeholder) placeholder.classList.remove('hidden');
+        if(guia) guia.classList.add('hidden');
+        if(mostrarErro) {
+            // Evita alert genérico que escondia a tela; o erro fica visível na própria página.
+        }
         return false;
     }
 }
 
-
 function pararCamera() {
-
     if(webcamStream) {
-
-        webcamStream
-            .getTracks()
-            .forEach(
-                track => track.stop()
-            );
-
-
-        webcamStream =
-            null;
+        webcamStream.getTracks().forEach(track => track.stop());
+        webcamStream = null;
+    }
+    const video = document.getElementById('videoAssinatura');
+    if(video) {
+        try { video.pause(); } catch(e) {}
+        video.srcObject = null;
     }
 }
 
@@ -4435,16 +4665,11 @@ function pararCamera() {
 async function tirarFoto() {
     let video = document.getElementById('videoAssinatura');
 
-    // Se o usuário tocar rápido demais, não falha imediatamente:
-    // reinicia/aguarda a câmera ficar pronta e só então captura.
     if(!video || !video.videoWidth || !video.videoHeight) {
-        const pronta = await iniciarCamera();
+        atualizarStatusSelfie('Preparando a câmera...', '');
+        const pronta = await iniciarCamera(true);
         video = document.getElementById('videoAssinatura');
-
-        if(!pronta || !video || !video.videoWidth || !video.videoHeight) {
-            alert('Não consegui preparar a câmera. Confira a permissão e tente novamente.');
-            return;
-        }
+        if(!pronta || !video || !video.videoWidth || !video.videoHeight) return;
     }
 
     const canvas = document.createElement('canvas');
@@ -4452,36 +4677,110 @@ async function tirarFoto() {
     canvas.height = video.videoHeight;
 
     const contexto = canvas.getContext('2d');
+    // Espelha a imagem salva para ficar igual ao preview da câmera frontal.
+    contexto.translate(canvas.width, 0);
+    contexto.scale(-1, 1);
     contexto.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const imagem = document.getElementById('imagemAssinatura');
     if(!imagem) {
-        alert('Não foi possível preparar a foto da assinatura.');
+        atualizarStatusSelfie('Não foi possível preparar a selfie.', 'erro');
         return;
     }
 
-    imagem.src = canvas.toDataURL('image/jpeg', .85);
+    imagem.src = canvas.toDataURL('image/jpeg', .88);
+    imagem.classList.remove('hidden');
+    video.classList.add('hidden');
 
+    const placeholder = document.getElementById('selfiePlaceholder');
+    const guia = document.getElementById('selfieGuia');
+    const capturar = document.getElementById('btnCapturarSelfie');
+    const abrir = document.getElementById('btnAbrirCamera');
+    const refazer = document.getElementById('btnRefazerSelfie');
     const fotoCapturada = document.getElementById('fotoCapturada');
+    if(placeholder) placeholder.classList.add('hidden');
+    if(guia) guia.classList.add('hidden');
+    if(capturar) capturar.classList.add('hidden');
+    if(abrir) abrir.classList.add('hidden');
+    if(refazer) refazer.classList.remove('hidden');
     if(fotoCapturada) fotoCapturada.classList.remove('hidden');
 
     pararCamera();
+    atualizarStatusSelfie('Selfie capturada com sucesso. Se ficou boa, pode assinar o contrato.', 'ok');
 }
 
+async function usarArquivoSelfie(input) {
+    try {
+        const arquivo = input && input.files ? input.files[0] : null;
+        if(!arquivo) return;
+        if(!arquivo.type || !arquivo.type.startsWith('image/')) {
+            atualizarStatusSelfie('Escolha um arquivo de imagem para usar como selfie.', 'erro');
+            input.value = '';
+            return;
+        }
+        // Evita arquivos exageradamente grandes em notebooks/celulares antigos.
+        if(arquivo.size > 12 * 1024 * 1024) {
+            atualizarStatusSelfie('Essa imagem é muito grande. Escolha uma foto de até 12 MB.', 'erro');
+            input.value = '';
+            return;
+        }
+
+        atualizarStatusSelfie('Preparando a selfie selecionada...');
+        pararCamera();
+
+        const dataUrl = await new Promise((resolve, reject) => {
+            const leitor = new FileReader();
+            leitor.onload = () => resolve(leitor.result);
+            leitor.onerror = () => reject(new Error('Não foi possível ler a imagem selecionada.'));
+            leitor.readAsDataURL(arquivo);
+        });
+
+        const imagem = document.getElementById('imagemAssinatura');
+        if(!imagem) throw new Error('Área da selfie não encontrada.');
+
+        await new Promise((resolve, reject) => {
+            imagem.onload = resolve;
+            imagem.onerror = () => reject(new Error('A imagem escolhida não pôde ser aberta.'));
+            imagem.src = dataUrl;
+        });
+
+        imagem.classList.remove('hidden');
+        const video = document.getElementById('videoAssinatura');
+        const placeholder = document.getElementById('selfiePlaceholder');
+        const guia = document.getElementById('selfieGuia');
+        const capturar = document.getElementById('btnCapturarSelfie');
+        const abrir = document.getElementById('btnAbrirCamera');
+        const refazer = document.getElementById('btnRefazerSelfie');
+        const fotoCapturada = document.getElementById('fotoCapturada');
+        if(video) video.classList.add('hidden');
+        if(placeholder) placeholder.classList.add('hidden');
+        if(guia) guia.classList.add('hidden');
+        if(capturar) capturar.classList.add('hidden');
+        if(abrir) abrir.classList.add('hidden');
+        if(refazer) refazer.classList.remove('hidden');
+        if(fotoCapturada) fotoCapturada.classList.remove('hidden');
+
+        atualizarStatusSelfie('Selfie carregada com sucesso. Confira a foto e, se estiver boa, pode assinar o contrato.', 'ok');
+    } catch(error) {
+        console.error('Erro ao carregar selfie:', error);
+        atualizarStatusSelfie(error && error.message ? error.message : 'Não foi possível usar essa foto.', 'erro');
+        if(input) input.value = '';
+    }
+}
 
 function refazerFoto() {
-
-    document
-        .getElementById(
-            'fotoCapturada'
-        )
-        .classList
-        .add(
-            'hidden'
-        );
-
-
-    iniciarCamera();
+    const imagem = document.getElementById('imagemAssinatura');
+    const fotoCapturada = document.getElementById('fotoCapturada');
+    const refazer = document.getElementById('btnRefazerSelfie');
+    const abrir = document.getElementById('btnAbrirCamera');
+    if(imagem) { imagem.src = ''; imagem.classList.add('hidden'); }
+    if(fotoCapturada) fotoCapturada.classList.add('hidden');
+    if(refazer) refazer.classList.add('hidden');
+    if(abrir) abrir.classList.remove('hidden');
+    const arquivoSelfie = document.getElementById('arquivoSelfie');
+    if(arquivoSelfie) arquivoSelfie.value = '';
+    atualizarStatusSelfie('Toque em “Abrir câmera” para tirar outra selfie, ou use uma foto do aparelho.');
+    abrirCameraSelfie();
 }
 
 
