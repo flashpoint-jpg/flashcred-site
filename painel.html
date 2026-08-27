@@ -1007,6 +1007,53 @@ select:focus-visible{
         margin-top:50px;
     }
 }
+
+/* ===== CORREÇÕES / MELHORIAS DE ESTABILIDADE DO PAINEL ===== */
+.hidden{
+    display:none !important;
+}
+
+.card{
+    background:#fff;
+    border-radius:var(--raio);
+    box-shadow:var(--sombra);
+    border:1px solid rgba(226,232,240,.7);
+    box-sizing:border-box;
+}
+
+#telaPrincipal{
+    padding-bottom:48px;
+}
+
+@media(max-width:700px){
+    .acoes-cabecalho{
+        width:100%;
+    }
+    .acoes-cabecalho .botao{
+        flex:1 1 auto;
+        min-height:44px;
+    }
+    .fluxo-abas{
+        gap:6px;
+        padding:8px;
+    }
+    .fluxo-aba{
+        flex:1 1 calc(50% - 6px);
+        min-width:0;
+        padding:10px;
+        font-size:13px;
+    }
+    .linha-proposta{
+        padding:14px;
+    }
+    .destaque-receber{
+        padding:18px;
+    }
+    .destaque-receber-valor{
+        font-size:30px;
+    }
+}
+
 </style>
 </head>
 
@@ -3044,6 +3091,47 @@ async function editarLimiteCliente(cpf){
     }
 }
 
+function pagamentoEhNaEntrega(item){
+    const forma = String(item?.forma_pagamento_entrada || 'pix_antecipado');
+    return forma === 'na_entrega' ||
+           forma === 'cartao_entrega' ||
+           forma === 'pix_total_entrega';
+}
+
+function obterInicioPrazoEntrega(item){
+    if(!item) return null;
+
+    // Pagamento feito antes da entrega: prazo começa quando a entrada é confirmada.
+    if(!pagamentoEhNaEntrega(item)){
+        return item.data_pagamento_entrada ||
+               item.entrada_pago_em ||
+               item.data_entrada_paga ||
+               null;
+    }
+
+    // Pagamento na entrega: não pode esperar o Pix/cartão para iniciar o pedido.
+    // O contrato assinado confirma o pedido e libera imediatamente os 8 dias úteis.
+    if(Boolean(item.contrato_assinado)){
+        return item.data_assinatura || item.updated_at || item.created_at || null;
+    }
+
+    return null;
+}
+
+function pedidoLiberadoParaEntrega(item){
+    if(!item || !Boolean(item.contrato_assinado)) return false;
+    return pagamentoEhNaEntrega(item) || Boolean(item.entrada_paga);
+}
+
+function textoStatusPagamento(item){
+    const forma = String(item?.forma_pagamento_entrada || 'pix_antecipado');
+    if(Boolean(item?.entrada_paga)) return '✅ Pago';
+    if(forma === 'na_entrega') return '📦 Pix será pago na entrega';
+    if(forma === 'cartao_entrega') return '💳 Cartão será pago na entrega';
+    if(forma === 'pix_total_entrega') return '📦 Pix total será pago na entrega';
+    return '❌ Pendente';
+}
+
 function calcularProgressoEntrega(
     diasUteis,
     concluida,
@@ -3053,7 +3141,7 @@ function calcularProgressoEntrega(
     diasUteis =
         Math.max(
             1,
-            Number(diasUteis)||7
+            Number(diasUteis)||8
         );
 
     if(concluida){
@@ -4623,12 +4711,11 @@ function renderizarProximasEntregas(data){
     const container = document.getElementById('painelProximasEntregas');
     if(!container) return;
 
-    // Só entra aqui quem já assinou contrato E já teve o pagamento confirmado
-    // (entrada paga = "vindo confirmado, pago", inclusive nas modalidades sem entrada,
-    // onde o admin marca esse campo manualmente ao confirmar o combinado com o cliente).
+    // O pedido entra no fluxo de entrega assim que estiver liberado:
+    // - Pix antecipado: contrato assinado + entrada confirmada;
+    // - pagamento na entrega: contrato assinado já libera o pedido, sem esperar o pagamento.
     const pendentes = data.filter(item =>
-        Boolean(item.contrato_assinado) &&
-        Boolean(item.entrada_paga) &&
+        pedidoLiberadoParaEntrega(item) &&
         !Boolean(item.entrega_concluida)
     );
 
@@ -4676,7 +4763,7 @@ function renderizarProximasEntregas(data){
     container.innerHTML = `
         <div class="card" style="margin-bottom:16px;padding:16px 18px;border:1.5px solid #99F6E4;background:#F0FDFA">
             <div style="font-weight:800;color:#0A2463;font-size:14.5px;margin-bottom:8px">
-                🚚 Próximas entregas (pagamento confirmado) — ${pendentes.length}
+                🚚 Próximas entregas — ${pendentes.length}
             </div>
             <div style="max-height:280px;overflow-y:auto;border-radius:10px;background:#fff">
                 ${comData.map(linha).join('')}
@@ -4931,7 +5018,7 @@ function renderizarProposta(i){
         calcularProgressoEntrega(
             i.dias_entrega || 8,
             Boolean(i.entrega_concluida),
-            i.data_pagamento_entrada || i.entrada_pago_em || i.data_entrada_paga
+            obterInicioPrazoEntrega(i)
         );
 
 
@@ -5226,7 +5313,7 @@ function renderizarProposta(i){
                                     🔥 Reengajar cliente (aprovado, não assinou)
                                 </button>
                             `
-                            : (Boolean(i.contrato_assinado) && !Boolean(i.entrada_paga))
+                            : (Boolean(i.contrato_assinado) && !Boolean(i.entrada_paga) && !pagamentoEhNaEntrega(i))
                             ? `
                                 <button
                                     type="button"
@@ -5278,11 +5365,7 @@ function renderizarProposta(i){
 
                             <strong>Entrada:</strong>
 
-                            ${
-                                i.entrada_paga
-                                ? '✅ Paga'
-                                : '❌ Pendente'
-                            }
+                            ${textoStatusPagamento(i)}
 
                             |
 
@@ -5427,6 +5510,12 @@ function renderizarProposta(i){
                     : ''
                 }"
             >
+
+                ${pagamentoEhNaEntrega(i) && Boolean(i.contrato_assinado) && !Boolean(i.entrada_paga) ? `
+                    <div style="margin-bottom:10px;padding:9px 11px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E40AF;font-size:12px;font-weight:700">
+                        ✅ Pedido liberado pelo contrato assinado. O prazo de ${Number(i.dias_entrega)||8} dias úteis já está contando; o pagamento será feito na entrega.
+                    </div>
+                ` : ''}
 
                 <div>
 
@@ -6646,7 +6735,7 @@ async function salvarEdicao(id){
                 document
                 .getElementById(`edit_dias_${id}`)
                 .value
-            ) || 7;
+            ) || 8;
 
         const data_preferida_entrega =
             document
@@ -6759,18 +6848,32 @@ async function salvarEdicao(id){
         // Se a quantidade de parcelas foi alterada, recria automaticamente o cronograma.
         // Assim 8 parcelas sempre terão exatamente 8 datas, sem exigir edição manual.
         if(datas_parcelas.length !== quantidade_parcelas){
-            const intervalo = Math.max(1, Number(dias_entrega) || 30);
-            const anteriores = Array.isArray(propostasCache.find(x => String(x.id)===String(id))?.datas_parcelas)
-                ? propostasCache.find(x => String(x.id)===String(id)).datas_parcelas : [];
-            let base = anteriores.length ? new Date(anteriores[0]+'T00:00:00') : new Date();
+            const selectIntervalo = document.getElementById(`edit_intervalo_${id}`);
+            const modoIntervalo = selectIntervalo?.value || '30';
+            const intervalo = modoIntervalo === 'manual'
+                ? 30
+                : Math.max(1, Number(modoIntervalo) || 30);
+
+            const propostaAtual = propostasCache.find(
+                x => String(x.id) === String(id)
+            );
+            const anteriores = Array.isArray(propostaAtual?.datas_parcelas)
+                ? propostaAtual.datas_parcelas
+                : [];
+
+            let base = anteriores.length
+                ? new Date(anteriores[0] + 'T00:00:00')
+                : new Date();
+
             datas_parcelas = [];
+
             for(let i=0;i<quantidade_parcelas;i++){
-                if(i===0 && anteriores.length) {
+                if(i === 0 && anteriores.length){
                     base = new Date(base);
-                } else {
-                    base = new Date(base.getTime() + intervalo*86400000);
+                }else{
+                    base = adicionarDias(base, intervalo);
                 }
-                datas_parcelas.push(base.toISOString().slice(0,10));
+                datas_parcelas.push(dataLocalISO(base));
             }
         }
 
