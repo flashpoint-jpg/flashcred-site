@@ -6839,13 +6839,24 @@ async function salvarEdicao(id){
             }
         }
 
+        // Remove propriedades undefined antes de enviar ao Supabase.
+        // Isso evita payload inconsistente em navegadores/versões diferentes.
+        Object.keys(dadosParaSalvar).forEach(chave => {
+            if(dadosParaSalvar[chave] === undefined){
+                delete dadosParaSalvar[chave];
+            }
+        });
+
         const {
+            data: propostaSalva,
             error
         } =
             await supabaseClient
             .from('propostas')
             .update(dadosParaSalvar)
-            .eq('id',id);
+            .eq('id',id)
+            .select('*')
+            .maybeSingle();
 
 
         if(error){
@@ -6860,6 +6871,16 @@ async function salvarEdicao(id){
             return;
         }
 
+        if(!propostaSalva){
+            alert('A alteração não foi confirmada no banco. Atualize a página e tente novamente.');
+            return;
+        }
+
+        // Atualiza o cache imediatamente com exatamente o que voltou do banco.
+        const indiceCache = propostasCache.findIndex(p => String(p.id) === String(id));
+        if(indiceCache >= 0){
+            propostasCache[indiceCache] = propostaSalva;
+        }
 
         await carregarPropostas();
 

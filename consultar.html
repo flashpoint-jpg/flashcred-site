@@ -1313,6 +1313,7 @@ async function executarConsulta(
                 .from('propostas')
                 .select('*')
                 .eq('cpf', cpf)
+                .order('created_at', { ascending:false })
                 .limit(1);
 
 
@@ -1338,6 +1339,7 @@ async function executarConsulta(
                         'cpf',
                         cpfFormatado
                     )
+                    .order('created_at', { ascending:false })
                     .limit(1);
         }
 
@@ -1900,9 +1902,41 @@ function configurarRealtime() {
                 }
             );
 
-    // ✅ Polling de 5s removido — o Realtime acima já cobre a atualização automática
-    // sem re-renderizar a tela toda hora (o que causava o piscar).
+    // Plano B: alguns navegadores/rede não mantêm o Realtime estável.
+    // Faz uma consulta leve a cada 5s e só redesenha se os dados realmente mudarem.
     if(intervaloAtualizacaoCliente) clearInterval(intervaloAtualizacaoCliente);
+    intervaloAtualizacaoCliente = setInterval(async () => {
+        try{
+            if(!propostaAtual || !propostaAtual.id) return;
+
+            const { data, error } = await supabase
+                .from('propostas')
+                .select('*')
+                .eq('id', propostaAtual.id)
+                .maybeSingle();
+
+            if(error || !data) return;
+
+            const antes = JSON.stringify(propostaAtual);
+            const depois = JSON.stringify(data);
+
+            if(antes !== depois){
+                const jaEstavaPago = booleano(propostaAtual.entrada_paga);
+                propostaAtual = data;
+                salvarSessao();
+                mostrarProposta(propostaAtual);
+
+                if(booleano(propostaAtual.entrada_paga)){
+                    pararCamera();
+                    if(!jaEstavaPago && propostaAtual.cpf){
+                        mostrarAnimacaoScore(propostaAtual.cpf);
+                    }
+                }
+            }
+        }catch(e){
+            console.warn('Atualização automática do cliente:', e);
+        }
+    }, 5000);
 }
 
 
@@ -1952,6 +1986,11 @@ function abrirProposta() {
 ========================================================== */
 
 function voltarInicio() {
+
+    if(intervaloAtualizacaoCliente){
+        clearInterval(intervaloAtualizacaoCliente);
+        intervaloAtualizacaoCliente = null;
+    }
 
     if(canalRealtime) {
 
