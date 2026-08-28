@@ -1007,6 +1007,53 @@ select:focus-visible{
         margin-top:50px;
     }
 }
+
+/* ===== CORREÇÕES / MELHORIAS DE ESTABILIDADE DO PAINEL ===== */
+.hidden{
+    display:none !important;
+}
+
+.card{
+    background:#fff;
+    border-radius:var(--raio);
+    box-shadow:var(--sombra);
+    border:1px solid rgba(226,232,240,.7);
+    box-sizing:border-box;
+}
+
+#telaPrincipal{
+    padding-bottom:48px;
+}
+
+@media(max-width:700px){
+    .acoes-cabecalho{
+        width:100%;
+    }
+    .acoes-cabecalho .botao{
+        flex:1 1 auto;
+        min-height:44px;
+    }
+    .fluxo-abas{
+        gap:6px;
+        padding:8px;
+    }
+    .fluxo-aba{
+        flex:1 1 calc(50% - 6px);
+        min-width:0;
+        padding:10px;
+        font-size:13px;
+    }
+    .linha-proposta{
+        padding:14px;
+    }
+    .destaque-receber{
+        padding:18px;
+    }
+    .destaque-receber-valor{
+        font-size:30px;
+    }
+}
+
 </style>
 </head>
 
@@ -1582,7 +1629,7 @@ select:focus-visible{
                 <input
                     type="number"
                     id="dias_entrega"
-                    value="7"
+                    value="8"
                     min="1"
                     class="campo"
                 >
@@ -1782,6 +1829,8 @@ const supabaseClient =
 
 let inscricaoTempoReal = null;
 let carregando = false;
+let tokenAdminFlashcred = null;
+let intervaloAtualizacaoPainelAdmin = null;
 
 
 /* ============================================================
@@ -3044,6 +3093,47 @@ async function editarLimiteCliente(cpf){
     }
 }
 
+function pagamentoEhNaEntrega(item){
+    const forma = String(item?.forma_pagamento_entrada || 'pix_antecipado');
+    return forma === 'na_entrega' ||
+           forma === 'cartao_entrega' ||
+           forma === 'pix_total_entrega';
+}
+
+function obterInicioPrazoEntrega(item){
+    if(!item) return null;
+
+    // Pagamento feito antes da entrega: prazo começa quando a entrada é confirmada.
+    if(!pagamentoEhNaEntrega(item)){
+        return item.data_pagamento_entrada ||
+               item.entrada_pago_em ||
+               item.data_entrada_paga ||
+               null;
+    }
+
+    // Pagamento na entrega: não pode esperar o Pix/cartão para iniciar o pedido.
+    // O contrato assinado confirma o pedido e libera imediatamente os 8 dias úteis.
+    if(Boolean(item.contrato_assinado)){
+        return item.data_assinatura || item.updated_at || item.created_at || null;
+    }
+
+    return null;
+}
+
+function pedidoLiberadoParaEntrega(item){
+    if(!item || !Boolean(item.contrato_assinado)) return false;
+    return pagamentoEhNaEntrega(item) || Boolean(item.entrada_paga);
+}
+
+function textoStatusPagamento(item){
+    const forma = String(item?.forma_pagamento_entrada || 'pix_antecipado');
+    if(Boolean(item?.entrada_paga)) return '✅ Pago';
+    if(forma === 'na_entrega') return '📦 Pix será pago na entrega';
+    if(forma === 'cartao_entrega') return '💳 Cartão será pago na entrega';
+    if(forma === 'pix_total_entrega') return '📦 Pix total será pago na entrega';
+    return '❌ Pendente';
+}
+
 function calcularProgressoEntrega(
     diasUteis,
     concluida,
@@ -3053,7 +3143,7 @@ function calcularProgressoEntrega(
     diasUteis =
         Math.max(
             1,
-            Number(diasUteis)||7
+            Number(diasUteis)||8
         );
 
     if(concluida){
@@ -3147,16 +3237,26 @@ function calcularProgressoEntrega(
 
 window.addEventListener(
     'load',
-    function(){
+    async function(){
 
-        if(
-            localStorage.getItem(
-                'logado_flashcred'
-            ) === 'SIM'
-        ){
+        const tokenSalvo = localStorage.getItem('flashcred_admin_token');
 
-            mostrarPainel();
+        if(tokenSalvo){
+            try{
+                const { data: valido } = await supabaseClient
+                    .rpc('flashcred_validar_sessao_admin', { p_token: tokenSalvo });
 
+                if(valido){
+                    tokenAdminFlashcred = tokenSalvo;
+                    mostrarPainel();
+                    return;
+                }
+            }catch(e){
+                console.warn('Sessão salva inválida, pedindo login novamente.', e);
+            }
+
+            localStorage.removeItem('flashcred_admin_token');
+            localStorage.removeItem('logado_flashcred');
         }
 
     }
@@ -3180,24 +3280,21 @@ async function entrar(){
 
     try{
 
-        const resposta =
-            await fetch('/api/verificar-senha-admin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ senha })
-            });
+        // Login direto pelo RPC seguro do próprio Supabase.
+        // Evita depender de Edge Function/rota externa para abrir a sessão administrativa.
+        const { data: token, error: sessaoErro } = await supabaseClient
+            .rpc('flashcred_admin_login', { p_senha: senha });
 
-        const dados = await resposta.json();
-
-        if(!dados.ok){
-
-            alert(
-                dados.mensagem ||
-                'Senha incorreta!'
-            );
-
+        if(sessaoErro || !token){
+            console.error('Falha no login administrativo:', sessaoErro);
+            alert(sessaoErro?.message?.includes('Senha inválida')
+                ? 'Senha incorreta!'
+                : 'Não foi possível abrir a sessão administrativa. Tente novamente.');
             return;
         }
+
+        tokenAdminFlashcred = token;
+        localStorage.setItem('flashcred_admin_token', token);
 
         localStorage.setItem(
             'logado_flashcred',
@@ -3228,6 +3325,13 @@ function sair(){
     localStorage.removeItem(
         'logado_flashcred'
     );
+    localStorage.removeItem('flashcred_admin_token');
+    tokenAdminFlashcred = null;
+
+    if(intervaloAtualizacaoPainelAdmin){
+        clearInterval(intervaloAtualizacaoPainelAdmin);
+        intervaloAtualizacaoPainelAdmin = null;
+    }
 
     if(inscricaoTempoReal){
 
@@ -3262,6 +3366,15 @@ function mostrarPainel(){
 
     ativarTempoReal();
 
+    // Plano B: com a tabela agora protegida (acesso só via funções RPC),
+    // o Realtime não recebe mais eventos de propostas sem uma policy de
+    // leitura aberta. Este polling garante que novas propostas, entradas
+    // pagas e contratos assinados continuem sendo detectados mesmo assim.
+    if(intervaloAtualizacaoPainelAdmin) clearInterval(intervaloAtualizacaoPainelAdmin);
+    intervaloAtualizacaoPainelAdmin = setInterval(() => {
+        if(tokenAdminFlashcred) carregarPropostas();
+    }, 15000);
+
     setTimeout(mostrarConviteNotificacaoAdmin, 800);
 }
 
@@ -3295,7 +3408,7 @@ function abrirNovo(){
 
     document.getElementById(
         'dias_entrega'
-    ).value = 7;
+    ).value = 8;
 
     document.getElementById(
         'intervalo_auto'
@@ -3425,9 +3538,7 @@ async function salvarNovo(){
         // "Quitada" = entrada paga + todas as parcelas pagas.
         const {data: propostasDoCpf, error: erroCpf} =
             await supabaseClient
-            .from('propostas')
-            .select('id,entrada_paga,parcelas_pagas,quantidade_parcelas')
-            .eq('cpf', cpf);
+            .rpc('admin_propostas_por_cpf', { p_token: tokenAdminFlashcred, p_cpf: cpf });
 
         if(erroCpf){
             console.error('Erro ao checar CPF duplicado:', erroCpf);
@@ -3556,8 +3667,7 @@ async function salvarNovo(){
             error
         } =
             await supabaseClient
-            .from('propostas')
-            .insert([dados]);
+            .rpc('admin_propostas_inserir', { p_token: tokenAdminFlashcred, p_dados: dados });
 
         if(error){
 
@@ -3660,14 +3770,19 @@ function buscarPropostas(valor){
 }
 
 function clienteNoFluxo(item, tipo){
+    const status = String(item.status || '').trim().toLowerCase();
+    const statusNovo = status === 'nova' || status === 'novo';
+    const statusAprovado = status === 'aprovada' || status === 'aprovado';
+
     if(tipo === 'novos'){
-        const status = String(item.status || '').trim().toLowerCase();
-        return status === 'nova'
+        // Cadastro recém-chegado não pode sumir do painel só porque já veio aprovado.
+        // Enquanto a entrada não foi paga, ele continua visível em Novos Clientes.
+        return (statusNovo || statusAprovado)
             && !Boolean(item.entrada_paga);
     }
 
     if(tipo === 'aprovados'){
-        return item.status === 'Aprovada' && !Boolean(item.entrada_paga);
+        return statusAprovado && !Boolean(item.entrada_paga);
     }
 
     if(tipo === 'entrada'){
@@ -4057,14 +4172,7 @@ async function carregarPropostas(){
             error
         } =
             await supabaseClient
-            .from('propostas')
-            .select('*')
-            .order(
-                'created_at',
-                {
-                    ascending:false
-                }
-            );
+            .rpc('admin_propostas_listar', { p_token: tokenAdminFlashcred });
 
         if(error){
 
@@ -4598,9 +4706,11 @@ async function agendarEntregaRapido(id, novaData){
     }
 
     const { error } = await supabaseClient
-        .from('propostas')
-        .update({ data_preferida_entrega: novaData })
-        .eq('id', id);
+        .rpc('admin_propostas_atualizar', {
+            p_token: tokenAdminFlashcred,
+            p_id: id,
+            p_dados: { data_preferida_entrega: novaData }
+        });
 
     if(error){
         alert('Erro ao agendar a entrega:\n' + error.message);
@@ -4618,12 +4728,11 @@ function renderizarProximasEntregas(data){
     const container = document.getElementById('painelProximasEntregas');
     if(!container) return;
 
-    // Só entra aqui quem já assinou contrato E já teve o pagamento confirmado
-    // (entrada paga = "vindo confirmado, pago", inclusive nas modalidades sem entrada,
-    // onde o admin marca esse campo manualmente ao confirmar o combinado com o cliente).
+    // O pedido entra no fluxo de entrega assim que estiver liberado:
+    // - Pix antecipado: contrato assinado + entrada confirmada;
+    // - pagamento na entrega: contrato assinado já libera o pedido, sem esperar o pagamento.
     const pendentes = data.filter(item =>
-        Boolean(item.contrato_assinado) &&
-        Boolean(item.entrada_paga) &&
+        pedidoLiberadoParaEntrega(item) &&
         !Boolean(item.entrega_concluida)
     );
 
@@ -4671,7 +4780,7 @@ function renderizarProximasEntregas(data){
     container.innerHTML = `
         <div class="card" style="margin-bottom:16px;padding:16px 18px;border:1.5px solid #99F6E4;background:#F0FDFA">
             <div style="font-weight:800;color:#0A2463;font-size:14.5px;margin-bottom:8px">
-                🚚 Próximas entregas (pagamento confirmado) — ${pendentes.length}
+                🚚 Próximas entregas — ${pendentes.length}
             </div>
             <div style="max-height:280px;overflow-y:auto;border-radius:10px;background:#fff">
                 ${comData.map(linha).join('')}
@@ -4924,9 +5033,9 @@ function renderizarProposta(i){
 
     const entrega =
         calcularProgressoEntrega(
-            i.dias_entrega || 7,
+            i.dias_entrega || 8,
             Boolean(i.entrega_concluida),
-            i.data_pagamento_entrada || i.entrada_pago_em || i.data_entrada_paga
+            obterInicioPrazoEntrega(i)
         );
 
 
@@ -5221,7 +5330,7 @@ function renderizarProposta(i){
                                     🔥 Reengajar cliente (aprovado, não assinou)
                                 </button>
                             `
-                            : (Boolean(i.contrato_assinado) && !Boolean(i.entrada_paga))
+                            : (Boolean(i.contrato_assinado) && !Boolean(i.entrada_paga) && !pagamentoEhNaEntrega(i))
                             ? `
                                 <button
                                     type="button"
@@ -5273,11 +5382,7 @@ function renderizarProposta(i){
 
                             <strong>Entrada:</strong>
 
-                            ${
-                                i.entrada_paga
-                                ? '✅ Paga'
-                                : '❌ Pendente'
-                            }
+                            ${textoStatusPagamento(i)}
 
                             |
 
@@ -5423,13 +5528,19 @@ function renderizarProposta(i){
                 }"
             >
 
+                ${pagamentoEhNaEntrega(i) && Boolean(i.contrato_assinado) && !Boolean(i.entrada_paga) ? `
+                    <div style="margin-bottom:10px;padding:9px 11px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E40AF;font-size:12px;font-weight:700">
+                        ✅ Pedido liberado pelo contrato assinado. O prazo de ${Number(i.dias_entrega)||8} dias úteis já está contando; o pagamento será feito na entrega.
+                    </div>
+                ` : ''}
+
                 <div>
 
                     <div class="prazo-topo">
 
                         <span>
                             🚚 Prazo:
-                            ${Number(i.dias_entrega)||7}
+                            ${Number(i.dias_entrega)||8}
                             dias úteis
                         </span>
 
@@ -5838,7 +5949,7 @@ function renderizarProposta(i){
                         <input
                             type="number"
                             id="edit_dias_${escapeHTML(String(i.id))}"
-                            value="${Number(i.dias_entrega)||7}"
+                            value="${Number(i.dias_entrega)||8}"
                             class="campo"
                             min="1"
                         >
@@ -6114,11 +6225,11 @@ async function aprovarProposta(id){
         error
     } =
         await supabaseClient
-        .from('propostas')
-        .update({
-            status:'Aprovada'
-        })
-        .eq('id',id);
+        .rpc('admin_propostas_atualizar', {
+            p_token: tokenAdminFlashcred,
+            p_id: id,
+            p_dados: { status:'Aprovada' }
+        });
 
     if(error){
 
@@ -6147,6 +6258,13 @@ async function alternarEntradaPaga(
         entrada_paga: Boolean(status)
     };
 
+    if(Boolean(status)){
+        const propostaPrazo = propostasCache.find(p => String(p.id) === String(id));
+        if(!Number(propostaPrazo?.dias_entrega)){
+            dadosAtualizar.dias_entrega = 8;
+        }
+    }
+
     // Se está marcando como paga e ainda não tem a data de pagamento
     // (ex: quando o Pix não confirmou sozinho e foi marcado na mão),
     // grava a data de agora — sem isso, a barra de progresso da entrega nunca soma dias.
@@ -6161,9 +6279,11 @@ async function alternarEntradaPaga(
         error
     } =
         await supabaseClient
-        .from('propostas')
-        .update(dadosAtualizar)
-        .eq('id',id);
+        .rpc('admin_propostas_atualizar', {
+            p_token: tokenAdminFlashcred,
+            p_id: id,
+            p_dados: dadosAtualizar
+        });
 
     if(error){
 
@@ -6283,9 +6403,7 @@ async function excluirProposta(id){
         error
     } =
         await supabaseClient
-        .from('propostas')
-        .delete()
-        .eq('id',id);
+        .rpc('admin_propostas_excluir', { p_token: tokenAdminFlashcred, p_id: id });
 
     if(error){
 
@@ -6313,27 +6431,21 @@ async function marcarParcela(
 
     try{
 
-        const {
-            data,
-            error
-        } =
-            await supabaseClient
-            .from('propostas')
-            .select(
-                'parcelas_pagas, quantidade_parcelas'
-            )
-            .eq('id',id)
-            .single();
+        const item = (propostasCache || []).find(p => String(p.id) === String(id));
 
-        if(error){
+        if(!item){
 
             alert(
-                'Erro ao consultar parcela:\n' +
-                error.message
+                'Erro ao consultar parcela:\nProposta não encontrada no cache. Atualize a página.'
             );
 
             return;
         }
+
+        const data = {
+            parcelas_pagas: item.parcelas_pagas,
+            quantidade_parcelas: item.quantidade_parcelas
+        };
 
         const total =
             Number(
@@ -6388,11 +6500,11 @@ async function marcarParcela(
             error:updateError
         } =
             await supabaseClient
-            .from('propostas')
-            .update({
-                parcelas_pagas:pagas
-            })
-            .eq('id',id);
+            .rpc('admin_propostas_atualizar', {
+                p_token: tokenAdminFlashcred,
+                p_id: id,
+                p_dados: { parcelas_pagas:pagas }
+            });
 
         if(updateError){
 
@@ -6473,12 +6585,14 @@ async function alternarEmRotaEntrega(
         error
     } =
         await supabaseClient
-        .from('propostas')
-        .update({
-            em_rota_entrega:Boolean(status),
-            data_em_rota_entrega: Boolean(status) ? new Date().toISOString() : null
-        })
-        .eq('id',id);
+        .rpc('admin_propostas_atualizar', {
+            p_token: tokenAdminFlashcred,
+            p_id: id,
+            p_dados: {
+                em_rota_entrega:Boolean(status),
+                data_em_rota_entrega: Boolean(status) ? new Date().toISOString() : null
+            }
+        });
 
     if(error){
 
@@ -6503,11 +6617,11 @@ async function alternarEntregaConcluida(
         error
     } =
         await supabaseClient
-        .from('propostas')
-        .update({
-            entrega_concluida:Boolean(status)
-        })
-        .eq('id',id);
+        .rpc('admin_propostas_atualizar', {
+            p_token: tokenAdminFlashcred,
+            p_id: id,
+            p_dados: { entrega_concluida:Boolean(status) }
+        });
 
     if(error){
 
@@ -6634,7 +6748,7 @@ async function salvarEdicao(id){
                 document
                 .getElementById(`edit_dias_${id}`)
                 .value
-            ) || 7;
+            ) || 8;
 
         const data_preferida_entrega =
             document
@@ -6747,18 +6861,32 @@ async function salvarEdicao(id){
         // Se a quantidade de parcelas foi alterada, recria automaticamente o cronograma.
         // Assim 8 parcelas sempre terão exatamente 8 datas, sem exigir edição manual.
         if(datas_parcelas.length !== quantidade_parcelas){
-            const intervalo = Math.max(1, Number(dias_entrega) || 30);
-            const anteriores = Array.isArray(propostasCache.find(x => String(x.id)===String(id))?.datas_parcelas)
-                ? propostasCache.find(x => String(x.id)===String(id)).datas_parcelas : [];
-            let base = anteriores.length ? new Date(anteriores[0]+'T00:00:00') : new Date();
+            const selectIntervalo = document.getElementById(`edit_intervalo_${id}`);
+            const modoIntervalo = selectIntervalo?.value || '30';
+            const intervalo = modoIntervalo === 'manual'
+                ? 30
+                : Math.max(1, Number(modoIntervalo) || 30);
+
+            const propostaAtual = propostasCache.find(
+                x => String(x.id) === String(id)
+            );
+            const anteriores = Array.isArray(propostaAtual?.datas_parcelas)
+                ? propostaAtual.datas_parcelas
+                : [];
+
+            let base = anteriores.length
+                ? new Date(anteriores[0] + 'T00:00:00')
+                : new Date();
+
             datas_parcelas = [];
+
             for(let i=0;i<quantidade_parcelas;i++){
-                if(i===0 && anteriores.length) {
+                if(i === 0 && anteriores.length){
                     base = new Date(base);
-                } else {
-                    base = new Date(base.getTime() + intervalo*86400000);
+                }else{
+                    base = adicionarDias(base, intervalo);
                 }
-                datas_parcelas.push(base.toISOString().slice(0,10));
+                datas_parcelas.push(dataLocalISO(base));
             }
         }
 
@@ -6834,13 +6962,24 @@ async function salvarEdicao(id){
             }
         }
 
+        // Remove propriedades undefined antes de enviar ao Supabase.
+        // Isso evita payload inconsistente em navegadores/versões diferentes.
+        Object.keys(dadosParaSalvar).forEach(chave => {
+            if(dadosParaSalvar[chave] === undefined){
+                delete dadosParaSalvar[chave];
+            }
+        });
+
         const {
+            data: propostaSalva,
             error
         } =
             await supabaseClient
-            .from('propostas')
-            .update(dadosParaSalvar)
-            .eq('id',id);
+            .rpc('admin_propostas_atualizar', {
+                p_token: tokenAdminFlashcred,
+                p_id: id,
+                p_dados: dadosParaSalvar
+            });
 
 
         if(error){
@@ -6855,6 +6994,16 @@ async function salvarEdicao(id){
             return;
         }
 
+        if(!propostaSalva){
+            alert('A alteração não foi confirmada no banco. Atualize a página e tente novamente.');
+            return;
+        }
+
+        // Atualiza o cache imediatamente com exatamente o que voltou do banco.
+        const indiceCache = propostasCache.findIndex(p => String(p.id) === String(id));
+        if(indiceCache >= 0){
+            propostasCache[indiceCache] = propostaSalva;
+        }
 
         await carregarPropostas();
 
@@ -7275,19 +7424,24 @@ async function mostrarNotificacoes(){
     try{
 
         const {
-            data,
+            data: dadosCompletos,
             error
         } =
             await supabaseClient
-            .from('propostas')
-            .select('id,nome,cpf,status,created_at,funcionario_id,indicado_por_cpf')
-            .eq('status','Nova')
-            .order(
-                'created_at',
-                {
-                    ascending:false
-                }
-            );
+            .rpc('admin_propostas_listar', { p_token: tokenAdminFlashcred });
+
+        const data = (dadosCompletos || [])
+            .filter(p => p.status === 'Nova')
+            .map(p => ({
+                id: p.id,
+                nome: p.nome,
+                cpf: p.cpf,
+                status: p.status,
+                created_at: p.created_at,
+                funcionario_id: p.funcionario_id,
+                indicado_por_cpf: p.indicado_por_cpf
+            }))
+            .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
 
         if(error){
 
@@ -7817,15 +7971,17 @@ async function responderPedidoLimite(id, aprovar){
     try{
         if(aprovar && pedido.proposta_id){
             const { error: erroProposta } = await supabaseClient
-                .from('propostas')
-                .update({ valor_desejado: pedido.valor_solicitado })
-                .eq('id', pedido.proposta_id);
+                .rpc('admin_propostas_atualizar', {
+                    p_token: tokenAdminFlashcred,
+                    p_id: pedido.proposta_id,
+                    p_dados: { valor_desejado: pedido.valor_solicitado }
+                });
             if(erroProposta) throw erroProposta;
         }
 
         const { error } = await supabaseClient
             .from('pedidos_limite')
-            .update({ status: aprovar ? 'Aprovado' : 'Recusado' })
+            .update({ status: aprovar ? 'Aprovada' : 'Recusado' })
             .eq('id', id);
         if(error) throw error;
 
