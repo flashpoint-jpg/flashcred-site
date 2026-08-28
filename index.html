@@ -4,21 +4,35 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FlashCred | Limite no Pix - Distribuidora Flash Point</title>
+<link rel="manifest" href="manifest-cliente.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0A2463">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FlashCred">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.1"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script>
-tailwind.config={theme:{extend:{colors:{primary:'#0A2463',azulLogo:'#2563EB',verdeLogo:'#10B981',neutro:'#475569',fundo:'#F8FAFC'}}}}
+tailwind.config={theme:{extend:{colors:{primary:'#0A2463',azulLogo:'#0F8B8D',verdeLogo:'#10B981',neutro:'#475569',fundo:'#F8FAFC'}}}}
 </script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:Inter,system-ui,-apple-system,sans-serif;background:radial-gradient(circle at 8% 8%,rgba(37,99,235,.10),transparent 28%),radial-gradient(circle at 92% 22%,rgba(16,185,129,.09),transparent 25%),linear-gradient(180deg,#f8fbff 0%,#f8fafc 55%,#eef4fb 100%);color:#1e293b;line-height:1.6}
+body{font-family:Inter,system-ui,-apple-system,sans-serif;background:radial-gradient(circle at 8% 8%,rgba(15,139,141,.10),transparent 28%),radial-gradient(circle at 92% 22%,rgba(16,185,129,.09),transparent 25%),linear-gradient(180deg,#f8fbff 0%,#f8fafc 55%,#eef4fb 100%);color:#1e293b;line-height:1.6}
 nav{background:rgba(255,255,255,.88);backdrop-filter:blur(18px);border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:50;box-shadow:0 8px 30px rgba(7,27,77,.07)}
 nav>div{min-height:72px}
-.nav-link{font-weight:600;color:#475569;transition:.25s;padding:9px 14px;border-radius:12px;text-decoration:none;border:1px solid transparent}
-.nav-link:hover{color:#0A2463;background:#eff6ff;border-color:#dbeafe;transform:translateY(-1px)}
-.logo-nome{font-size:30px;font-weight:900;letter-spacing:-1px;background:linear-gradient(90deg,#0A2463,#2563EB);-webkit-background-clip:text;background-clip:text;color:transparent;text-decoration:none}
-.logo-slogan{font-size:13px;color:#2563EB;font-weight:700;letter-spacing:.2px;opacity:.78}
+.nav-link{font-weight:700;font-size:14px;color:#334155;transition:.25s;padding:10px 18px;border-radius:999px;text-decoration:none;background:#f1f5f9;border:1px solid #e2e8f0}
+.nav-link:hover{color:#0A2463;background:#eafbfa;border-color:#a8dcdc;transform:translateY(-2px);box-shadow:0 8px 18px rgba(10,36,99,.10)}
+.nav-link:first-of-type{background:linear-gradient(135deg,#0A2463,#0F8B8D);color:#fff;border-color:transparent;box-shadow:0 8px 20px rgba(15,139,141,.25)}
+.nav-link:first-of-type:hover{color:#fff;background:linear-gradient(135deg,#0A2463,#0B6B6C);box-shadow:0 12px 26px rgba(15,139,141,.32);transform:translateY(-2px)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid rgba(15,139,141,.45);outline-offset:2px;border-radius:8px}
+.logo-nome{font-size:30px;font-weight:900;letter-spacing:-1px;background:linear-gradient(90deg,#0A2463,#0F8B8D);-webkit-background-clip:text;background-clip:text;color:transparent;text-decoration:none}
+.logo-slogan{font-size:13px;color:#0F8B8D;font-weight:700;letter-spacing:.2px;opacity:.78}
 main{padding-top:48px}
 .destaque-container{width:100%;max-width:980px;margin:0 auto 38px;border-radius:28px;overflow:hidden;box-shadow:0 22px 60px rgba(10,36,99,.13);background:#fff;border:1px solid #e2e8f0;transition:.3s}
 .destaque-container:hover{transform:translateY(-3px);box-shadow:0 28px 70px rgba(10,36,99,.16)}
@@ -26,16 +40,23 @@ main{padding-top:48px}
 .card{background:rgba(255,255,255,.97);border-radius:28px;box-shadow:0 18px 50px rgba(15,23,42,.075);padding:34px;border:1px solid rgba(226,232,240,.95);transition:.25s}
 .card:hover{transform:translateY(-3px);box-shadow:0 24px 60px rgba(15,23,42,.11)}
 .btn{width:100%;padding:15px 20px;border-radius:15px;font-weight:700;font-size:16px;border:0;cursor:pointer;transition:.25s}
-.btn-primary{background:linear-gradient(135deg,#0A2463,#2563EB);color:#fff;box-shadow:0 14px 28px rgba(37,99,235,.22);min-height:54px}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 34px rgba(37,99,235,.30)}
+.btn-primary{background:linear-gradient(135deg,#0A2463,#0F8B8D);color:#fff;box-shadow:0 14px 28px rgba(15,139,141,.22);min-height:54px}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 34px rgba(15,139,141,.30)}
 .btn-primary:disabled{opacity:.7;cursor:not-allowed;transform:none}
 .spinner{width:20px;height:20px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:girar .8s linear infinite;display:none}
 @keyframes girar{to{transform:rotate(360deg)}}
+@keyframes paGirar{to{transform:rotate(360deg)}}
+@keyframes paFadeIn{0%{transform:translateY(6px);opacity:0}100%{transform:translateY(0);opacity:1}}
+.pa-badge-valor{width:100%;max-width:320px;margin:0 auto 16px;padding:20px 24px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;border:1.5px solid #DBEAFE;box-shadow:0 8px 24px rgba(10,36,99,.08);animation:paFadeIn .4s ease}
+.pa-badge-valor span{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b}
+.pa-badge-valor strong{font-size:28px;font-weight:800;margin-top:4px;color:#0A2463}
 .input{width:100%;padding:14px 16px;border:1px solid #d7e0eb;border-radius:14px;font-size:15px;background:#f8fafc;margin-bottom:17px;transition:.2s}
 .input:hover{border-color:#9fb0c5}
-.input:focus{outline:none;border-color:#2563EB;background:#fff;box-shadow:0 0 0 4px rgba(37,99,235,.11);transform:translateY(-1px)}
+.input:focus{outline:none;border-color:#0F8B8D;background:#fff;box-shadow:0 0 0 4px rgba(15,139,141,.11);transform:translateY(-1px)}
 label{font-weight:700;font-size:11px;color:#334155;display:block;margin-bottom:7px;text-transform:uppercase;letter-spacing:.7px}
 .erro{color:#dc2626;font-size:13px;margin:-10px 0 12px;display:none}
+.protecao-check{display:flex;align-items:flex-start;gap:10px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:14px;padding:14px;margin-bottom:6px;cursor:pointer;text-transform:none;font-size:14px;letter-spacing:normal}
+.protecao-check input{width:auto;margin:3px 0 0;flex:0 0 auto}
 #valor_desejado{border:2px solid rgba(16,185,129,.35);background:#f0fdf9;font-size:17px;font-weight:700}
 .aviso-exclusivo{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fcd34d;border-radius:16px;padding:15px;color:#92400e;font-size:14px;font-weight:600;margin-bottom:22px;box-shadow:0 10px 25px rgba(146,64,14,.07)}
 .beneficio{display:flex;align-items:flex-start;gap:10px;padding:13px 0;border-bottom:1px solid #f1f5f9;font-size:14px;color:#334155}
@@ -58,8 +79,27 @@ label{font-weight:700;font-size:11px;color:#334155;display:block;margin-bottom:7
 .resumo-final{background:rgba(253,224,71,.17);border:2px solid #fde047;border-radius:17px;padding:22px;text-align:center;margin-top:24px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
 .texto-resumo{font-size:1.2rem;font-weight:700;font-style:italic;line-height:1.55}
 
+/* PAGAR PARCELAS */
+.parcelas-section{max-width:980px;margin:0 auto 38px;border-radius:28px;padding:2px;background:linear-gradient(135deg,#0A2463,#0f8b8d);box-shadow:0 22px 55px rgba(7,27,77,.16)}
+.parcelas-inner{background:#fff;border-radius:26px;padding:32px;text-align:center}
+.parcelas-titulo{color:#0A2463;font-size:clamp(1.5rem,4vw,2rem);font-weight:900;letter-spacing:-.5px}
+.parcelas-sub{color:#64748b;margin:6px auto 22px;max-width:560px}
+.parcelas-form{display:flex;gap:10px;max-width:440px;margin:0 auto;flex-wrap:wrap}
+.parcelas-form input{flex:1;min-width:200px}
+.parcelas-btn{flex:0 0 auto;padding:14px 22px;border:0;border-radius:14px;background:linear-gradient(135deg,#0A2463,#0F8B8D);color:#fff;font-weight:800;cursor:pointer;box-shadow:0 12px 26px rgba(15,139,141,.22);transition:.2s;min-height:52px}
+.parcelas-btn:hover{transform:translateY(-2px);box-shadow:0 16px 32px rgba(15,139,141,.28)}
+.parcelas-btn:disabled{opacity:.65;cursor:not-allowed;transform:none}
+#overlayParcelas{display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;padding:20px;background:rgba(3,15,42,.72);backdrop-filter:blur(10px)}
+#overlayParcelas.ativo{display:flex;animation:fcFadeIn .25s ease}
+.parcelas-card{width:min(420px,100%);background:#fff;border-radius:26px;padding:34px 26px;text-align:center;box-shadow:0 30px 90px rgba(0,0,0,.28);animation:fcCardIn .45s cubic-bezier(.2,.8,.2,1)}
+.parcelas-spinner{width:58px;height:58px;margin:0 auto 18px;border-radius:50%;border:5px solid #d3f3f2;border-top-color:#0f8b8d;animation:trocaSpinPar 1s linear infinite}
+@keyframes trocaSpinPar{to{transform:rotate(360deg)}}
+.parcelas-card h2{color:#0A2463;font-size:22px;font-weight:900;margin-bottom:6px}
+.parcelas-card p{color:#64748b}
+@media(max-width:640px){.parcelas-inner{padding:22px;border-radius:21px}.parcelas-form{flex-direction:column}.parcelas-btn{width:100%}}
+
 /* SIMULADOR */
-.simulador{max-width:980px;margin:0 auto 42px;border-radius:28px;padding:2px;background:linear-gradient(135deg,#2563eb,#10b981);box-shadow:0 24px 60px rgba(7,27,77,.16)}
+.simulador{max-width:980px;margin:0 auto 42px;border-radius:28px;padding:2px;background:linear-gradient(135deg,#0f8b8d,#10b981);box-shadow:0 24px 60px rgba(7,27,77,.16)}
 .simulador-inner{background:#fff;border-radius:26px;padding:32px}
 .simulador-titulo{text-align:center;color:#0A2463;font-size:clamp(1.7rem,4vw,2.25rem);font-weight:900;letter-spacing:-.6px}
 .simulador-sub{text-align:center;color:#64748b;margin:6px auto 24px}
@@ -67,7 +107,7 @@ label{font-weight:700;font-size:11px;color:#334155;display:block;margin-bottom:7
 .sim-field{background:#f8fafc;border:1px solid #e2e8f0;border-radius:17px;padding:18px}
 .sim-field label{margin-bottom:8px}
 .sim-field input,.sim-field select{width:100%;padding:14px;border:1px solid #cbd5e1;border-radius:13px;background:#fff;font-size:16px;font-weight:700;color:#0f172a;outline:none}
-.sim-field input:focus,.sim-field select:focus{border-color:#2563eb;box-shadow:0 0 0 4px rgba(37,99,235,.10)}
+.sim-field input:focus,.sim-field select:focus{border-color:#0f8b8d;box-shadow:0 0 0 4px rgba(15,139,141,.10)}
 .sim-info{display:flex;justify-content:space-between;gap:12px;margin-top:18px;flex-wrap:wrap}
 .sim-mini{flex:1;min-width:180px;padding:15px;border-radius:15px;background:#f0fdf9;border:1px solid #bbf7d0}
 .sim-mini span{display:block;color:#64748b;font-size:12px;font-weight:700;text-transform:uppercase}
@@ -77,13 +117,13 @@ label{font-weight:700;font-size:11px;color:#334155;display:block;margin-bottom:7
 .sim-loader{width:58px;height:58px;margin:0 auto 13px;border-radius:50%;border:5px solid rgba(255,255,255,.2);border-top-color:#10b981;animation:simSpin .8s linear infinite}
 .sim-analise h3{font-size:21px;font-weight:800}
 .sim-analise p{opacity:.82;font-size:14px}
-.sim-result{display:none;margin-top:22px;border-radius:20px;padding:23px;background:linear-gradient(135deg,#ecfdf5,#eff6ff);border:1px solid #bbf7d0;animation:simResult .55s cubic-bezier(.2,.8,.2,1)}
+.sim-result{display:none;margin-top:22px;border-radius:20px;padding:23px;background:linear-gradient(135deg,#ecfdf5,#eafbfa);border:1px solid #bbf7d0;animation:simResult .55s cubic-bezier(.2,.8,.2,1)}
 .sim-result.ativo{display:block}
 .result-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .result-box{padding:15px;border-radius:15px;background:rgba(255,255,255,.86);border:1px solid #e2e8f0}
 .result-box span{display:block;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase}
 .result-box strong{display:block;font-size:20px;color:#0A2463;margin-top:3px}
-.result-parcela{margin-top:15px;padding:20px;border-radius:18px;text-align:center;background:linear-gradient(135deg,#0A2463,#2563EB);color:#fff;box-shadow:0 14px 30px rgba(37,99,235,.20)}
+.result-parcela{margin-top:15px;padding:20px;border-radius:18px;text-align:center;background:linear-gradient(135deg,#0A2463,#0F8B8D);color:#fff;box-shadow:0 14px 30px rgba(15,139,141,.20)}
 .result-parcela span{display:block;font-size:12px;font-weight:700;opacity:.8;text-transform:uppercase}
 .result-parcela strong{font-size:34px;line-height:1.2}
 .sim-alert{margin-top:14px;text-align:center;color:#64748b;font-size:12px}
@@ -97,8 +137,8 @@ footer{background:linear-gradient(135deg,#071b4d,#0A2463);color:#cbd5e1;border-r
 #overlayEnvio{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:22px;background:rgba(3,15,42,.72);backdrop-filter:blur(12px)}
 #overlayEnvio.ativo{display:flex;animation:fcFadeIn .28s ease}
 .envio-card{width:min(460px,100%);padding:38px 28px 30px;border-radius:28px;background:rgba(255,255,255,.97);box-shadow:0 30px 100px rgba(0,0,0,.28);text-align:center;animation:fcCardIn .45s cubic-bezier(.2,.8,.2,1)}
-.envio-icon{width:92px;height:92px;margin:0 auto 20px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#dbeafe,#dcfce7);position:relative}
-.envio-icon:before{content:"";position:absolute;inset:-8px;border-radius:50%;border:3px solid rgba(37,99,235,.18);animation:fcPulse 1.4s infinite}
+.envio-icon{width:92px;height:92px;margin:0 auto 20px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#d3f3f2,#dcfce7);position:relative}
+.envio-icon:before{content:"";position:absolute;inset:-8px;border-radius:50%;border:3px solid rgba(15,139,141,.18);animation:fcPulse 1.4s infinite}
 .envio-icon svg{width:46px;height:46px;stroke:#10b981;stroke-width:2.8;fill:none}
 .envio-card h2{font-size:26px;font-weight:800;color:#0A2463;margin-bottom:7px}
 .envio-card p{color:#64748b;font-size:15px}
@@ -106,8 +146,8 @@ footer{background:linear-gradient(135deg,#071b4d,#0A2463);color:#cbd5e1;border-r
 .envio-linha{display:flex;align-items:center;gap:10px;font-size:14px;color:#475569;margin:9px 0}
 .envio-bolinha{width:21px;height:21px;border-radius:50%;display:grid;place-items:center;background:#10b981;color:#fff;font-size:12px;font-weight:800;flex:0 0 21px}
 .envio-barra{height:7px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-top:17px}
-.envio-barra span{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#2563eb,#10b981);animation:fcProgress 1.65s ease forwards}
-.envio-destino{margin-top:18px;font-size:13px;font-weight:700;color:#2563eb;animation:fcBlink 1s infinite alternate}
+.envio-barra span{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#0f8b8d,#10b981);animation:fcProgress 1.65s ease forwards}
+.envio-destino{margin-top:18px;font-size:13px;font-weight:700;color:#0f8b8d;animation:fcBlink 1s infinite alternate}
 @keyframes fcFadeIn{from{opacity:0}to{opacity:1}}
 @keyframes fcCardIn{from{opacity:0;transform:translateY(22px) scale(.96)}to{opacity:1;transform:none}}
 @keyframes fcPulse{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.12);opacity:.2}}
@@ -117,7 +157,8 @@ footer{background:linear-gradient(135deg,#071b4d,#0A2463);color:#cbd5e1;border-r
 @media(max-width:640px){
   main{padding-top:28px}
   .logo-nome{font-size:25px}
-  .nav-link{font-size:13px;padding:8px 9px}
+  #btnMenuMobile{display:flex!important;align-items:center;justify-content:center}
+  #navLinksDesktop{display:none!important}
   .card{padding:23px;border-radius:22px}
   .secao-limite-pix{border-radius:24px;margin:28px auto}
   .conteudo-destaque{padding:28px 16px}
@@ -125,37 +166,621 @@ footer{background:linear-gradient(135deg,#071b4d,#0A2463);color:#cbd5e1;border-r
   .simulador{border-radius:23px}
   .simulador-inner{padding:22px;border-radius:21px}
   .sim-grid,.result-grid{grid-template-columns:1fr}
+  .promo-armario-grid{grid-template-columns:1fr!important}
+  .promo-armario-grid > div:first-child{min-height:200px!important}
 }
+#drawerMenuMobile.aberto{transform:translateX(0)!important}
+.drawer-link{display:flex;align-items:center;gap:14px;padding:13px 12px;border-radius:14px;text-decoration:none;color:inherit;transition:.2s}
+.drawer-link:hover,.drawer-link:active{background:#f8fafc}
+.drawer-link-icone{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.drawer-link-titulo{display:block;font-weight:800;color:#0A2463;font-size:14.5px}
+.drawer-link-sub{display:block;font-weight:500;color:#94a3b8;font-size:11.5px;margin-top:1px}
+.drawer-link-seta{margin-left:auto;color:#cbd5e1;font-size:20px;flex-shrink:0}
+
+/* ===== INDIQUE E GANHE - ADIÇÃO ===== */
+.indique-section{max-width:980px;margin:0 auto 42px;border-radius:28px;padding:2px;background:linear-gradient(135deg,#10b981,#0f8b8d);box-shadow:0 24px 60px rgba(7,27,77,.15)}
+.indique-inner{background:#fff;border-radius:26px;padding:30px}
+.indique-header{text-align:center;margin-bottom:24px}
+.indique-badge{display:inline-block;background:#ecfdf5;color:#047857;border:1px solid #bbf7d0;border-radius:999px;padding:7px 13px;font-size:12px;font-weight:800;margin-bottom:10px}
+.indique-title{color:#0A2463;font-size:clamp(1.7rem,4vw,2.25rem);font-weight:900}
+.indique-sub{color:#64748b;margin-top:5px}
+.indique-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.indique-info{border-radius:20px;padding:24px;background:linear-gradient(135deg,#071b4d,#123f9b);color:#fff}
+.indique-info h3{font-size:21px;font-weight:800;margin-bottom:12px}
+.indique-passo{display:flex;gap:11px;align-items:flex-start;margin:13px 0}
+.indique-num{width:30px;height:30px;flex:0 0 30px;border-radius:9px;background:rgba(255,255,255,.14);display:grid;place-items:center;font-weight:900;color:#fde047}
+.indique-form{border:1px solid #e2e8f0;border-radius:20px;padding:24px;background:#f8fafc}
+.indique-form .input{background:#fff;margin-bottom:13px}
+.indique-btn{background:linear-gradient(135deg,#059669,#10b981);color:#fff;width:100%;padding:15px;border:0;border-radius:14px;font-weight:800;cursor:pointer;min-height:52px;box-shadow:0 12px 25px rgba(16,185,129,.18)}
+.indique-btn:disabled{opacity:.65;cursor:not-allowed}
+.indique-sucesso{display:none;margin-top:14px;padding:13px;border-radius:14px;background:#ecfdf5;border:1px solid #86efac;color:#166534;font-size:14px;font-weight:700}
+@media(max-width:640px){.indique-section{border-radius:23px;margin-bottom:28px}.indique-inner{padding:21px;border-radius:21px}.indique-grid{grid-template-columns:1fr}.indique-info,.indique-form{padding:20px}}
+
+
+.indique-exemplos{margin-top:18px;padding:15px;border-radius:15px;background:rgba(253,224,71,.13);border:1px solid rgba(253,224,71,.35)}
+.indique-exemplos div{display:flex;gap:7px;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.10);font-size:14px}
+.indique-exemplos div:last-child{border-bottom:0}
+.indique-exemplos b{color:#fde047;font-size:16px;white-space:nowrap}
+.overlay-indicacao{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(3,15,42,.76);backdrop-filter:blur(10px)}
+.overlay-indicacao.ativo{display:flex;animation:fcFadeIn .25s ease}
+.sucesso-indicacao-card{width:min(470px,100%);background:#fff;border-radius:28px;padding:34px 26px;text-align:center;box-shadow:0 30px 100px rgba(0,0,0,.3);animation:fcCardIn .45s cubic-bezier(.2,.8,.2,1)}
+.sucesso-indicacao-icon{width:82px;height:82px;margin:0 auto 16px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#d3f3f2,#dcfce7);color:#059669;font-size:48px;font-weight:900;border:3px solid #a7f3d0}
+.sucesso-indicacao-card h2{color:#0A2463;font-size:25px;font-weight:900;margin-bottom:6px}
+.sucesso-indicacao-card>p{color:#64748b;margin-bottom:20px}
+.sucesso-lista{text-align:left;background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px 16px}
+.sucesso-lista div{display:flex;gap:9px;padding:8px 0;color:#059669;font-weight:800}
+.sucesso-lista span{color:#475569;font-weight:600}
+.indicacao-wpp-msg{margin-top:18px;color:#0f8b8d;font-size:13px;font-weight:800;animation:fcBlink 1s infinite alternate}
+
+/* BOTÃO FLUTUANTE WHATSAPP */
+.wpp-flutuante{position:fixed;bottom:22px;right:22px;z-index:9998;display:flex;align-items:center;gap:10px;background:#25D366;color:#fff;padding:14px 20px 14px 14px;border-radius:999px;text-decoration:none;font-weight:800;font-size:15px;box-shadow:0 12px 30px rgba(37,211,102,.4);transition:.25s;animation:wppPulse 2.4s infinite}
+.wpp-flutuante:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 16px 38px rgba(37,211,102,.5)}
+.wpp-flutuante svg{width:26px;height:26px;flex:0 0 26px;fill:#fff}
+.wpp-flutuante span{white-space:nowrap}
+@keyframes wppPulse{0%,100%{box-shadow:0 12px 30px rgba(37,211,102,.4)}50%{box-shadow:0 12px 30px rgba(37,211,102,.75)}}
+@media(max-width:640px){.wpp-flutuante span{display:none}.wpp-flutuante{padding:15px;border-radius:50%}.wpp-flutuante svg{width:28px;height:28px}}
+
+/* BOTÃO FLUTUANTE LEILÃO */
+.leilao-flutuante{position:fixed;bottom:162px;right:22px;z-index:9997;display:flex;align-items:center;gap:9px;background:linear-gradient(135deg,#F59E0B,#DC2626);color:#fff;padding:12px 18px 12px 13px;border-radius:999px;text-decoration:none;font-weight:800;font-size:13.5px;box-shadow:0 12px 28px rgba(220,38,38,.35);transition:.25s;animation:leilaoPulse 2.4s infinite}
+.leilao-flutuante:hover{transform:translateY(-3px) scale(1.03)}
+.leilao-flutuante span{white-space:nowrap;line-height:1.2}
+.leilao-flutuante .leilao-sub{display:block;font-size:10px;font-weight:700;opacity:.9}
+@keyframes leilaoPulse{0%,100%{box-shadow:0 12px 28px rgba(220,38,38,.35)}50%{box-shadow:0 12px 28px rgba(220,38,38,.6)}}
+@media(max-width:640px){.leilao-flutuante{bottom:156px;padding:13px;border-radius:50%}.leilao-flutuante span{display:none}}
+.vitrine-card{background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden;box-shadow:0 4px 14px rgba(10,36,99,.06);transition:.25s}
+.vitrine-card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(10,36,99,.12)}
+.vitrine-card img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:#F1F5F9}
+.vitrine-info{padding:12px 14px}
+.vitrine-nome{font-size:13px;font-weight:700;color:#1E293B;line-height:1.35;margin-bottom:6px;min-height:35px}
+.vitrine-preco{font-size:16px;font-weight:900;color:#0A2463}
 </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
 <nav>
-  <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center gap-4">
     <div class="logo-container">
       <div class="flex flex-col">
         <a href="index.html" class="logo-nome">FlashCred</a>
         <span class="logo-slogan">Limite no Pix Parcelado</span>
       </div>
     </div>
-    <div class="flex gap-3 sm:gap-5">
-      <a href="painel.html" class="nav-link">Painel de Controle</a>
+    <button type="button" id="btnMenuMobile" onclick="abrirMenuMobile()" aria-label="Abrir menu" style="display:none;background:#fff;border:1px solid #e2e8f0;border-radius:12px;width:46px;height:46px;font-size:19px;color:#0A2463;cursor:pointer;flex-shrink:0;box-shadow:0 2px 8px rgba(10,36,99,.06)">☰</button>
+    <div class="flex gap-3 sm:gap-5" id="navLinksDesktop">
+      <a href="#pagarParcelas" class="nav-link">💳 Pagar Parcelas</a>
       <a href="consultar.html" class="nav-link">Acompanhar Proposta</a>
+      <a href="loja.html" class="nav-link">🛋️ Nossa Loja</a>
+      <a href="#indiqueEGanhe" class="nav-link">💚 Indique e Ganhe</a>
+      <a href="#quemSomos" class="nav-link">🏠 Quem Somos</a>
     </div>
   </div>
 </nav>
+
+<div id="overlayMenuMobile" onclick="fecharMenuMobile()" style="display:none;position:fixed;inset:0;background:rgba(10,36,99,.45);z-index:98;backdrop-filter:blur(2px)"></div>
+
+<aside id="drawerMenuMobile" style="position:fixed;top:0;right:0;height:100%;width:82%;max-width:320px;background:#fff;z-index:99;transform:translateX(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);box-shadow:-8px 0 40px rgba(10,36,99,.18);display:flex;flex-direction:column">
+
+  <div style="padding:22px 20px;border-bottom:1px solid #eef2f7;display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div class="logo-nome" style="font-size:22px">FlashCred</div>
+      <div style="font-size:11.5px;color:#64748b;font-weight:700">Limite no Pix Parcelado</div>
+    </div>
+    <button type="button" onclick="fecharMenuMobile()" aria-label="Fechar menu" style="background:#f1f5f9;border:none;border-radius:10px;width:36px;height:36px;font-size:16px;color:#334155;cursor:pointer">✕</button>
+  </div>
+
+  <nav style="padding:14px 12px;display:flex;flex-direction:column;gap:4px;overflow-y:auto">
+    <a href="#pagarParcelas" class="drawer-link" onclick="fecharMenuMobile()">
+      <span class="drawer-link-icone" style="background:#EFF6FF">💳</span>
+      <span>
+        <span class="drawer-link-titulo">Pagar Parcelas</span>
+        <span class="drawer-link-sub">Quitar uma parcela em aberto</span>
+      </span>
+      <span class="drawer-link-seta">›</span>
+    </a>
+    <a href="consultar.html" class="drawer-link">
+      <span class="drawer-link-icone" style="background:#F0FDFA">🔎</span>
+      <span>
+        <span class="drawer-link-titulo">Acompanhar Proposta</span>
+        <span class="drawer-link-sub">Ver status, entrada e entrega</span>
+      </span>
+      <span class="drawer-link-seta">›</span>
+    </a>
+    <a href="loja.html" class="drawer-link">
+      <span class="drawer-link-icone" style="background:#FFFBEB">🛋️</span>
+      <span>
+        <span class="drawer-link-titulo">Nossa Loja</span>
+        <span class="drawer-link-sub">Ver o catálogo de móveis</span>
+      </span>
+      <span class="drawer-link-seta">›</span>
+    </a>
+    <a href="leilao.html" class="drawer-link">
+      <span class="drawer-link-icone" style="background:#FEF3C7">🔨</span>
+      <span>
+        <span class="drawer-link-titulo">Melhor Lance Ganha</span>
+        <span class="drawer-link-sub">Dê seu lance e concorra a preços especiais</span>
+      </span>
+      <span class="drawer-link-seta">›</span>
+    </a>
+    <a href="#indiqueEGanhe" class="drawer-link" onclick="fecharMenuMobile()">
+      <span class="drawer-link-icone" style="background:#F0FDF4">💚</span>
+      <span>
+        <span class="drawer-link-titulo">Indique e Ganhe</span>
+        <span class="drawer-link-sub">Compartilhe e ganhe recompensa</span>
+      </span>
+      <span class="drawer-link-seta">›</span>
+    </a>
+    <a href="#quemSomos" class="drawer-link" onclick="fecharMenuMobile()">
+      <span class="drawer-link-icone" style="background:#FEF2F2">🏠</span>
+      <span>
+        <span class="drawer-link-titulo">Quem Somos</span>
+        <span class="drawer-link-sub">Conheça a FlashCred</span>
+      </span>
+      <span class="drawer-link-seta">›</span>
+    </a>
+  </nav>
+
+  <div style="margin-top:auto;padding:18px 20px;border-top:1px solid #eef2f7">
+    <p style="font-size:11px;color:#94a3b8;text-align:center">Distribuidora Flash Point Móveis<br>CNPJ 35.560.220/0001-54</p>
+  </div>
+
+</aside>
 
 <main class="flex-grow py-10 px-4">
 <div class="max-w-6xl mx-auto">
 
 <header class="text-center mb-8">
   <h1 class="text-3xl md:text-4xl font-bold text-primary mb-3">Compre Móveis com Limite no Pix Parcelado</h1>
-  <p class="text-lg text-neutro">Exclusivo para compras na <strong>Distribuidora Flash Point Móveis</strong></p>
+  <p class="text-lg text-neutro mb-4">Exclusivo para compras na <strong>Distribuidora Flash Point Móveis</strong></p>
+  <div style="display:inline-flex;align-items:center;gap:9px;background:#fff;border:1px solid #a7f3d0;border-radius:999px;padding:10px 18px;box-shadow:0 6px 18px rgba(15,139,141,.10)">
+    <span style="font-size:16px;line-height:1">✅</span>
+    <span style="font-size:13.5px;color:#0F766E;font-weight:700;letter-spacing:.1px">Pix na entrada é uma opção, não uma obrigação — a escolha da forma de pagamento é sempre sua</span>
+  </div>
 </header>
+
+<!-- PROMOÇÃO ARMÁRIO MULTIUSO -->
+<div class="card" id="cardPromoIndex" style="max-width:980px;margin:0 auto 28px;padding:0;border:none;box-shadow:0 14px 40px rgba(10,36,99,.12);overflow:hidden;position:relative">
+  <div style="position:absolute;top:16px;left:16px;background:#DC2626;color:#fff;font-weight:900;font-size:11.5px;letter-spacing:.04em;padding:7px 14px;border-radius:999px;z-index:2;box-shadow:0 4px 12px rgba(220,38,38,.35)">🔥 PROMOÇÃO</div>
+  <div class="promo-armario-grid" style="display:grid;grid-template-columns:280px 1fr;gap:0">
+    <div style="background:#F5F0E8;display:flex;align-items:center;justify-content:center;min-height:220px">
+      <img id="promoIndexImagem" src="/promo-armario-multiuso.png" alt="Produto em promoção" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.style.display='none'">
+    </div>
+    <div style="padding:26px 28px;display:flex;flex-direction:column;justify-content:center">
+      <h2 id="promoIndexNome" style="font-weight:900;color:#0A2463;font-size:21px;margin-bottom:4px">Armário Multiuso Grande</h2>
+      <p id="promoIndexDescricao" style="color:#64748b;font-size:13.5px;margin-bottom:14px">6 prateleiras removíveis · Altura 1,86m · Ideal para cozinha, lavanderia, despensa ou escritório</p>
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:16px">
+        <span id="promoIndexPreco" style="font-size:30px;font-weight:900;color:#DC2626">R$ 390,00</span>
+        <span style="font-size:12.5px;color:#94a3b8;font-weight:700">🚚 Entrega imediata</span>
+      </div>
+      <a href="#cardPreAnalise" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#0A2463;color:#fff;font-weight:800;font-size:14.5px;padding:14px 22px;border-radius:14px;text-decoration:none;box-shadow:0 10px 24px rgba(10,36,99,.25)">
+        Comprar agora com meu limite expresso
+      </a>
+      <p style="font-size:11.5px;color:#94a3b8;margin-top:8px">Faça sua Pré-Análise Expressa em 2 minutos e já use o limite liberado nessa compra.</p>
+    </div>
+  </div>
+</div>
+
+<!-- COMO FUNCIONA O PAGAMENTO -->
+<div class="card" style="max-width:980px;margin:0 auto 28px;padding:34px 26px;border:none;box-shadow:0 10px 40px rgba(10,36,99,.08)">
+  <div style="text-align:center;margin-bottom:26px">
+    <span style="display:inline-block;background:#f0fdfa;color:#0F8B8D;font-weight:800;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;padding:6px 14px;border-radius:999px;margin-bottom:10px">Formas de pagamento</span>
+    <h2 style="font-weight:900;color:#0A2463;font-size:22px;margin-bottom:6px">4 formas de pagar</h2>
+    <p style="color:#64748b;font-size:14px">Escolha a que faz mais sentido pra você — sem letra miúda, sem pegadinha.</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px">
+
+    <div style="position:relative;border-radius:20px;padding:22px 18px 18px;background:linear-gradient(160deg,#0F8B8D,#0c6e70);box-shadow:0 14px 30px rgba(15,139,141,.28)">
+      <span style="position:absolute;top:-10px;right:16px;background:#fde047;color:#78350f;font-weight:800;font-size:10.5px;letter-spacing:.03em;padding:5px 11px;border-radius:999px;box-shadow:0 4px 10px rgba(0,0,0,.15)">MAIS RÁPIDO</span>
+      <div style="width:42px;height:42px;border-radius:13px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px">⚡</div>
+      <h3 style="font-weight:900;color:#fff;font-size:16px;margin-bottom:2px">Pix com entrada</h3>
+      <p style="font-size:12px;font-weight:700;color:rgba(255,255,255,.75);margin-bottom:14px">Entrada de 40% — paga agora</p>
+      <ul style="font-size:13px;color:rgba(255,255,255,.94);line-height:1.85;padding-left:0;list-style:none;margin-bottom:0">
+        <li>🚚 <strong>Entrega mais rápida</strong> — o pedido entra na fila assim que a entrada cai</li>
+        <li>💸 Entrada mais baixa</li>
+        <li>🔒 Reserva seus móveis na hora</li>
+        <li>🗓️ <strong>Você escolhe o dia da entrega</strong></li>
+        <li>📅 Restante em até 12x</li>
+      </ul>
+      <div style="margin-top:12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:10px;padding:9px 11px;font-size:11.5px;color:#fff;font-weight:700;line-height:1.45">⚠️ Essa entrada faz parte do preço total — não é valor extra</div>
+    </div>
+
+    <div style="border-radius:20px;padding:22px 18px 18px;background:#f8fafc;border:1px solid #e7ecf3">
+      <div style="width:42px;height:42px;border-radius:13px;background:#eef2f7;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px">📦</div>
+      <h3 style="font-weight:900;color:#0A2463;font-size:16px;margin-bottom:2px">Pix na entrega</h3>
+      <p style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:14px">Entrada de 55% — paga quando chegar</p>
+      <ul style="font-size:13px;color:#334155;line-height:1.85;padding-left:0;list-style:none;margin-bottom:0">
+        <li>🐢 <strong>Entrega mais lenta</strong> — o pedido só entra na fila depois de combinar tudo</li>
+        <li>🙌 Você não paga nada adiantado</li>
+        <li>🛡️ Mais segurança pra quem tem dúvida</li>
+        <li>📅 Restante em até 6x</li>
+      </ul>
+      <div style="margin-top:12px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:9px 11px;font-size:11.5px;color:#92400E;font-weight:700;line-height:1.45">⚠️ Essa entrada faz parte do preço total — não é valor extra</div>
+    </div>
+
+    <div style="border-radius:20px;padding:22px 18px 18px;background:#f8fafc;border:1px solid #e7ecf3">
+      <div style="width:42px;height:42px;border-radius:13px;background:#eef2f7;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px">💳</div>
+      <h3 style="font-weight:900;color:#0A2463;font-size:16px;margin-bottom:2px">Cartão de crédito na entrega</h3>
+      <p style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:14px">Pago só quando o móvel chegar</p>
+      <ul style="font-size:13px;color:#334155;line-height:1.85;padding-left:0;list-style:none;margin-bottom:0">
+        <li>🙌 Sem pagar nada adiantado</li>
+        <li>🔗 Cobrança feita por link, na hora da entrega</li>
+        <li>💳 Parcelamento no próprio cartão</li>
+        <li>📦 Você só passa o cartão depois de conferir os móveis</li>
+      </ul>
+    </div>
+
+    <div style="border-radius:20px;padding:22px 18px 18px;background:#f8fafc;border:1px solid #e7ecf3">
+      <div style="width:42px;height:42px;border-radius:13px;background:#eef2f7;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px">💰</div>
+      <h3 style="font-weight:900;color:#0A2463;font-size:16px;margin-bottom:2px">Pix total na entrega</h3>
+      <p style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:14px">Paga tudo de uma vez, quando chegar</p>
+      <ul style="font-size:13px;color:#334155;line-height:1.85;padding-left:0;list-style:none;margin-bottom:0">
+        <li>🙌 Sem entrada, sem adiantar nada</li>
+        <li>✅ Sem parcelamento — paga o valor cheio</li>
+        <li>📦 Só confirma o Pix depois de ver os móveis</li>
+        <li>⚡ Jeito mais simples de fechar</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div style="margin-top:18px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:14px;padding:14px 16px">
+    <p style="font-size:13px;color:#92400E;line-height:1.6"><strong>🛡️ Fica tranquilo:</strong> seja qual for a opção escolhida, tudo fica registrado no sistema com contrato assinado — você acompanha o andamento da sua proposta a qualquer momento em "Acompanhar Proposta", no menu.</p>
+  </div>
+</div>
 
 <div class="destaque-container">
   <img src="/banner.png" alt="FlashCred - Limite no Pix Parcelado" class="destaque-imagem" onerror="this.parentElement.style.display='none';">
 </div>
+
+<div style="max-width:980px;margin:0 auto 30px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+  <div style="text-align:center;padding:18px 10px">
+    <div style="width:52px;height:52px;margin:0 auto 10px;border-radius:50%;border:2px solid #0F8B8D;display:grid;place-items:center;font-size:22px">🚚</div>
+    <div style="font-weight:800;color:#0A2463;font-size:14px">Entrega Rápida</div>
+  </div>
+  <div style="text-align:center;padding:18px 10px">
+    <div style="width:52px;height:52px;margin:0 auto 10px;border-radius:50%;border:2px solid #0F8B8D;display:grid;place-items:center;font-size:22px">🛡️</div>
+    <div style="font-weight:800;color:#0A2463;font-size:14px">Atendimento Personalizado</div>
+  </div>
+  <div style="text-align:center;padding:18px 10px">
+    <div style="width:52px;height:52px;margin:0 auto 10px;border-radius:50%;border:2px solid #0F8B8D;display:grid;place-items:center;font-size:22px">✅</div>
+    <div style="font-weight:800;color:#0A2463;font-size:14px">Garantia</div>
+  </div>
+</div>
+
+<!-- CARTA DE VENDAS -->
+<div class="card" style="max-width:820px;margin:0 auto 30px;background:linear-gradient(160deg,#071b2e,#0A2463 55%,#0F8B8D 140%);color:#fff;padding:40px 30px">
+  <h2 style="font-size:clamp(1.5rem,4vw,2.1rem);font-weight:900;line-height:1.2;margin-bottom:20px;text-align:center">
+    FINANCIAMENTO FACILITADO PARA VOCÊ CONSEGUIR OS MÓVEIS DOS SONHOS!
+  </h2>
+
+  <div style="font-size:15px;line-height:1.75;color:#e2e8f0">
+    <p style="margin-bottom:16px">Tô cansado de ver tanta gente querendo mudar de casa ou arrumar o cantinho, mas parado por causa do dinheiro.</p>
+
+    <p style="margin-bottom:16px">Eu entendo o que é olhar para o sofá quebrado, a cama de solteiro que não cabe mais ou a cozinha que não tem armários e pensar: <em>"Isso vai ficar assim pra sempre?"</em></p>
+
+    <p style="margin-bottom:16px">E a pior parte? Tentar pedir empréstimo em banco e passar por aquele processo burocrático que demora semanas, com mil perguntas e um "não" garantido no final.</p>
+
+    <p style="margin-bottom:20px;font-weight:800;color:#fde047;font-size:17px">Isso acaba HOJE.</p>
+
+    <p style="margin-bottom:16px">Eu criei o FlashCred exatamente para resolver esse problema. Para você não ter mais que esperar meses ou anos para ter a casa que merece.</p>
+
+    <p style="margin-bottom:10px">Aqui, o processo é 100% online, rápido e sem complicações:</p>
+
+    <ol style="list-style:none;padding:0;margin:0 0 20px">
+      <li style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px">
+        <span style="flex:0 0 30px;height:30px;border-radius:9px;background:rgba(15,139,141,.35);border:1px solid rgba(255,255,255,.2);display:grid;place-items:center;font-weight:900;color:#fde047">1</span>
+        <span>Você escolhe os móveis que precisa.</span>
+      </li>
+      <li style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px">
+        <span style="flex:0 0 30px;height:30px;border-radius:9px;background:rgba(15,139,141,.35);border:1px solid rgba(255,255,255,.2);display:grid;place-items:center;font-weight:900;color:#fde047">2</span>
+        <span>Preenche um formulário em 5 minutos.</span>
+      </li>
+      <li style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px">
+        <span style="flex:0 0 30px;height:30px;border-radius:9px;background:rgba(15,139,141,.35);border:1px solid rgba(255,255,255,.2);display:grid;place-items:center;font-weight:900;color:#fde047">3</span>
+        <span>Aguarda a aprovação — que em muitos casos, é na HORA.</span>
+      </li>
+      <li style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px">
+        <span style="flex:0 0 30px;height:30px;border-radius:9px;background:rgba(15,139,141,.35);border:1px solid rgba(255,255,255,.2);display:grid;place-items:center;font-weight:900;color:#fde047">4</span>
+        <span>Paga a entrada (que é bem menor do que em outras lojas) e...</span>
+      </li>
+      <li style="display:flex;gap:12px;align-items:flex-start">
+        <span style="flex:0 0 30px;height:30px;border-radius:9px;background:rgba(15,139,141,.35);border:1px solid rgba(255,255,255,.2);display:grid;place-items:center;font-weight:900;color:#fde047">5</span>
+        <span>Recebe os móveis na sua porta — data de entrega combinada com você.</span>
+      </li>
+    </ol>
+
+    <p style="margin-bottom:16px">E a melhor parte? Você pode parcelar o restante em até <strong>12x no Pix</strong>, sem juros abusivos e sem surpresas.</p>
+
+    <p style="margin-bottom:16px">Eu não quero que você continue morando em um lugar que não te faz feliz. Eu quero que você tenha a liberdade de mudar de casa, de organizar o seu espaço, de receber amigos e família em um ambiente que você ama.</p>
+
+    <p style="margin-bottom:16px">O FlashCred não é só um sistema de financiamento. É a sua chance de finalmente viver com conforto e dignidade.</p>
+
+    <p style="margin-bottom:16px">E acredite, eu já ajudei milhares de pessoas a conseguirem os móveis dos sonhos. E você pode ser o próximo.</p>
+
+    <p style="margin-bottom:26px;font-weight:700">Não espere mais. Hoje é o dia de mudar a sua vida.</p>
+  </div>
+
+  <a href="#cardPreAnalise" style="display:block;text-align:center;background:linear-gradient(135deg,#fde047,#facc15);color:#0A2463;font-weight:900;font-size:16px;padding:17px 20px;border-radius:15px;text-decoration:none;box-shadow:0 16px 34px rgba(0,0,0,.28)">
+    🛋️ QUERO MEUS MÓVEIS AGORA
+  </a>
+</div>
+
+<!-- PRÉ-ANÁLISE EXPRESSA -->
+<div class="card" id="cardPreAnalise" style="max-width:980px;margin:0 auto 28px;border:1.5px solid #DBEAFE;background:#fff">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap">
+    <span style="font-size:26px">⚡</span>
+    <h2 class="text-2xl font-semibold text-primary" style="margin:0">Pré-Análise Expressa</h2>
+  </div>
+  <p class="text-gray-700 mb-4" id="pa_textoIntro">Preencha seus dados abaixo e descubra <strong>na hora</strong> o valor que você já sai com liberado pra comprar na loja — sem esperar análise manual.</p>
+
+  <div id="pa_resultadoBox" style="display:none;text-align:center;margin-bottom:22px">
+    <div id="pa_bolinha" style="width:120px;height:120px;margin:0 auto 16px;border-radius:50%;border:7px solid #DBEAFE;border-top-color:#0A2463;animation:paGirar .9s linear infinite"></div>
+    <div id="pa_statusTexto" style="font-weight:800;color:#0A2463;font-size:16px">🔎 Verificando seus dados...</div>
+    <div id="pa_statusSub" style="color:#64748b;font-size:13.5px;margin-top:4px">Só um instante, estamos analisando suas informações.</div>
+    <div style="width:100%;max-width:280px;height:6px;background:#DBEAFE;border-radius:999px;margin:16px auto 0;overflow:hidden">
+      <div id="pa_barraProgresso" style="height:100%;width:0%;background:#0A2463;border-radius:999px;transition:width .9s ease"></div>
+    </div>
+  </div>
+
+  <form id="formPreAnalise">
+    <label>Nome Completo</label>
+    <input type="text" id="pa_nome" class="input" placeholder="Informe seu nome completo" required>
+
+    <label>CPF</label>
+    <input type="text" id="pa_cpf" class="input" placeholder="000.000.000-00" maxlength="14" required>
+    <div id="pa_erroCpf" class="erro">CPF inválido. Verifique os números informados.</div>
+
+    <label>Data de Nascimento</label>
+    <input type="date" id="pa_nascimento" class="input" required>
+    <div id="pa_erroIdade" class="erro">É necessário ter idade igual ou superior a 18 anos.</div>
+
+    <label>CEP</label>
+    <input type="text" id="pa_cep" class="input" placeholder="00000-000" maxlength="9" required>
+
+    <label>Endereço (rua, bairro, cidade - UF)</label>
+    <input type="text" id="pa_endereco" class="input" placeholder="Rua, número, bairro, cidade - UF" required>
+
+    <label>Número</label>
+    <input type="text" id="pa_numero" class="input" placeholder="Número da casa/prédio" required>
+
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:2px 0 4px">
+      <input type="checkbox" id="pa_eh_apartamento" style="width:auto">
+      <span style="font-size:13.5px;color:#334155">É apartamento?</span>
+    </label>
+    <div id="pa_camposApto" style="display:none;gap:10px;grid-template-columns:1fr 1fr">
+      <div>
+        <label>Bloco <span style="font-weight:400;color:#94a3b8">(se houver)</span></label>
+        <input type="text" id="pa_bloco" class="input" placeholder="Ex: Bloco B">
+      </div>
+      <div>
+        <label>Número do apartamento</label>
+        <input type="text" id="pa_numero_apto" class="input" placeholder="Ex: 302">
+      </div>
+    </div>
+
+    <label>Ponto de referência</label>
+    <input type="text" id="pa_referencia" class="input" placeholder="Ex: Perto do mercado, portão azul" required>
+
+    <label>Melhor dia para receber <span style="font-weight:400;color:#94a3b8">(estimativa, a gente confirma com você)</span></label>
+    <input type="date" id="pa_data_preferida_entrega" class="input">
+
+    <label>WhatsApp / Telefone</label>
+    <input type="tel" id="pa_telefone" class="input" placeholder="(00) 00000-0000" maxlength="16" required>
+
+    <label>Como você prefere fechar o pagamento?</label>
+    <div style="display:flex;flex-direction:column;gap:10px;margin:6px 0 16px">
+      <label style="display:flex;gap:10px;align-items:flex-start;border:1.5px solid #d7e0eb;border-radius:12px;padding:12px 14px;cursor:pointer;background:#fff">
+        <input type="radio" name="pa_forma_entrada" value="pix_antecipado" checked style="margin-top:3px">
+        <span style="font-size:13.5px;color:#334155"><strong>Pagar agora no Pix (40%)</strong><br>Entrada mais baixa, paga antes da entrega, o restante em até <strong>12x</strong>, e você ainda escolhe o dia da entrega.<br><span style="font-size:11.5px;color:#92400E;font-weight:700">⚠️ Essa entrada faz parte do preço total — não é valor extra</span></span>
+      </label>
+      <label style="display:flex;gap:10px;align-items:flex-start;border:1.5px solid #d7e0eb;border-radius:12px;padding:12px 14px;cursor:pointer;background:#fff">
+        <input type="radio" name="pa_forma_entrada" value="na_entrega" style="margin-top:3px">
+        <span style="font-size:13.5px;color:#334155"><strong>Pagar só na entrega (55%)</strong><br>Sem adiantar nada agora — a entrada fica mais alta e o restante é parcelado em até <strong>6x</strong>.<br><span style="font-size:11.5px;color:#92400E;font-weight:700">⚠️ Essa entrada faz parte do preço total — não é valor extra</span></span>
+      </label>
+      <label style="display:flex;gap:10px;align-items:flex-start;border:1.5px solid #d7e0eb;border-radius:12px;padding:12px 14px;cursor:pointer;background:#fff">
+        <input type="radio" name="pa_forma_entrada" value="cartao_entrega" style="margin-top:3px">
+        <span style="font-size:13.5px;color:#334155"><strong>Cartão de crédito na entrega</strong><br>Sem entrada — você paga tudo por um link de cartão quando o móvel chegar, direto no seu cartão.</span>
+      </label>
+      <label style="display:flex;gap:10px;align-items:flex-start;border:1.5px solid #d7e0eb;border-radius:12px;padding:12px 14px;cursor:pointer;background:#fff">
+        <input type="radio" name="pa_forma_entrada" value="pix_total_entrega" style="margin-top:3px">
+        <span style="font-size:13.5px;color:#334155"><strong>Pix total na entrega</strong><br>Sem entrada, sem parcelamento — paga o valor cheio no Pix quando o móvel chegar.</span>
+      </label>
+    </div>
+
+    <label class="protecao-check">
+      <input type="checkbox" id="pa_montagem_contratada">
+      <span>
+        🔧 <strong>Contratar Montagem</strong> (+5% do valor)
+        <br>
+        <small class="text-slate-500">Enviamos um montador pra deixar tudo prontinho. Opcional.</small>
+      </span>
+    </label>
+    <div id="pa_valorMontagemInfo" class="hidden text-sm font-bold text-emerald-700 mb-3"></div>
+
+    <button type="submit" id="pa_btnEnviar" class="btn mt-2 flex items-center justify-center gap-2" style="background:#0A2463;color:#fff;min-height:54px">
+      <span id="pa_textoBtn">Fazer minha pré-análise</span>
+      <div class="spinner" id="pa_carregando"></div>
+    </button>
+    <p class="text-xs text-slate-400 mt-3" style="line-height:1.5">Precisa de um valor maior? Preencha a análise personalizada logo abaixo — ela é avaliada manualmente e pode liberar mais limite.</p>
+  </form>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8" style="max-width:980px;margin:0 auto 38px">
+  <div class="card">
+    <h2 class="text-2xl font-semibold text-primary mb-4">O que é o FlashCred?</h2>
+    <p class="text-gray-700 mb-5 leading-relaxed">É uma forma prática de comprar seus móveis: <strong>você não precisa de cartão de crédito</strong>, e as condições de pagamento são definidas conforme a análise de crédito. O pagamento é feito via Pix, de acordo com as condições aprovadas.</p>
+    <div class="aviso-exclusivo">⚠️ Este benefício é válido <strong>apenas para compras realizadas na Distribuidora Flash Point Móveis</strong>.</div>
+    <h3 class="text-xl font-semibold text-primary mb-4">Vantagens Exclusivas</h3>
+    <div>
+      <div class="beneficio"><span class="check-icon">✓</span><span>Não precisa de cartão de crédito</span></div>
+      <div class="beneficio"><span class="check-icon">✓</span><span>Condições de pagamento conforme análise de crédito</span></div>
+      <div class="beneficio"><span class="check-icon">✓</span><span>Entrada fixa de 40% do valor da compra</span></div>
+      <div class="beneficio"><span class="check-icon">✓</span><span>Parcelamento de até 12 vezes no Pix</span></div>
+      <div class="beneficio"><span class="check-icon">✓</span><span>Pagamento seguro e rastreável</span></div>
+      <div class="beneficio"><span class="check-icon">✓</span><span>Entrega garantida direto na sua casa</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 class="text-xl font-semibold text-primary mb-6">Análise Personalizada (valor maior)</h3>
+    <form id="formSolicitacao">
+      <label>Nome Completo</label>
+      <input type="text" id="nome" class="input" placeholder="Informe seu nome completo" required>
+
+      <label>CPF</label>
+      <input type="text" id="cpf" class="input" placeholder="000.000.000-00" maxlength="14" required>
+      <div id="erroCpf" class="erro">CPF inválido. Verifique os números informados.</div>
+
+      <label>Data de Nascimento</label>
+      <input type="date" id="nascimento" class="input" required>
+      <div id="erroIdade" class="erro">É necessário ter idade igual ou superior a 18 anos.</div>
+
+      <label>CEP</label>
+      <input type="text" id="cep" class="input" placeholder="00000-000" maxlength="9" required>
+
+      <label>Endereço (rua, bairro, cidade - UF)</label>
+      <input type="text" id="endereco" class="input" placeholder="Rua, número, bairro, cidade - UF" required>
+
+      <label>Número</label>
+      <input type="text" id="numero" class="input" placeholder="Número da casa/prédio" required>
+
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:2px 0 4px">
+        <input type="checkbox" id="eh_apartamento" style="width:auto">
+        <span style="font-size:13.5px;color:#334155">É apartamento?</span>
+      </label>
+      <div id="camposApto" style="display:none;gap:10px;grid-template-columns:1fr 1fr">
+        <div>
+          <label>Bloco <span style="font-weight:400;color:#94a3b8">(se houver)</span></label>
+          <input type="text" id="bloco" class="input" placeholder="Ex: Bloco B">
+        </div>
+        <div>
+          <label>Número do apartamento</label>
+          <input type="text" id="numero_apto" class="input" placeholder="Ex: 302">
+        </div>
+      </div>
+
+      <label>Ponto de referência</label>
+      <input type="text" id="referencia" class="input" placeholder="Ex: Perto do mercado, portão azul" required>
+
+      <label>Melhor dia para receber <span style="font-weight:400;color:#94a3b8">(estimativa, a gente confirma com você)</span></label>
+      <input type="date" id="data_preferida_entrega" class="input">
+
+      <label>WhatsApp / Telefone</label>
+      <input type="tel" id="telefone" class="input" placeholder="(00) 00000-0000" maxlength="16" required>
+
+      <label>CPF de quem te indicou (opcional)</label>
+      <input type="text" id="indicado_por_cpf" class="input" placeholder="000.000.000-00" maxlength="14">
+
+      <label>Valor Desejado para Compra (R$)</label>
+      <input type="number" id="valor_desejado" class="input" placeholder="Digite apenas números, ex: 1500" min="100" step="1" required>
+
+      <label>Como você prefere fechar o pagamento?</label>
+      <div style="display:flex;flex-direction:column;gap:10px;margin:6px 0 16px">
+        <label style="display:flex;gap:10px;align-items:flex-start;border:1.5px solid #d7e0eb;border-radius:12px;padding:12px 14px;cursor:pointer">
+          <input type="radio" name="forma_entrada" value="pix_antecipado" checked style="margin-top:3px">
+          <span style="font-size:13.5px;color:#334155"><strong>Pagar agora no Pix</strong><br>Entrada normal, o restante parcelado em até <strong>12x</strong>, e você ainda escolhe o dia da entrega.<br><span style="font-size:11.5px;color:#92400E;font-weight:700">⚠️ Essa entrada faz parte do preço total — não é valor extra</span></span>
+        </label>
+        <label style="display:flex;gap:10px;align-items:flex-start;border:1.5px solid #d7e0eb;border-radius:12px;padding:12px 14px;cursor:pointer">
+          <input type="radio" name="forma_entrada" value="na_entrega" style="margin-top:3px">
+          <span style="font-size:13.5px;color:#334155"><strong>Pagar só na entrega</strong><br>Sem adiantar nada agora — a entrada fica mais alta (55% do valor) e o restante é parcelado em até <strong>6x</strong>.<br><span style="font-size:11.5px;color:#92400E;font-weight:700">⚠️ Essa entrada faz parte do preço total — não é valor extra</span></span>
+        </label>
+        <label style="display:flex;gap:10px;align-items:flex-start;border:1.5px solid #d7e0eb;border-radius:12px;padding:12px 14px;cursor:pointer">
+          <input type="radio" name="forma_entrada" value="cartao_entrega" style="margin-top:3px">
+          <span style="font-size:13.5px;color:#334155"><strong>Cartão de crédito na entrega</strong><br>Sem entrada — paga tudo por um link de cartão quando o móvel chegar.</span>
+        </label>
+        <label style="display:flex;gap:10px;align-items:flex-start;border:1.5px solid #d7e0eb;border-radius:12px;padding:12px 14px;cursor:pointer">
+          <input type="radio" name="forma_entrada" value="pix_total_entrega" style="margin-top:3px">
+          <span style="font-size:13.5px;color:#334155"><strong>Pix total na entrega</strong><br>Sem entrada, sem parcelamento — paga o valor cheio no Pix quando o móvel chegar.</span>
+        </label>
+      </div>
+
+      <label class="protecao-check">
+        <input type="checkbox" id="seguro_contratado">
+        <span>
+          🛡️ <strong>Adicionar Proteção do Móvel</strong> (+5% do valor)
+          <br>
+          <small class="text-slate-500">Cobre danos e manchas durante o período do contrato. Opcional.</small>
+        </span>
+      </label>
+      <div id="valorSeguroInfo" class="hidden text-sm font-bold text-emerald-700 mb-3"></div>
+
+      <label class="protecao-check">
+        <input type="checkbox" id="montagem_contratada">
+        <span>
+          🔧 <strong>Contratar Montagem</strong> (+5% do valor)
+          <br>
+          <small class="text-slate-500">Enviamos um montador pra deixar tudo prontinho. Opcional.</small>
+        </span>
+      </label>
+      <div id="valorMontagemInfo" class="hidden text-sm font-bold text-emerald-700 mb-3"></div>
+
+      <button type="submit" id="btnEnviar" class="btn btn-primary mt-2 flex items-center justify-center gap-2">
+        <span id="textoBtn">Enviar Solicitação</span>
+        <div class="spinner" id="carregando"></div>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- PAGAR PARCELAS -->
+<section class="parcelas-section" id="pagarParcelas">
+  <div class="parcelas-inner">
+    <h2 class="parcelas-titulo">💳 Pagar Parcelas</h2>
+    <p class="parcelas-sub">Digite seu CPF para abrir sua proposta e ver as parcelas em aberto.</p>
+    <form id="formPagarParcelas" class="parcelas-form">
+      <input type="text" id="cpfPagarParcelas" class="input" placeholder="Seu CPF" inputmode="numeric" maxlength="14" required>
+      <button type="submit" class="parcelas-btn">🔍 Consultar</button>
+    </form>
+  </div>
+</section>
+
+<div id="overlayParcelas" aria-hidden="true">
+  <div class="parcelas-card">
+    <div class="parcelas-spinner"></div>
+    <h2>Processando...</h2>
+    <p>Buscando as parcelas a serem pagas.</p>
+  </div>
+</div>
+
+<!-- INDIQUE E GANHE -->
+<section class="indique-section" id="indiqueEGanhe">
+  <div class="indique-inner">
+    <div class="indique-header">
+      <span class="indique-badge">💚 INDIQUE E GANHE</span>
+      <h2 class="indique-title">Indique um amigo, ganhem os dois</h2>
+      <p class="indique-sub">Compartilhe seu link e ganhe uma recompensa quando a proposta da pessoa indicada for aprovada.</p>
+    </div>
+
+    <div class="indique-grid">
+      <div class="indique-info">
+        <h3>Como funciona</h3>
+        <div class="indique-passo">
+          <span class="indique-num">1</span>
+          <div>Gere seu link de indicação abaixo com o seu CPF.</div>
+        </div>
+        <div class="indique-passo">
+          <span class="indique-num">2</span>
+          <div>Compartilhe com um amigo interessado em móveis.</div>
+        </div>
+        <div class="indique-passo">
+          <span class="indique-num">3</span>
+          <div>O CPF de quem indicou já vem preenchido na proposta dele.</div>
+        </div>
+        <div class="indique-passo">
+          <span class="indique-num">4</span>
+          <div>Proposta aprovada, vocês dois ganham a recompensa combinada com a loja.</div>
+        </div>
+      </div>
+
+      <div class="indique-form">
+        <label class="block text-sm font-bold mb-2">Seu CPF</label>
+        <input type="text" id="cpfIndicador" class="input" placeholder="000.000.000-00" maxlength="14">
+        <button type="button" class="indique-btn" id="btnGerarLinkIndicacao">🔗 Gerar meu link de indicação</button>
+        <div class="indique-sucesso" id="linkIndicacaoResultado"></div>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- SIMULADOR -->
 <section class="simulador" id="simulador">
@@ -235,6 +860,10 @@ footer{background:linear-gradient(135deg,#071b4d,#0A2463);color:#cbd5e1;border-r
   </div>
 </section>
 
+
+
+
+
 <section class="secao-limite-pix">
   <div class="elementos-decorativos">
     <div class="decor-1">🛋️</div><div class="decor-2">💳</div><div class="decor-3">✨</div>
@@ -268,53 +897,73 @@ footer{background:linear-gradient(135deg,#071b4d,#0A2463);color:#cbd5e1;border-r
   </div>
 </section>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-  <div class="card">
-    <h2 class="text-2xl font-semibold text-primary mb-4">O que é o FlashCred?</h2>
-    <p class="text-gray-700 mb-5 leading-relaxed">É uma forma prática de comprar seus móveis: <strong>você não precisa de cartão de crédito</strong>, e as condições de pagamento são definidas conforme a análise de crédito. O pagamento é feito via Pix, de acordo com as condições aprovadas.</p>
-    <div class="aviso-exclusivo">⚠️ Este benefício é válido <strong>apenas para compras realizadas na Distribuidora Flash Point Móveis</strong>.</div>
-    <h3 class="text-xl font-semibold text-primary mb-4">Vantagens Exclusivas</h3>
-    <div>
-      <div class="beneficio"><span class="check-icon">✓</span><span>Não precisa de cartão de crédito</span></div>
-      <div class="beneficio"><span class="check-icon">✓</span><span>Condições de pagamento conforme análise de crédito</span></div>
-      <div class="beneficio"><span class="check-icon">✓</span><span>Entrada fixa de 40% do valor da compra</span></div>
-      <div class="beneficio"><span class="check-icon">✓</span><span>Parcelamento de até 12 vezes no Pix</span></div>
-      <div class="beneficio"><span class="check-icon">✓</span><span>Pagamento seguro e rastreável</span></div>
-      <div class="beneficio"><span class="check-icon">✓</span><span>Entrega garantida direto na sua casa</span></div>
-    </div>
+<div class="card" style="max-width:980px;margin:0 auto 38px">
+  <h2 class="text-2xl font-semibold text-primary mb-5">❓ Perguntas Frequentes</h2>
+
+  <div style="margin-bottom:18px">
+    <h3 style="font-weight:800;color:#0A2463;font-size:15px;margin-bottom:5px">Isso é golpe?</h3>
+    <p class="text-gray-700" style="font-size:14px;line-height:1.6">Não. A FlashCred é um serviço da Distribuidora Flash Point Móveis (CNPJ 35.560.220/0001-54). Toda proposta fica registrada no sistema e pode ser acompanhada em tempo real pelo link que você recebe — nada é feito por fora ou sem registro.</p>
   </div>
 
-  <div class="card">
-    <h3 class="text-xl font-semibold text-primary mb-6">Solicitar Análise de Crédito</h3>
-    <form id="formSolicitacao">
-      <label>Nome Completo</label>
-      <input type="text" id="nome" class="input" placeholder="Informe seu nome completo" required>
+  <div style="margin-bottom:18px">
+    <h3 style="font-weight:800;color:#0A2463;font-size:15px;margin-bottom:5px">Por que preciso pagar uma entrada?</h3>
+    <p class="text-gray-700" style="font-size:14px;line-height:1.6">A entrada não é um valor extra — ela já faz parte do preço total do seu móvel. Ela garante que vamos comprar e reservar o produto especialmente pra você, com todo o cuidado e compromisso.</p>
+  </div>
 
-      <label>CPF</label>
-      <input type="text" id="cpf" class="input" placeholder="000.000.000-00" maxlength="14" required>
-      <div id="erroCpf" class="erro">CPF inválido. Verifique os números informados.</div>
+  <div style="margin-bottom:18px">
+    <h3 style="font-weight:800;color:#0A2463;font-size:15px;margin-bottom:5px">Como acompanho minha proposta depois de enviar?</h3>
+    <p class="text-gray-700" style="font-size:14px;line-height:1.6">Você recebe um link exclusivo (também disponível no menu "Acompanhar Proposta") onde vê o status, o valor da entrada, as parcelas e a previsão de entrega, atualizados em tempo real.</p>
+  </div>
 
-      <label>Data de Nascimento</label>
-      <input type="date" id="nascimento" class="input" required>
-      <div id="erroIdade" class="erro">É necessário ter idade igual ou superior a 18 anos.</div>
+  <div>
+    <h3 style="font-weight:800;color:#0A2463;font-size:15px;margin-bottom:5px">O restante das parcelas também é adiantado?</h3>
+    <p class="text-gray-700" style="font-size:14px;line-height:1.6">Só no Pix parcelado — nesse caso, a entrada e as parcelas seguintes são pagas pelo site FlashCred, sem burocracia de aprovação. Nas demais formas de pagamento (crediário, cartão, dinheiro), o pagamento acontece somente no ato da entrega.</p>
+  </div>
+</div>
 
-      <label>CEP</label>
-      <input type="text" id="cep" class="input" placeholder="00000-000" maxlength="9" required>
+<div id="quemSomos" class="card" style="max-width:980px;margin:36px auto 0;padding:36px 30px;border:none;box-shadow:0 10px 40px rgba(10,36,99,.08)">
+  <div style="text-align:center;margin-bottom:26px">
+    <span style="display:inline-block;background:#EFF6FF;color:#0A2463;font-weight:800;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;padding:6px 14px;border-radius:999px;margin-bottom:10px">Sobre a FlashCred</span>
+    <h2 style="font-weight:900;color:#0A2463;font-size:24px;margin-bottom:8px">🛋️ Quem Somos</h2>
+    <p style="color:#64748b;font-size:14.5px;max-width:640px;margin:0 auto">Sua casa merece o melhor, e nós estamos aqui para ajudar você a chegar lá!</p>
+  </div>
 
-      <label>Endereço Completo</label>
-      <input type="text" id="endereco" class="input" placeholder="Rua, número, bairro, cidade - UF" required>
+  <div style="max-width:720px;margin:0 auto">
+    <p style="font-size:14.5px;color:#334155;line-height:1.7;margin-bottom:14px">A FlashCred nasceu com um propósito claro: acabar com a burocracia e as dificuldades para você ter os móveis novos que sempre quis.</p>
+    <p style="font-size:14.5px;color:#334155;line-height:1.7;margin-bottom:14px">Sabemos que para muitas pessoas, ter uma casa completa e aconchegante parece um sonho distante — os preços à vista são altos, os bancos cobram juros abusivos e as lojas tradicionais dificultam demais a aprovação.</p>
+    <p style="font-size:14.5px;color:#0A2463;font-weight:700;line-height:1.7;margin-bottom:28px">Nós mudamos essa história.</p>
 
-      <label>WhatsApp / Telefone</label>
-      <input type="tel" id="telefone" class="input" placeholder="(00) 00000-0000" maxlength="16" required>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:28px">
+      <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:16px;padding:20px">
+        <h3 style="font-weight:800;color:#92400E;font-size:15px;margin-bottom:6px">💛 Nossa Missão</h3>
+        <p style="font-size:13.5px;color:#78350F;line-height:1.6">Oferecer condições justas, transparentes e acessíveis para que você possa mobiliar sua casa sem complicações, sem pegadinhas e sem esperar meses ou anos.</p>
+      </div>
+      <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:16px;padding:20px">
+        <h3 style="font-weight:800;color:#1D4ED8;font-size:15px;margin-bottom:6px">💙 Nossa Visão</h3>
+        <p style="font-size:13.5px;color:#1E40AF;line-height:1.6">Ser a escolha número um das famílias do ABC Paulista e região quando pensarem em móveis e pagamento facilitado — reconhecida pela confiança, clareza e respeito ao cliente.</p>
+      </div>
+    </div>
 
-      <label>Valor Desejado para Compra (R$)</label>
-      <input type="number" id="valor_desejado" class="input" placeholder="Digite apenas números, ex: 1500" min="100" step="1" required>
+    <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:16px;padding:22px;margin-bottom:28px">
+      <h3 style="font-weight:800;color:#9A3412;font-size:15px;margin-bottom:12px">🧡 Nossos Valores</h3>
+      <ul style="font-size:13.5px;color:#7C2D12;line-height:2;padding-left:0;list-style:none">
+        <li>✅ <strong>Transparência total:</strong> sem letras miúdas, sem custos escondidos</li>
+        <li>✅ <strong>Respeito ao cliente:</strong> você não é um número, é nossa prioridade</li>
+        <li>✅ <strong>Compromisso com a palavra:</strong> o que combinamos, cumprimos</li>
+        <li>✅ <strong>Simplicidade:</strong> processo fácil, rápido e sem enrolação</li>
+        <li>✅ <strong>Confiança:</strong> tudo registrado, tudo acompanhável, sempre com você</li>
+      </ul>
+    </div>
 
-      <button type="submit" id="btnEnviar" class="btn btn-primary mt-2 flex items-center justify-center gap-2">
-        <span id="textoBtn">Enviar Solicitação</span>
-        <div class="spinner" id="carregando"></div>
-      </button>
-    </form>
+    <h3 style="font-weight:800;color:#0A2463;font-size:15px;margin-bottom:8px">📍 Onde Estamos</h3>
+    <p style="font-size:14.5px;color:#334155;line-height:1.7;margin-bottom:14px">Atendemos com orgulho toda a região do ABC Paulista, São Paulo e Guarulhos, com entrega rápida e atendimento próximo e dedicado.</p>
+    <p style="font-size:14.5px;color:#334155;line-height:1.7;margin-bottom:14px">Somos uma empresa de pessoas reais, atendendo pessoas reais — e cada cliente é tratado como gostaríamos de ser tratados.</p>
+
+    <div style="background:#F0FDFA;border:1px solid #99F6E4;border-radius:16px;padding:20px;margin-bottom:20px">
+      <p style="font-size:14px;color:#0F766E;line-height:1.7;font-weight:600">🤝 Não somos golpe, não somos distantes, não somos automação. Somos gente como você, querendo ajudar você a construir um lar melhor, um móvel de cada vez.</p>
+    </div>
+
+    <p style="font-size:15px;color:#0A2463;font-weight:800;text-align:center;line-height:1.6">Seja bem-vindo à FlashCred.<br>Sua casa, suas regras, agora sim.</p>
   </div>
 </div>
 
@@ -341,17 +990,99 @@ footer{background:linear-gradient(135deg,#071b4d,#0A2463);color:#cbd5e1;border-r
 <footer>
   <p class="font-medium">© 2026 FlashCred | Limite no Pix</p>
   <p class="text-sm mt-1">Serviço exclusivo da Distribuidora Flash Point Móveis | Todos os direitos reservados</p>
+  <p class="text-sm mt-1">CNPJ: 35.560.220/0001-54</p>
 </footer>
 
+<a href="leilao.html" class="leilao-flutuante">
+  🔨
+  <span>Melhor Lance Ganha<span class="leilao-sub">Entrega em 24h</span></span>
+</a>
+
+<a href="#" id="botaoWppFlutuante" class="wpp-flutuante" target="_blank" rel="noopener">
+  <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.088.535 4.062 1.474 5.783L0 24l6.393-1.446A11.947 11.947 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.892 0-3.66-.5-5.19-1.372l-.372-.213-3.86.874.86-3.83-.242-.393A9.94 9.94 0 012 12c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10z"/></svg>
+  <span>Fale conosco no WhatsApp</span>
+</a>
+
 <script>
+function abrirMenuMobile(){
+  document.getElementById('drawerMenuMobile').classList.add('aberto');
+  document.getElementById('overlayMenuMobile').style.display='block';
+  document.body.style.overflow='hidden';
+}
+function fecharMenuMobile(){
+  document.getElementById('drawerMenuMobile').classList.remove('aberto');
+  document.getElementById('overlayMenuMobile').style.display='none';
+  document.body.style.overflow='';
+}
+
 const SUPABASE_URL='https://rgcclordmqjmwuzrrfbd.supabase.co';
 const SUPABASE_KEY='sb_publishable_g5Tcimge2aiMX8JE3ml1dg_6zbR3uXi';
 let supabase=null;
 
-window.addEventListener('load',()=>{
-  try{supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)}
-  catch(e){console.error(e)}
+let valorPreAnaliseAtual=500;
+
+function inicializarSupabase(){
+  if(supabase) return supabase;
+  try{
+    if(window.supabase && window.supabase.createClient){
+      supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    }
+  }catch(e){console.error('Erro ao iniciar Supabase:',e)}
+  return supabase;
+}
+
+inicializarSupabase();
+let tentativasSupabaseIndex=0;
+
+async function carregarPromoIndex(){
+  const cliente=inicializarSupabase();
+  if(!cliente) return;
+  try{
+    const { data, error } = await cliente
+      .from('promocao_index')
+      .select('*')
+      .eq('id', 1)
+      .single();
+    if(error || !data || !data.ativo) return;
+    const nomeEl=document.getElementById('promoIndexNome');
+    const descEl=document.getElementById('promoIndexDescricao');
+    const precoEl=document.getElementById('promoIndexPreco');
+    const imgEl=document.getElementById('promoIndexImagem');
+    if(nomeEl) nomeEl.textContent=data.produto_nome;
+    if(descEl) descEl.textContent=data.descricao||'';
+    if(precoEl) precoEl.textContent='R$ '+Number(data.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+    if(imgEl && data.imagem_url) imgEl.src=data.imagem_url;
+  }catch(e){console.error('Erro ao carregar promoção:',e)}
+}
+carregarPromoIndex();
+
+const intervaloSupabaseIndex=setInterval(()=>{
+  tentativasSupabaseIndex++;
+  const ok=inicializarSupabase();
+  if(ok) carregarValorPreAnalise();
+  if(ok || tentativasSupabaseIndex>20) clearInterval(intervaloSupabaseIndex);
+},300);
+
+window.addEventListener('load',async ()=>{
+  if(inicializarSupabase()) await carregarValorPreAnalise();
 });
+
+async function carregarValorPreAnalise(){
+  try{
+    const{data,error}=await supabase.from('configuracoes').select('valor').eq('chave','valor_pre_analise').maybeSingle();
+    if(error) throw error;
+    if(data && data.valor) valorPreAnaliseAtual=Number(data.valor);
+  }catch(e){
+    console.warn('Não foi possível carregar o valor de pré-análise, usando padrão.',e);
+  }
+}
+
+/* ===== WHATSAPP ===== */
+const WHATSAPP_NUMERO='5511973294235';
+function linkWhatsapp(mensagem){
+  return `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensagem)}`;
+}
+document.getElementById('botaoWppFlutuante').href=linkWhatsapp('Olá! Quero saber mais sobre os móveis com Limite no Pix Parcelado da FlashCred.');
 
 /* ===== SIMULADOR ===== */
 const simValor=document.getElementById('simValor');
@@ -421,7 +1152,7 @@ function validarCPF(cpf){
   if(r!==+cpf[9])return false;
   s=0;
   for(let i=1;i<=10;i++)s+=+cpf[i-1]*(12-i);
-  r=(s*10)%11;
+  r=(s*10)%11;if(r===10||r===11)r=0;
   return r===+cpf[10];
 }
 
@@ -433,8 +1164,8 @@ function validarIdade(d){
   return i>=18;
 }
 
-async function buscarCep(){
-  const cep=document.getElementById('cep').value.replace(/\D/g,'');
+async function buscarCepGenerico(cepId,enderecoId){
+  const cep=document.getElementById(cepId).value.replace(/\D/g,'');
   if(cep.length!==8)return;
   try{
     const r=await fetch(`https://viacep.com.br/ws/${cep}/json/`);
@@ -444,10 +1175,11 @@ async function buscarCep(){
       if(d.logradouro)e+=d.logradouro;
       if(d.bairro)e+=(e?', ':'')+d.bairro;
       if(d.localidade&&d.uf)e+=(e?', ':'')+`${d.localidade} - ${d.uf}`;
-      document.getElementById('endereco').value=e;
+      document.getElementById(enderecoId).value=e;
     }
   }catch(e){}
 }
+async function buscarCep(){ return buscarCepGenerico('cep','endereco'); }
 
 document.getElementById('cpf').addEventListener('input',e=>{
   e.target.value=e.target.value.replace(/\D/g,'').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4')
@@ -456,8 +1188,298 @@ document.getElementById('cep').addEventListener('input',e=>{
   e.target.value=e.target.value.replace(/\D/g,'').replace(/(\d{5})(\d{3})/,'$1-$2')
 });
 document.getElementById('cep').addEventListener('blur',buscarCep);
+document.getElementById('eh_apartamento').addEventListener('change',e=>{
+  document.getElementById('camposApto').style.display=e.target.checked?'grid':'none';
+});
+
+/* ===== PRÉ-ANÁLISE EXPRESSA ===== */
+document.getElementById('pa_cpf').addEventListener('input',e=>{
+  e.target.value=e.target.value.replace(/\D/g,'').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4')
+});
+document.getElementById('pa_cep').addEventListener('input',e=>{
+  e.target.value=e.target.value.replace(/\D/g,'').replace(/(\d{5})(\d{3})/,'$1-$2')
+});
+document.getElementById('pa_cep').addEventListener('blur',()=>buscarCepGenerico('pa_cep','pa_endereco'));
+document.getElementById('pa_eh_apartamento').addEventListener('change',e=>{
+  document.getElementById('pa_camposApto').style.display=e.target.checked?'grid':'none';
+});
+document.getElementById('pa_montagem_contratada').addEventListener('change',e=>{
+  const info=document.getElementById('pa_valorMontagemInfo');
+  if(!e.target.checked){info.classList.add('hidden');return}
+  const valorMontagem=Math.round(valorPreAnaliseAtual*0.05*100)/100;
+  info.textContent=`✅ Montagem adicionada: +R$ ${valorMontagem.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+  info.classList.remove('hidden');
+});
+document.getElementById('pa_telefone').addEventListener('input',e=>{
+  e.target.value=e.target.value.replace(/\D/g,'').replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3')
+});
+
+function gerarDatasParcelasMensal(qtd,intervaloDias){
+  const datas=[];
+  const hoje=new Date();
+  let atual=new Date(hoje);
+  atual.setDate(atual.getDate()+intervaloDias);
+  for(let i=0;i<qtd;i++){
+    const d=new Date(atual);
+    d.setDate(d.getDate()+i*intervaloDias);
+    datas.push(d.toISOString().slice(0,10));
+  }
+  return datas;
+}
+
+document.getElementById('formPreAnalise').addEventListener('submit',async e=>{
+  e.preventDefault();
+  document.getElementById('pa_erroCpf').style.display='none';
+  document.getElementById('pa_erroIdade').style.display='none';
+
+  const nome=document.getElementById('pa_nome').value.trim();
+  const cpf=document.getElementById('pa_cpf').value;
+  const nascimento=document.getElementById('pa_nascimento').value;
+  const telefone=document.getElementById('pa_telefone').value;
+  const cep=document.getElementById('pa_cep').value;
+  const enderecoBase=document.getElementById('pa_endereco').value.trim();
+  const numero=document.getElementById('pa_numero').value.trim();
+  const ehApartamento=document.getElementById('pa_eh_apartamento').checked;
+  const bloco=document.getElementById('pa_bloco').value.trim();
+  const numeroApto=document.getElementById('pa_numero_apto').value.trim();
+  const referencia=document.getElementById('pa_referencia').value.trim();
+  const dataPreferidaEntrega=document.getElementById('pa_data_preferida_entrega').value||null;
+
+  if(!nome)return alert('Informe seu nome completo');
+  if(!validarCPF(cpf)){document.getElementById('pa_erroCpf').style.display='block';return}
+  if(!validarIdade(nascimento)){document.getElementById('pa_erroIdade').style.display='block';return}
+  if(telefone.replace(/\D/g,'').length<11)return alert('Informe um WhatsApp válido com DDD');
+  if(!enderecoBase)return alert('Preencha o endereço completo');
+  if(!numero)return alert('Informe o número da casa/prédio');
+  if(ehApartamento&&!numeroApto)return alert('Informe o número do apartamento');
+  if(!referencia)return alert('Informe um ponto de referência');
+  if(!inicializarSupabase())return alert('Aguarde o sistema carregar completamente e tente novamente');
+
+  let endereco=`${enderecoBase}, nº ${numero}`;
+  if(ehApartamento){
+    endereco+=bloco?`, Bloco ${bloco} - Apto ${numeroApto}`:`, Apto ${numeroApto}`;
+  }
+  endereco+=` — Referência: ${referencia}`;
+
+  const btn=document.getElementById('pa_btnEnviar');
+  const txt=document.getElementById('pa_textoBtn');
+  const sp=document.getElementById('pa_carregando');
+  btn.disabled=true;
+  txt.textContent='Enviando...';
+  sp.style.display='block';
+
+  const card=document.getElementById('cardPreAnalise');
+  const form=document.getElementById('formPreAnalise');
+
+  // Trava a altura do card antes de esconder o formulário, pra tela não pular
+  card.style.minHeight=card.offsetHeight+'px';
+  card.scrollIntoView({behavior:'smooth', block:'start'});
+
+  // Esconde o formulário e mostra a bolinha girando "analisando"
+  form.style.display='none';
+  document.getElementById('pa_textoIntro').style.display='none';
+  const box=document.getElementById('pa_resultadoBox');
+  const bolinha=document.getElementById('pa_bolinha');
+  const statusTexto=document.getElementById('pa_statusTexto');
+  const statusSub=document.getElementById('pa_statusSub');
+  box.style.display='block';
+
+  const formaEntrada=(document.querySelector('input[name="pa_forma_entrada"]:checked')||{}).value||'pix_antecipado';
+  const semEntrada=(formaEntrada==='cartao_entrega'||formaEntrada==='pix_total_entrega');
+  const percentualEntrada=semEntrada?0:(formaEntrada==='na_entrega'?0.55:0.40);
+  const montagemContratada=document.getElementById('pa_montagem_contratada').checked;
+
+  const valorBase=Math.round(valorPreAnaliseAtual*100)/100;
+  const valorMontagem=montagemContratada?Math.round(valorBase*0.05*100)/100:0;
+  const valor=Math.round((valorBase+valorMontagem)*100)/100;
+  const valorEntrada=Math.round(valor*percentualEntrada*100)/100;
+  const quantidadeParcelas=semEntrada?0:(formaEntrada==='na_entrega'?6:12);
+  const jurosMensal=semEntrada?0:6.4;
+  const diasEntrega=7;
+  const datasParcelas=semEntrada?[]:gerarDatasParcelasMensal(quantidadeParcelas,30);
+
+  const dados={
+    nome,
+    cpf:cpf.replace(/\D/g,''),
+    nascimento,
+    telefone:telefone.replace(/\D/g,''),
+    cep:cep.replace(/\D/g,''),
+    endereco,
+    data_preferida_entrega:dataPreferidaEntrega,
+    valor_desejado:valor,
+    valor_entrada:valorEntrada,
+    forma_pagamento_entrada:formaEntrada,
+    montagem_contratada:montagemContratada,
+    valor_montagem:valorMontagem,
+    juros_mensal:jurosMensal,
+    quantidade_parcelas:quantidadeParcelas,
+    qtd_parcelas_escolhida:null,
+    dias_entrega:diasEntrega,
+    datas_parcelas:datasParcelas,
+    status:'Aprovada',
+    entrada_paga:false,
+    contrato_assinado:false,
+    parcelas_pagas:0,
+    entrega_concluida:false
+  };
+
+  // Sequência de mensagens simulando uma análise real (mais demorada e natural)
+  const etapas=[
+    {texto:'🔎 Verificando seus dados...', sub:'Conferindo CPF e informações cadastradas.'},
+    {texto:'📄 Consultando seu CPF...', sub:'Buscando informações no sistema de crédito.'},
+    {texto:'📊 Analisando seu perfil...', sub:'Avaliando o histórico de crédito.'},
+    {texto:'🧮 Calculando seu limite...', sub:'Definindo a melhor condição pra você.'},
+    {texto:'🔐 Validando com segurança...', sub:'Confirmando as informações antes de liberar.'},
+    {texto:'✅ Finalizando a pré-aprovação...', sub:'Já estamos concluindo sua análise.'}
+  ];
+  const barra=document.getElementById('pa_barraProgresso');
+  for(let i=0;i<etapas.length;i++){
+    statusTexto.textContent=etapas[i].texto;
+    statusSub.textContent=etapas[i].sub;
+    if(barra) barra.style.width=Math.round(((i+1)/etapas.length)*100)+'%';
+    await new Promise(res=>setTimeout(res,2000+Math.random()*800));
+  }
+
+  const { error } = await supabase.rpc('cliente_criar_proposta', { p_dados: dados });
+
+  if(error){
+    bolinha.style.display='none';
+    statusTexto.textContent='❌ Erro ao processar';
+    statusTexto.style.color='#dc2626';
+    statusSub.textContent=error.message;
+    btn.disabled=false;
+    document.getElementById('formPreAnalise').style.display='block';
+    document.getElementById('pa_textoIntro').style.display='block';
+    txt.textContent='Fazer minha pré-análise';
+    sp.style.display='none';
+    console.error(error);
+    return;
+  }
+
+  // Revela o limite liberado com visual mais sóbrio, tipo instituição financeira
+  bolinha.outerHTML=`
+    <div class="pa-badge-valor" id="pa_bolinha">
+      <span>Valor pré-aprovado</span>
+      <strong>R$ ${valor.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>
+    </div>
+  `;
+  statusTexto.textContent='🎉 Parabéns! Seu limite foi liberado!';
+  statusTexto.style.color='#0A2463';
+  const mensagemWhats=encodeURIComponent(`Olá! Fiz a pré-análise expressa no site e recebi R$ ${valor.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})} de limite pré-aprovado. Meu CPF é ${dados.cpf}. Gostaria de falar com um atendente.`);
+  statusSub.innerHTML=`
+    ${semEntrada
+      ? `Você escolheu pagar <strong>${formaEntrada==='cartao_entrega'?'no cartão de crédito':'o valor cheio no Pix'}</strong> direto na entrega, sem adiantar nada agora.`
+      : `Sua entrada de <strong>R$ ${valorEntrada.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong> ficou combinada para ${formaEntrada==='na_entrega'?'ser paga <strong>na entrega</strong>, sem adiantar nada agora':'ser paga <strong>agora no Pix</strong>'}.`
+    }
+    <div style="text-align:left;background:#f0fdf9;border:1px solid #bbf7d0;border-radius:14px;padding:16px 18px;margin-top:16px">
+      <div style="font-weight:800;color:#0A2463;font-size:14px;margin-bottom:8px">✅ 4 formas de pagamento — você escolhe a melhor:</div>
+      <ul style="margin:0;padding-left:18px;font-size:13.5px;color:#334155;line-height:1.8">
+        <li>Entrada em Pix na hora — 40%</li>
+        <li>Entrada depois que recebe a mercadoria — 55%</li>
+        <li>Pagar total na entrega via Pix</li>
+        <li>Pagar tudo na entrega no cartão de crédito</li>
+      </ul>
+      <div style="margin-top:8px;font-size:13.5px;color:#334155">✅ Restante parcelado no Pix, sem burocracia</div>
+    </div>
+    <div style="text-align:left;background:#fffbeb;border:1px solid #fcd34d;border-radius:14px;padding:14px 16px;margin-top:12px;color:#92400e;font-size:13px;font-weight:600">
+      ⚠️ Aprovar o limite não tem custo nenhum! Você só paga quando decidir usar. Sem compromisso, sem pegadinhas.
+    </div>
+    <div style="text-align:left;margin-top:16px">
+      <div style="font-weight:800;color:#0A2463;font-size:14px;margin-bottom:8px">📋 O que fazer agora:</div>
+      <ol style="margin:0;padding-left:18px;font-size:13.5px;color:#334155;line-height:1.8">
+        <li>Escolha seus móveis</li>
+        <li>Escolha a forma de entrada</li>
+        <li>Assine o contrato — na hora, rápido</li>
+        <li>Receba tudo em sua casa! 🚚</li>
+      </ol>
+    </div>
+    <span style="display:block;margin-top:10px;font-size:12px;color:#94a3b8">Pré-aprovação sujeita à confirmação dos dados e à assinatura do contrato. Distribuidora Flash Point Móveis — CNPJ 35.560.220/0001-54.</span>
+    <a href="loja.html?cpf=${encodeURIComponent(dados.cpf)}"
+       style="display:block;margin-top:16px;background:#0A2463;color:#fff;font-weight:700;font-size:15px;padding:15px 20px;border-radius:12px;text-decoration:none">
+      Continuar e escolher meus móveis
+    </a>
+    <a href="consultar.html?cpf=${encodeURIComponent(dados.cpf)}"
+       style="display:block;margin-top:10px;background:#fff;color:#0A2463;font-weight:700;font-size:14px;padding:13px 20px;border-radius:12px;text-decoration:none;border:1.5px solid #0A2463">
+      Pedir aumento de limite
+    </a>
+    <a href="https://wa.me/5511973294235?text=${mensagemWhats}" target="_blank" rel="noopener"
+       style="display:block;margin-top:10px;background:#25D366;color:#fff;font-weight:700;font-size:14px;padding:13px 20px;border-radius:12px;text-decoration:none">
+      Falar com atendente
+    </a>
+    <span style="display:block;margin-top:12px;font-size:12.5px;color:#94a3b8">Você também pode acompanhar sua proposta a qualquer momento em "Acompanhar Proposta" no menu.</span>
+  `;
+  card.style.minHeight='';
+});
+
+function atualizarInfoSeguro(){
+  const valorBase=Number(document.getElementById('valor_desejado').value)||0;
+  const marcado=document.getElementById('seguro_contratado').checked;
+  const info=document.getElementById('valorSeguroInfo');
+  if(!marcado||valorBase<=0){ info.classList.add('hidden'); return; }
+  const valorSeguro=Math.round(valorBase*0.05*100)/100;
+  info.textContent=`✅ Proteção adicionada: +R$ ${valorSeguro.toLocaleString('pt-BR',{minimumFractionDigits:2})} (total: R$ ${(valorBase+valorSeguro).toLocaleString('pt-BR',{minimumFractionDigits:2})})`;
+  info.classList.remove('hidden');
+}
+function atualizarInfoMontagem(){
+  const valorBase=Number(document.getElementById('valor_desejado').value)||0;
+  const marcado=document.getElementById('montagem_contratada').checked;
+  const info=document.getElementById('valorMontagemInfo');
+  if(!marcado||valorBase<=0){ info.classList.add('hidden'); return; }
+  const valorMontagem=Math.round(valorBase*0.05*100)/100;
+  info.textContent=`✅ Montagem adicionada: +R$ ${valorMontagem.toLocaleString('pt-BR',{minimumFractionDigits:2})} (total: R$ ${(valorBase+valorMontagem).toLocaleString('pt-BR',{minimumFractionDigits:2})})`;
+  info.classList.remove('hidden');
+}
+document.getElementById('valor_desejado').addEventListener('input',()=>{atualizarInfoSeguro();atualizarInfoMontagem();});
+document.getElementById('seguro_contratado').addEventListener('change',atualizarInfoSeguro);
+document.getElementById('montagem_contratada').addEventListener('change',atualizarInfoMontagem);
+
+/* INDIQUE E GANHE */
+document.getElementById('cpfIndicador').addEventListener('input',e=>{
+  e.target.value=e.target.value.replace(/\D/g,'').slice(0,11).replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+});
+
+document.getElementById('btnGerarLinkIndicacao').addEventListener('click',()=>{
+  const cpf=document.getElementById('cpfIndicador').value.replace(/\D/g,'');
+  if(cpf.length!==11){ alert('Digite os 11 números do seu CPF.'); return; }
+  const link=`${location.origin}${location.pathname}?ref=${cpf}`;
+  const resultado=document.getElementById('linkIndicacaoResultado');
+  resultado.style.display='block';
+  resultado.innerHTML=`
+    Seu link: <a href="${link}" style="word-break:break-all">${link}</a>
+    <button type="button" class="indique-btn mt-2" style="background:linear-gradient(135deg,#075e54,#25D366)" onclick="window.open('https://wa.me/?text='+encodeURIComponent('Olha essa oportunidade de comprar móveis com limite no Pix parcelado! '+'${link}'),'_blank')">
+      <i class="fab fa-whatsapp"></i> Compartilhar no WhatsApp
+    </button>
+  `;
+});
+
+// Se a pessoa chegou por um link de indicação (?ref=CPF), pré-preenche o campo.
+(function(){
+  const params=new URLSearchParams(location.search);
+  const ref=params.get('ref');
+  const campoIndicador=document.getElementById('indicado_por_cpf');
+  if(ref && campoIndicador){
+    const cpfLimpo=ref.replace(/\D/g,'').slice(0,11);
+    campoIndicador.value=cpfLimpo.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  }
+})();
+document.getElementById('indicado_por_cpf').addEventListener('input',e=>{
+  e.target.value=e.target.value.replace(/\D/g,'').slice(0,11).replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+});
 document.getElementById('telefone').addEventListener('input',e=>{
   e.target.value=e.target.value.replace(/\D/g,'').replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3')
+});
+
+/* PAGAR PARCELAS */
+document.getElementById('cpfPagarParcelas').addEventListener('input',e=>{
+  e.target.value=e.target.value.replace(/\D/g,'').slice(0,11).replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+});
+document.getElementById('formPagarParcelas').addEventListener('submit',function(e){
+  e.preventDefault();
+  const cpf=document.getElementById('cpfPagarParcelas').value.replace(/\D/g,'');
+  if(cpf.length!==11){alert('Digite os 11 números do CPF.');return}
+  localStorage.setItem('flashcred_cpf',document.getElementById('cpfPagarParcelas').value);
+  document.getElementById('overlayParcelas').classList.add('ativo');
+  setTimeout(()=>{location.href='consultar.html?cpf='+encodeURIComponent(cpf)},1400);
 });
 
 document.getElementById('formSolicitacao').addEventListener('submit',async e=>{
@@ -469,16 +1491,36 @@ document.getElementById('formSolicitacao').addEventListener('submit',async e=>{
   const nascimento=document.getElementById('nascimento').value;
   const telefone=document.getElementById('telefone').value;
   const cep=document.getElementById('cep').value;
-  const endereco=document.getElementById('endereco').value.trim();
-  const valor=Number(document.getElementById('valor_desejado').value);
+  const enderecoBase=document.getElementById('endereco').value.trim();
+  const numero=document.getElementById('numero').value.trim();
+  const ehApartamento=document.getElementById('eh_apartamento').checked;
+  const bloco=document.getElementById('bloco').value.trim();
+  const numeroApto=document.getElementById('numero_apto').value.trim();
+  const referencia=document.getElementById('referencia').value.trim();
+  const dataPreferidaEntrega=document.getElementById('data_preferida_entrega').value||null;
+  const valorBase=Number(document.getElementById('valor_desejado').value);
+  const seguroContratado=document.getElementById('seguro_contratado').checked;
+  const valorSeguro=seguroContratado?Math.round(valorBase*0.05*100)/100:0;
+  const montagemContratada=document.getElementById('montagem_contratada').checked;
+  const valorMontagem=montagemContratada?Math.round(valorBase*0.05*100)/100:0;
+  const valor=Math.round((valorBase+valorSeguro+valorMontagem)*100)/100;
 
   if(!nome)return alert('Informe seu nome completo');
   if(!validarCPF(cpf)){document.getElementById('erroCpf').style.display='block';return}
   if(!validarIdade(nascimento)){document.getElementById('erroIdade').style.display='block';return}
   if(telefone.replace(/\D/g,'').length<11)return alert('Informe um WhatsApp válido com DDD');
-  if(!endereco)return alert('Preencha o endereço completo');
-  if(isNaN(valor)||valor<100)return alert('Valor mínimo de R$ 100,00');
-  if(!supabase)return alert('Aguarde o sistema carregar completamente e tente novamente');
+  if(!enderecoBase)return alert('Preencha o endereço completo');
+  if(!numero)return alert('Informe o número da casa/prédio');
+  if(ehApartamento&&!numeroApto)return alert('Informe o número do apartamento');
+  if(!referencia)return alert('Informe um ponto de referência');
+  if(isNaN(valorBase)||valorBase<100)return alert('Valor mínimo de R$ 100,00');
+  if(!inicializarSupabase())return alert('Aguarde o sistema carregar completamente e tente novamente');
+
+  let endereco=`${enderecoBase}, nº ${numero}`;
+  if(ehApartamento){
+    endereco+=bloco?`, Bloco ${bloco} - Apto ${numeroApto}`:`, Apto ${numeroApto}`;
+  }
+  endereco+=` — Referência: ${referencia}`;
 
   const btn=document.getElementById('btnEnviar');
   const txt=document.getElementById('textoBtn');
@@ -495,11 +1537,18 @@ document.getElementById('formSolicitacao').addEventListener('submit',async e=>{
     telefone:telefone.replace(/\D/g,''),
     cep:cep.replace(/\D/g,''),
     endereco,
+    data_preferida_entrega:dataPreferidaEntrega,
     valor_desejado:valor,
+    seguro_contratado:seguroContratado,
+    valor_seguro:valorSeguro,
+    montagem_contratada:montagemContratada,
+    valor_montagem:valorMontagem,
+    indicado_por_cpf:document.getElementById('indicado_por_cpf').value.replace(/\D/g,'')||null,
+    forma_pagamento_entrada:(document.querySelector('input[name="forma_entrada"]:checked')||{}).value||'pix_antecipado',
     status:'Nova'
   };
 
-  const{error}=await supabase.from('propostas').insert([dados]);
+  const { error } = await supabase.rpc('cliente_criar_proposta', { p_dados: dados });
 
   if(error){
     alert('❌ Erro ao enviar: '+error.message);
@@ -511,9 +1560,75 @@ document.getElementById('formSolicitacao').addEventListener('submit',async e=>{
     const overlay=document.getElementById('overlayEnvio');
     overlay.classList.add('ativo');
     overlay.setAttribute('aria-hidden','false');
-    setTimeout(()=>location.href=`consultar.html?cpf=${dados.cpf}`,1900);
+    const msgWpp=`Olá! Acabei de enviar minha proposta de análise de crédito no site (Nome: ${dados.nome}, valor desejado: R$ ${dados.valor_desejado}). Quero saber mais sobre os móveis disponíveis!`;
+    setTimeout(()=>{
+      window.open('consultar.html?cpf='+encodeURIComponent(dados.cpf),'_blank');
+      location.href=linkWhatsapp(msgWpp);
+    },1900);
   }
 });
+
+/* ============================================================
+   PWA — INSTALAR COMO APP
+============================================================ */
+
+if('serviceWorker' in navigator){
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw-cliente.js').catch(e => console.warn('Service worker não registrado:', e));
+    });
+}
+
+let eventoInstalarPWACliente = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    eventoInstalarPWACliente = e;
+});
+
+function instalarAppCliente(){
+    if(eventoInstalarPWACliente){
+        eventoInstalarPWACliente.prompt();
+        eventoInstalarPWACliente.userChoice.then(() => { eventoInstalarPWACliente = null; });
+        return;
+    }
+    abrirInstrucoesInstalarAppCliente();
+}
+
+function abrirInstrucoesInstalarAppCliente(){
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(7,27,77,.75);display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML = `
+        <div style="background:#fff;border-radius:20px;padding:26px 22px;max-width:360px;width:100%">
+            <div style="font-size:17px;font-weight:900;color:#0A2463;margin-bottom:14px">📲 Como instalar o app</div>
+            <div style="font-size:13.5px;color:#334155;line-height:1.6;margin-bottom:14px">
+                <strong>No Android (Chrome):</strong><br>
+                Toca nos <strong>três pontinhos (⋮)</strong> no canto superior direito do navegador → toca em <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>.
+            </div>
+            <div style="font-size:13.5px;color:#334155;line-height:1.6;margin-bottom:18px">
+                <strong>No iPhone (Safari):</strong><br>
+                Toca no ícone de <strong>compartilhar</strong> (quadrado com seta pra cima, na barra de baixo) → desça e toque em <strong>"Adicionar à Tela de Início"</strong>.
+            </div>
+            <button type="button" onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;padding:13px;border:none;border-radius:12px;background:#0A2463;color:#fff;font-weight:800;font-size:14px;cursor:pointer">Entendi</button>
+        </div>
+    `;
+    modal.addEventListener('click', e => { if(e.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
+}
+
+window.addEventListener('appinstalled', () => {
+    const botao = document.getElementById('botaoInstalarAppCliente');
+    if(botao) botao.style.display = 'none';
+});
+
 </script>
+
+<button
+    id="botaoInstalarAppCliente"
+    onclick="instalarAppCliente()"
+    style="display:flex;position:fixed;bottom:96px;right:20px;z-index:9999;align-items:center;gap:8px;background:linear-gradient(135deg,#0A2463,#0F8B8D);color:#fff;border:none;border-radius:999px;padding:14px 20px;font-weight:800;font-size:14px;box-shadow:0 10px 30px rgba(10,36,99,.35);cursor:pointer"
+>
+    📲 Instalar App
+</button>
+
 </body>
 </html>
