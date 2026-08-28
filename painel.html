@@ -1832,6 +1832,13 @@ let carregando = false;
 let tokenAdminFlashcred = null;
 let intervaloAtualizacaoPainelAdmin = null;
 
+// Evita que polling/Realtime reconstruam a lista enquanto o admin está editando.
+let propostaEmEdicaoId = null;
+let atualizacaoPendenteDuranteEdicao = false;
+
+// Seleção para exclusão em massa.
+const propostasSelecionadas = new Set();
+
 
 /* ============================================================
    FUNÇÕES DE SEGURANÇA
@@ -3280,17 +3287,32 @@ async function entrar(){
 
     try{
 
-        const { data: sessaoDados, error: sessaoErro } = await supabaseClient.functions.invoke(
-            'flashcred-admin-session',
-            { body: { senha } }
-        );
+        const resposta =
+            await fetch('/api/verificar-senha-admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ senha })
+            });
 
-        if(sessaoErro || !sessaoDados?.ok || !sessaoDados?.token){
-            alert(sessaoDados?.mensagem || 'Senha incorreta ou não foi possível abrir a sessão.');
+        const dados = await resposta.json();
+
+        if(!dados.ok){
+
+            alert(
+                dados.mensagem ||
+                'Senha incorreta!'
+            );
+
             return;
         }
 
-        const token = sessaoDados.token;
+        const { data: token, error: erroToken } = await supabaseClient
+            .rpc('flashcred_admin_login', { p_senha: senha });
+
+        if(erroToken || !token){
+            alert('Senha confirmada, mas não foi possível abrir a sessão com o banco de dados. Tente novamente.');
+            return;
+        }
 
         tokenAdminFlashcred = token;
         localStorage.setItem('flashcred_admin_token', token);
@@ -3371,7 +3393,7 @@ function mostrarPainel(){
     // pagas e contratos assinados continuem sendo detectados mesmo assim.
     if(intervaloAtualizacaoPainelAdmin) clearInterval(intervaloAtualizacaoPainelAdmin);
     intervaloAtualizacaoPainelAdmin = setInterval(() => {
-        if(tokenAdminFlashcred) carregarPropostas();
+        if(tokenAdminFlashcred) carregarPropostas(false);
     }, 15000);
 
     setTimeout(mostrarConviteNotificacaoAdmin, 800);
@@ -4126,7 +4148,68 @@ function renderizarListaFiltrada(){
         entrada_atrasada:'Aprovados há +3 dias sem pagar entrada'
     }[filtroResumoAtual];
 
+    const idsVisiveis = dados.map(item => String(item.id));
+    const todosVisiveisSelecionados =
+        idsVisiveis.length > 0 &&
+        idsVisiveis.every(id => propostasSelecionadas.has(id));
+
     lista.innerHTML = `
+        <div style="
+            position:sticky;top:0;z-index:20;
+            display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+            padding:10px 12px;margin-bottom:10px;
+            background:rgba(255,255,255,.97);
+            border:1px solid #E2E8F0;border-radius:12px;
+            box-shadow:0 4px 16px rgba(15,23,42,.08)
+        ">
+            <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:800;color:#334155;cursor:pointer">
+                <input
+                    type="checkbox"
+                    ${todosVisiveisSelecionados ? 'checked' : ''}
+                    onchange="selecionarTodasPropostasVisiveis(this.checked)"
+                    style="width:18px;height:18px"
+                >
+                Selecionar todas (${idsVisiveis.length})
+            </label>
+
+            <span id="contadorPropostasSelecionadas" style="font-size:12px;font-weight:800;color:#64748B">
+                ${propostasSelecionadas.size} selecionada(s)
+            </span>
+
+            <button
+                type="button"
+                onclick="excluirPropostasSelecionadas()"
+                class="botao botao-perigo"
+                style="width:auto;margin:0;padding:8px 12px"
+                ${propostasSelecionadas.size ? '' : 'disabled'}
+            >
+                <i class="fas fa-trash"></i>
+                Excluir selecionadas
+            </button>
+
+            <button
+                type="button"
+                onclick="excluirTodasPropostasVisiveis()"
+                class="botao botao-perigo"
+                style="width:auto;margin:0;padding:8px 12px;background:#7f1d1d"
+                ${idsVisiveis.length ? '' : 'disabled'}
+            >
+                <i class="fas fa-trash-alt"></i>
+                Excluir TODAS visíveis (${idsVisiveis.length})
+            </button>
+
+            ${propostasSelecionadas.size ? `
+                <button
+                    type="button"
+                    onclick="limparSelecaoPropostas()"
+                    class="botao botao-cinza"
+                    style="width:auto;margin:0;padding:8px 12px"
+                >
+                    Limpar seleção
+                </button>
+            ` : ''}
+        </div>
+
         ${filtroResumoAtual !== 'todos' ? `
             <div class="filtro-aviso">
                 <span>🔎 ${titulo} — ${dados.length} cliente(s)</span>
@@ -4151,7 +4234,12 @@ function renderizarListaFiltrada(){
     }
 }
 
-async function carregarPropostas(){
+async function carregarPropostas(forcar=false){
+
+    if(propostaEmEdicaoId && !forcar){
+        atualizacaoPendenteDuranteEdicao = true;
+        return;
+    }
 
     if(carregando){
         return;
@@ -5165,7 +5253,23 @@ function renderizarProposta(i){
 
             <div class="proposta-topo">
 
-                <div>
+                <div style="display:flex;align-items:flex-start;gap:10px;min-width:0">
+                    <label
+                        title="Selecionar proposta"
+                        style="display:flex;align-items:center;justify-content:center;padding-top:2px;cursor:pointer;flex:0 0 auto"
+                        onclick="event.stopPropagation()"
+                    >
+                        <input
+                            type="checkbox"
+                            class="checkbox-proposta-massa"
+                            data-proposta-id="${escapeHTML(String(i.id))}"
+                            ${propostasSelecionadas.has(String(i.id)) ? 'checked' : ''}
+                            onchange="alternarSelecaoProposta('${escapeHTML(String(i.id))}', this.checked)"
+                            style="width:20px;height:20px;accent-color:#DC2626"
+                        >
+                    </label>
+
+                    <div style="min-width:0;flex:1">
 
                     <div class="nome-cliente">
                         ${escapeHTML(i.nome)}
@@ -5394,6 +5498,8 @@ function renderizarProposta(i){
                             }
 
                         </p>
+
+                    </div>
 
                     </div>
 
@@ -6362,6 +6468,109 @@ async function alternarEntradaPaga(
    EXCLUIR
 ============================================================ */
 
+
+function atualizarContadorSelecaoPropostas(){
+    const contador = document.getElementById('contadorPropostasSelecionadas');
+    if(contador){
+        contador.textContent = `${propostasSelecionadas.size} selecionada(s)`;
+    }
+}
+
+function alternarSelecaoProposta(id, marcado){
+    id = String(id);
+    if(marcado) propostasSelecionadas.add(id);
+    else propostasSelecionadas.delete(id);
+    renderizarListaFiltrada();
+}
+
+function selecionarTodasPropostasVisiveis(marcar){
+    const base = propostasCache.filter(item => clienteNoFluxo(item, filtroFluxoAtual));
+    const filtrado = termoBuscaAtual
+        ? base.filter(item => propostaCasaComBusca(item, termoBuscaAtual))
+        : base;
+    const dados = filtroResumoAtual === 'todos'
+        ? filtrado
+        : filtroResumoAtual === 'entrada_atrasada'
+        ? filtrado.filter(item => item.status === 'Aprovada' && !item.entrada_paga && item.created_at && diasEntre(item.created_at) > 3)
+        : filtrado.filter(item => parcelaTemStatus(item, filtroResumoAtual));
+
+    dados.forEach(item => {
+        const id = String(item.id);
+        if(marcar) propostasSelecionadas.add(id);
+        else propostasSelecionadas.delete(id);
+    });
+
+    renderizarListaFiltrada();
+}
+
+function limparSelecaoPropostas(){
+    propostasSelecionadas.clear();
+    renderizarListaFiltrada();
+}
+
+async function excluirTodasPropostasVisiveis(){
+    const base = propostasCache.filter(item => clienteNoFluxo(item, filtroFluxoAtual));
+    const filtrado = termoBuscaAtual ? base.filter(item => propostaCasaComBusca(item, termoBuscaAtual)) : base;
+    const dados = filtroResumoAtual === 'todos' ? filtrado
+        : filtroResumoAtual === 'entrada_atrasada'
+        ? filtrado.filter(item => item.status === 'Aprovada' && !item.entrada_paga && item.created_at && diasEntre(item.created_at) > 3)
+        : filtrado.filter(item => parcelaTemStatus(item, filtroResumoAtual));
+    const ids = dados.map(x => Number(x.id)).filter(Number.isInteger);
+    if(!ids.length){ alert('Não há propostas visíveis para excluir.'); return; }
+    if(!confirm(`⚠️ EXCLUIR ${ids.length} PROPOSTA(S) DE UMA VEZ?\n\nSerão apagadas todas as propostas que estão aparecendo neste filtro.`)) return;
+    if(!confirm('Confirma a exclusão em massa? Esta ação não pode ser desfeita.')) return;
+    try{
+        const {data: totalExcluido, error} = await supabaseClient.rpc('admin_propostas_excluir_em_massa',{p_token:tokenAdminFlashcred,p_ids:ids});
+        if(error) throw error;
+        propostasSelecionadas.clear(); propostaEmEdicaoId=null; atualizacaoPendenteDuranteEdicao=false;
+        await carregarPropostas(true);
+        alert(`✅ ${Number(totalExcluido)||0} proposta(s) excluída(s).`);
+    }catch(erro){ console.error(erro); alert('Erro ao excluir em massa:\n'+(erro.message||erro)); }
+}
+
+async function excluirPropostasSelecionadas(){
+    const ids = Array.from(propostasSelecionadas)
+        .map(id => Number(id))
+        .filter(Number.isInteger);
+
+    if(!ids.length){
+        alert('Selecione pelo menos uma proposta.');
+        return;
+    }
+
+    const texto = ids.length === 1
+        ? '1 proposta selecionada'
+        : `${ids.length} propostas selecionadas`;
+
+    if(!confirm(
+        `Excluir ${texto}?\n\nEsta ação apaga as propostas selecionadas e não pode ser desfeita.`
+    )){
+        return;
+    }
+
+    try{
+        const { data: totalExcluido, error } = await supabaseClient
+            .rpc('admin_propostas_excluir_em_massa', {
+                p_token: tokenAdminFlashcred,
+                p_ids: ids
+            });
+
+        if(error) throw error;
+
+        propostasSelecionadas.clear();
+        propostaEmEdicaoId = null;
+        atualizacaoPendenteDuranteEdicao = false;
+
+        await carregarPropostas(true);
+
+        alert(`✅ ${Number(totalExcluido)||0} proposta(s) excluída(s).`);
+    }catch(erro){
+        console.error(erro);
+        alert('Erro ao excluir propostas selecionadas:\n' + (erro.message || erro));
+    }
+}
+
+
 async function excluirProposta(id){
 
     if(
@@ -6414,7 +6623,9 @@ async function excluirProposta(id){
         return;
     }
 
-    await carregarPropostas();
+    propostasSelecionadas.delete(String(id));
+    if(String(propostaEmEdicaoId) === String(id)) propostaEmEdicaoId = null;
+    await carregarPropostas(true);
 }
 
 
@@ -6642,25 +6853,35 @@ async function alternarEntregaConcluida(
 
 function toggleEditar(id){
 
-    const area =
-        document.getElementById(
-            `edicao_${id}`
-        );
+    const area = document.getElementById(`edicao_${id}`);
+    if(!area) return;
 
-    if(!area){
-        return;
-    }
+    const vaiAbrir = !area.classList.contains('ativa');
 
-    area.classList.toggle('ativa');
+    // Fecha qualquer outra edição para nunca haver dois formulários concorrendo.
+    document.querySelectorAll('[id^="edicao_"].ativa').forEach(outra => {
+        if(outra !== area) outra.classList.remove('ativa');
+    });
 
-    if(area.classList.contains('ativa')){
+    if(vaiAbrir){
+        area.classList.add('ativa');
+        propostaEmEdicaoId = String(id);
+        atualizacaoPendenteDuranteEdicao = false;
 
         atualizarCalculo(area);
+        // Não força a tela para o topo ao editar. Mantém exatamente a posição do administrador.
+        document.body.classList.add('flashcred-editando');
+    }else{
+        area.classList.remove('ativa');
+        if(String(propostaEmEdicaoId) === String(id)){
+            propostaEmEdicaoId = null;
+        }
+        document.body.classList.remove('flashcred-editando');
 
-        area.scrollIntoView({
-            behavior:'smooth',
-            block:'start'
-        });
+        if(atualizacaoPendenteDuranteEdicao){
+            atualizacaoPendenteDuranteEdicao = false;
+            carregarPropostas(true);
+        }
     }
 }
 
@@ -7004,15 +7225,19 @@ async function salvarEdicao(id){
             propostasCache[indiceCache] = propostaSalva;
         }
 
-        await carregarPropostas();
+        // Libera a atualização somente depois do banco confirmar o salvamento.
+        propostaEmEdicaoId = null;
+        atualizacaoPendenteDuranteEdicao = false;
 
-        // Mantém a proposta editada aberta e visível, em vez de fechar
-        // tudo e voltar pro topo da lista.
+        await carregarPropostas(true);
+
+        // Mantém a proposta editada aberta e visível após salvar.
         const areaReaberta = document.getElementById(`edicao_${id}`);
         if(areaReaberta){
             areaReaberta.classList.add('ativa');
+            propostaEmEdicaoId = String(id);
             atualizarCalculo(areaReaberta);
-            areaReaberta.scrollIntoView({behavior:'smooth', block:'start'});
+            areaReaberta.scrollIntoView({behavior:'smooth', block:'center'});
         }
 
         alert(
