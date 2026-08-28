@@ -1007,53 +1007,6 @@ select:focus-visible{
         margin-top:50px;
     }
 }
-
-/* ===== CORREÇÕES / MELHORIAS DE ESTABILIDADE DO PAINEL ===== */
-.hidden{
-    display:none !important;
-}
-
-.card{
-    background:#fff;
-    border-radius:var(--raio);
-    box-shadow:var(--sombra);
-    border:1px solid rgba(226,232,240,.7);
-    box-sizing:border-box;
-}
-
-#telaPrincipal{
-    padding-bottom:48px;
-}
-
-@media(max-width:700px){
-    .acoes-cabecalho{
-        width:100%;
-    }
-    .acoes-cabecalho .botao{
-        flex:1 1 auto;
-        min-height:44px;
-    }
-    .fluxo-abas{
-        gap:6px;
-        padding:8px;
-    }
-    .fluxo-aba{
-        flex:1 1 calc(50% - 6px);
-        min-width:0;
-        padding:10px;
-        font-size:13px;
-    }
-    .linha-proposta{
-        padding:14px;
-    }
-    .destaque-receber{
-        padding:18px;
-    }
-    .destaque-receber-valor{
-        font-size:30px;
-    }
-}
-
 </style>
 </head>
 
@@ -1629,7 +1582,7 @@ select:focus-visible{
                 <input
                     type="number"
                     id="dias_entrega"
-                    value="8"
+                    value="7"
                     min="1"
                     class="campo"
                 >
@@ -1829,15 +1782,6 @@ const supabaseClient =
 
 let inscricaoTempoReal = null;
 let carregando = false;
-let tokenAdminFlashcred = null;
-let intervaloAtualizacaoPainelAdmin = null;
-
-// Evita que polling/Realtime reconstruam a lista enquanto o admin está editando.
-let propostaEmEdicaoId = null;
-let atualizacaoPendenteDuranteEdicao = false;
-
-// Seleção para exclusão em massa.
-const propostasSelecionadas = new Set();
 
 
 /* ============================================================
@@ -3100,47 +3044,6 @@ async function editarLimiteCliente(cpf){
     }
 }
 
-function pagamentoEhNaEntrega(item){
-    const forma = String(item?.forma_pagamento_entrada || 'pix_antecipado');
-    return forma === 'na_entrega' ||
-           forma === 'cartao_entrega' ||
-           forma === 'pix_total_entrega';
-}
-
-function obterInicioPrazoEntrega(item){
-    if(!item) return null;
-
-    // Pagamento feito antes da entrega: prazo começa quando a entrada é confirmada.
-    if(!pagamentoEhNaEntrega(item)){
-        return item.data_pagamento_entrada ||
-               item.entrada_pago_em ||
-               item.data_entrada_paga ||
-               null;
-    }
-
-    // Pagamento na entrega: não pode esperar o Pix/cartão para iniciar o pedido.
-    // O contrato assinado confirma o pedido e libera imediatamente os 8 dias úteis.
-    if(Boolean(item.contrato_assinado)){
-        return item.data_assinatura || item.updated_at || item.created_at || null;
-    }
-
-    return null;
-}
-
-function pedidoLiberadoParaEntrega(item){
-    if(!item || !Boolean(item.contrato_assinado)) return false;
-    return pagamentoEhNaEntrega(item) || Boolean(item.entrada_paga);
-}
-
-function textoStatusPagamento(item){
-    const forma = String(item?.forma_pagamento_entrada || 'pix_antecipado');
-    if(Boolean(item?.entrada_paga)) return '✅ Pago';
-    if(forma === 'na_entrega') return '📦 Pix será pago na entrega';
-    if(forma === 'cartao_entrega') return '💳 Cartão será pago na entrega';
-    if(forma === 'pix_total_entrega') return '📦 Pix total será pago na entrega';
-    return '❌ Pendente';
-}
-
 function calcularProgressoEntrega(
     diasUteis,
     concluida,
@@ -3150,7 +3053,7 @@ function calcularProgressoEntrega(
     diasUteis =
         Math.max(
             1,
-            Number(diasUteis)||8
+            Number(diasUteis)||7
         );
 
     if(concluida){
@@ -3244,26 +3147,16 @@ function calcularProgressoEntrega(
 
 window.addEventListener(
     'load',
-    async function(){
+    function(){
 
-        const tokenSalvo = localStorage.getItem('flashcred_admin_token');
+        if(
+            localStorage.getItem(
+                'logado_flashcred'
+            ) === 'SIM'
+        ){
 
-        if(tokenSalvo){
-            try{
-                const { data: valido } = await supabaseClient
-                    .rpc('flashcred_validar_sessao_admin', { p_token: tokenSalvo });
+            mostrarPainel();
 
-                if(valido){
-                    tokenAdminFlashcred = tokenSalvo;
-                    mostrarPainel();
-                    return;
-                }
-            }catch(e){
-                console.warn('Sessão salva inválida, pedindo login novamente.', e);
-            }
-
-            localStorage.removeItem('flashcred_admin_token');
-            localStorage.removeItem('logado_flashcred');
         }
 
     }
@@ -3306,17 +3199,6 @@ async function entrar(){
             return;
         }
 
-        const { data: token, error: erroToken } = await supabaseClient
-            .rpc('flashcred_admin_login', { p_senha: senha });
-
-        if(erroToken || !token){
-            alert('Senha confirmada, mas não foi possível abrir a sessão com o banco de dados. Tente novamente.');
-            return;
-        }
-
-        tokenAdminFlashcred = token;
-        localStorage.setItem('flashcred_admin_token', token);
-
         localStorage.setItem(
             'logado_flashcred',
             'SIM'
@@ -3346,13 +3228,6 @@ function sair(){
     localStorage.removeItem(
         'logado_flashcred'
     );
-    localStorage.removeItem('flashcred_admin_token');
-    tokenAdminFlashcred = null;
-
-    if(intervaloAtualizacaoPainelAdmin){
-        clearInterval(intervaloAtualizacaoPainelAdmin);
-        intervaloAtualizacaoPainelAdmin = null;
-    }
 
     if(inscricaoTempoReal){
 
@@ -3387,15 +3262,6 @@ function mostrarPainel(){
 
     ativarTempoReal();
 
-    // Plano B: com a tabela agora protegida (acesso só via funções RPC),
-    // o Realtime não recebe mais eventos de propostas sem uma policy de
-    // leitura aberta. Este polling garante que novas propostas, entradas
-    // pagas e contratos assinados continuem sendo detectados mesmo assim.
-    if(intervaloAtualizacaoPainelAdmin) clearInterval(intervaloAtualizacaoPainelAdmin);
-    intervaloAtualizacaoPainelAdmin = setInterval(() => {
-        if(tokenAdminFlashcred) carregarPropostas(false);
-    }, 15000);
-
     setTimeout(mostrarConviteNotificacaoAdmin, 800);
 }
 
@@ -3429,7 +3295,7 @@ function abrirNovo(){
 
     document.getElementById(
         'dias_entrega'
-    ).value = 8;
+    ).value = 7;
 
     document.getElementById(
         'intervalo_auto'
@@ -3559,7 +3425,9 @@ async function salvarNovo(){
         // "Quitada" = entrada paga + todas as parcelas pagas.
         const {data: propostasDoCpf, error: erroCpf} =
             await supabaseClient
-            .rpc('admin_propostas_por_cpf', { p_token: tokenAdminFlashcred, p_cpf: cpf });
+            .from('propostas')
+            .select('id,entrada_paga,parcelas_pagas,quantidade_parcelas')
+            .eq('cpf', cpf);
 
         if(erroCpf){
             console.error('Erro ao checar CPF duplicado:', erroCpf);
@@ -3688,7 +3556,8 @@ async function salvarNovo(){
             error
         } =
             await supabaseClient
-            .rpc('admin_propostas_inserir', { p_token: tokenAdminFlashcred, p_dados: dados });
+            .from('propostas')
+            .insert([dados]);
 
         if(error){
 
@@ -3791,19 +3660,14 @@ function buscarPropostas(valor){
 }
 
 function clienteNoFluxo(item, tipo){
-    const status = String(item.status || '').trim().toLowerCase();
-    const statusNovo = status === 'nova' || status === 'novo';
-    const statusAprovado = status === 'aprovada' || status === 'aprovado';
-
     if(tipo === 'novos'){
-        // Cadastro recém-chegado não pode sumir do painel só porque já veio aprovado.
-        // Enquanto a entrada não foi paga, ele continua visível em Novos Clientes.
-        return (statusNovo || statusAprovado)
+        const status = String(item.status || '').trim().toLowerCase();
+        return status === 'nova'
             && !Boolean(item.entrada_paga);
     }
 
     if(tipo === 'aprovados'){
-        return statusAprovado && !Boolean(item.entrada_paga);
+        return item.status === 'Aprovada' && !Boolean(item.entrada_paga);
     }
 
     if(tipo === 'entrada'){
@@ -4148,68 +4012,7 @@ function renderizarListaFiltrada(){
         entrada_atrasada:'Aprovados há +3 dias sem pagar entrada'
     }[filtroResumoAtual];
 
-    const idsVisiveis = dados.map(item => String(item.id));
-    const todosVisiveisSelecionados =
-        idsVisiveis.length > 0 &&
-        idsVisiveis.every(id => propostasSelecionadas.has(id));
-
     lista.innerHTML = `
-        <div style="
-            position:sticky;top:0;z-index:20;
-            display:flex;align-items:center;flex-wrap:wrap;gap:8px;
-            padding:10px 12px;margin-bottom:10px;
-            background:rgba(255,255,255,.97);
-            border:1px solid #E2E8F0;border-radius:12px;
-            box-shadow:0 4px 16px rgba(15,23,42,.08)
-        ">
-            <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:800;color:#334155;cursor:pointer">
-                <input
-                    type="checkbox"
-                    ${todosVisiveisSelecionados ? 'checked' : ''}
-                    onchange="selecionarTodasPropostasVisiveis(this.checked)"
-                    style="width:18px;height:18px"
-                >
-                Selecionar todas (${idsVisiveis.length})
-            </label>
-
-            <span id="contadorPropostasSelecionadas" style="font-size:12px;font-weight:800;color:#64748B">
-                ${propostasSelecionadas.size} selecionada(s)
-            </span>
-
-            <button
-                type="button"
-                onclick="excluirPropostasSelecionadas()"
-                class="botao botao-perigo"
-                style="width:auto;margin:0;padding:8px 12px"
-                ${propostasSelecionadas.size ? '' : 'disabled'}
-            >
-                <i class="fas fa-trash"></i>
-                Excluir selecionadas
-            </button>
-
-            <button
-                type="button"
-                onclick="excluirTodasPropostasVisiveis()"
-                class="botao botao-perigo"
-                style="width:auto;margin:0;padding:8px 12px;background:#7f1d1d"
-                ${idsVisiveis.length ? '' : 'disabled'}
-            >
-                <i class="fas fa-trash-alt"></i>
-                Excluir TODAS visíveis (${idsVisiveis.length})
-            </button>
-
-            ${propostasSelecionadas.size ? `
-                <button
-                    type="button"
-                    onclick="limparSelecaoPropostas()"
-                    class="botao botao-cinza"
-                    style="width:auto;margin:0;padding:8px 12px"
-                >
-                    Limpar seleção
-                </button>
-            ` : ''}
-        </div>
-
         ${filtroResumoAtual !== 'todos' ? `
             <div class="filtro-aviso">
                 <span>🔎 ${titulo} — ${dados.length} cliente(s)</span>
@@ -4234,12 +4037,7 @@ function renderizarListaFiltrada(){
     }
 }
 
-async function carregarPropostas(forcar=false){
-
-    if(propostaEmEdicaoId && !forcar){
-        atualizacaoPendenteDuranteEdicao = true;
-        return;
-    }
+async function carregarPropostas(){
 
     if(carregando){
         return;
@@ -4259,7 +4057,14 @@ async function carregarPropostas(forcar=false){
             error
         } =
             await supabaseClient
-            .rpc('admin_propostas_listar', { p_token: tokenAdminFlashcred });
+            .from('propostas')
+            .select('*')
+            .order(
+                'created_at',
+                {
+                    ascending:false
+                }
+            );
 
         if(error){
 
@@ -4793,11 +4598,9 @@ async function agendarEntregaRapido(id, novaData){
     }
 
     const { error } = await supabaseClient
-        .rpc('admin_propostas_atualizar', {
-            p_token: tokenAdminFlashcred,
-            p_id: id,
-            p_dados: { data_preferida_entrega: novaData }
-        });
+        .from('propostas')
+        .update({ data_preferida_entrega: novaData })
+        .eq('id', id);
 
     if(error){
         alert('Erro ao agendar a entrega:\n' + error.message);
@@ -4815,11 +4618,12 @@ function renderizarProximasEntregas(data){
     const container = document.getElementById('painelProximasEntregas');
     if(!container) return;
 
-    // O pedido entra no fluxo de entrega assim que estiver liberado:
-    // - Pix antecipado: contrato assinado + entrada confirmada;
-    // - pagamento na entrega: contrato assinado já libera o pedido, sem esperar o pagamento.
+    // Só entra aqui quem já assinou contrato E já teve o pagamento confirmado
+    // (entrada paga = "vindo confirmado, pago", inclusive nas modalidades sem entrada,
+    // onde o admin marca esse campo manualmente ao confirmar o combinado com o cliente).
     const pendentes = data.filter(item =>
-        pedidoLiberadoParaEntrega(item) &&
+        Boolean(item.contrato_assinado) &&
+        Boolean(item.entrada_paga) &&
         !Boolean(item.entrega_concluida)
     );
 
@@ -4867,7 +4671,7 @@ function renderizarProximasEntregas(data){
     container.innerHTML = `
         <div class="card" style="margin-bottom:16px;padding:16px 18px;border:1.5px solid #99F6E4;background:#F0FDFA">
             <div style="font-weight:800;color:#0A2463;font-size:14.5px;margin-bottom:8px">
-                🚚 Próximas entregas — ${pendentes.length}
+                🚚 Próximas entregas (pagamento confirmado) — ${pendentes.length}
             </div>
             <div style="max-height:280px;overflow-y:auto;border-radius:10px;background:#fff">
                 ${comData.map(linha).join('')}
@@ -5120,9 +4924,9 @@ function renderizarProposta(i){
 
     const entrega =
         calcularProgressoEntrega(
-            i.dias_entrega || 8,
+            i.dias_entrega || 7,
             Boolean(i.entrega_concluida),
-            obterInicioPrazoEntrega(i)
+            i.data_pagamento_entrada || i.entrada_pago_em || i.data_entrada_paga
         );
 
 
@@ -5253,23 +5057,7 @@ function renderizarProposta(i){
 
             <div class="proposta-topo">
 
-                <div style="display:flex;align-items:flex-start;gap:10px;min-width:0">
-                    <label
-                        title="Selecionar proposta"
-                        style="display:flex;align-items:center;justify-content:center;padding-top:2px;cursor:pointer;flex:0 0 auto"
-                        onclick="event.stopPropagation()"
-                    >
-                        <input
-                            type="checkbox"
-                            class="checkbox-proposta-massa"
-                            data-proposta-id="${escapeHTML(String(i.id))}"
-                            ${propostasSelecionadas.has(String(i.id)) ? 'checked' : ''}
-                            onchange="alternarSelecaoProposta('${escapeHTML(String(i.id))}', this.checked)"
-                            style="width:20px;height:20px;accent-color:#DC2626"
-                        >
-                    </label>
-
-                    <div style="min-width:0;flex:1">
+                <div>
 
                     <div class="nome-cliente">
                         ${escapeHTML(i.nome)}
@@ -5433,7 +5221,7 @@ function renderizarProposta(i){
                                     🔥 Reengajar cliente (aprovado, não assinou)
                                 </button>
                             `
-                            : (Boolean(i.contrato_assinado) && !Boolean(i.entrada_paga) && !pagamentoEhNaEntrega(i))
+                            : (Boolean(i.contrato_assinado) && !Boolean(i.entrada_paga))
                             ? `
                                 <button
                                     type="button"
@@ -5485,7 +5273,11 @@ function renderizarProposta(i){
 
                             <strong>Entrada:</strong>
 
-                            ${textoStatusPagamento(i)}
+                            ${
+                                i.entrada_paga
+                                ? '✅ Paga'
+                                : '❌ Pendente'
+                            }
 
                             |
 
@@ -5498,8 +5290,6 @@ function renderizarProposta(i){
                             }
 
                         </p>
-
-                    </div>
 
                     </div>
 
@@ -5633,19 +5423,13 @@ function renderizarProposta(i){
                 }"
             >
 
-                ${pagamentoEhNaEntrega(i) && Boolean(i.contrato_assinado) && !Boolean(i.entrada_paga) ? `
-                    <div style="margin-bottom:10px;padding:9px 11px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E40AF;font-size:12px;font-weight:700">
-                        ✅ Pedido liberado pelo contrato assinado. O prazo de ${Number(i.dias_entrega)||8} dias úteis já está contando; o pagamento será feito na entrega.
-                    </div>
-                ` : ''}
-
                 <div>
 
                     <div class="prazo-topo">
 
                         <span>
                             🚚 Prazo:
-                            ${Number(i.dias_entrega)||8}
+                            ${Number(i.dias_entrega)||7}
                             dias úteis
                         </span>
 
@@ -6054,7 +5838,7 @@ function renderizarProposta(i){
                         <input
                             type="number"
                             id="edit_dias_${escapeHTML(String(i.id))}"
-                            value="${Number(i.dias_entrega)||8}"
+                            value="${Number(i.dias_entrega)||7}"
                             class="campo"
                             min="1"
                         >
@@ -6330,11 +6114,11 @@ async function aprovarProposta(id){
         error
     } =
         await supabaseClient
-        .rpc('admin_propostas_atualizar', {
-            p_token: tokenAdminFlashcred,
-            p_id: id,
-            p_dados: { status:'Aprovada' }
-        });
+        .from('propostas')
+        .update({
+            status:'Aprovada'
+        })
+        .eq('id',id);
 
     if(error){
 
@@ -6363,13 +6147,6 @@ async function alternarEntradaPaga(
         entrada_paga: Boolean(status)
     };
 
-    if(Boolean(status)){
-        const propostaPrazo = propostasCache.find(p => String(p.id) === String(id));
-        if(!Number(propostaPrazo?.dias_entrega)){
-            dadosAtualizar.dias_entrega = 8;
-        }
-    }
-
     // Se está marcando como paga e ainda não tem a data de pagamento
     // (ex: quando o Pix não confirmou sozinho e foi marcado na mão),
     // grava a data de agora — sem isso, a barra de progresso da entrega nunca soma dias.
@@ -6384,11 +6161,9 @@ async function alternarEntradaPaga(
         error
     } =
         await supabaseClient
-        .rpc('admin_propostas_atualizar', {
-            p_token: tokenAdminFlashcred,
-            p_id: id,
-            p_dados: dadosAtualizar
-        });
+        .from('propostas')
+        .update(dadosAtualizar)
+        .eq('id',id);
 
     if(error){
 
@@ -6468,109 +6243,6 @@ async function alternarEntradaPaga(
    EXCLUIR
 ============================================================ */
 
-
-function atualizarContadorSelecaoPropostas(){
-    const contador = document.getElementById('contadorPropostasSelecionadas');
-    if(contador){
-        contador.textContent = `${propostasSelecionadas.size} selecionada(s)`;
-    }
-}
-
-function alternarSelecaoProposta(id, marcado){
-    id = String(id);
-    if(marcado) propostasSelecionadas.add(id);
-    else propostasSelecionadas.delete(id);
-    renderizarListaFiltrada();
-}
-
-function selecionarTodasPropostasVisiveis(marcar){
-    const base = propostasCache.filter(item => clienteNoFluxo(item, filtroFluxoAtual));
-    const filtrado = termoBuscaAtual
-        ? base.filter(item => propostaCasaComBusca(item, termoBuscaAtual))
-        : base;
-    const dados = filtroResumoAtual === 'todos'
-        ? filtrado
-        : filtroResumoAtual === 'entrada_atrasada'
-        ? filtrado.filter(item => item.status === 'Aprovada' && !item.entrada_paga && item.created_at && diasEntre(item.created_at) > 3)
-        : filtrado.filter(item => parcelaTemStatus(item, filtroResumoAtual));
-
-    dados.forEach(item => {
-        const id = String(item.id);
-        if(marcar) propostasSelecionadas.add(id);
-        else propostasSelecionadas.delete(id);
-    });
-
-    renderizarListaFiltrada();
-}
-
-function limparSelecaoPropostas(){
-    propostasSelecionadas.clear();
-    renderizarListaFiltrada();
-}
-
-async function excluirTodasPropostasVisiveis(){
-    const base = propostasCache.filter(item => clienteNoFluxo(item, filtroFluxoAtual));
-    const filtrado = termoBuscaAtual ? base.filter(item => propostaCasaComBusca(item, termoBuscaAtual)) : base;
-    const dados = filtroResumoAtual === 'todos' ? filtrado
-        : filtroResumoAtual === 'entrada_atrasada'
-        ? filtrado.filter(item => item.status === 'Aprovada' && !item.entrada_paga && item.created_at && diasEntre(item.created_at) > 3)
-        : filtrado.filter(item => parcelaTemStatus(item, filtroResumoAtual));
-    const ids = dados.map(x => Number(x.id)).filter(Number.isInteger);
-    if(!ids.length){ alert('Não há propostas visíveis para excluir.'); return; }
-    if(!confirm(`⚠️ EXCLUIR ${ids.length} PROPOSTA(S) DE UMA VEZ?\n\nSerão apagadas todas as propostas que estão aparecendo neste filtro.`)) return;
-    if(!confirm('Confirma a exclusão em massa? Esta ação não pode ser desfeita.')) return;
-    try{
-        const {data: totalExcluido, error} = await supabaseClient.rpc('admin_propostas_excluir_em_massa',{p_token:tokenAdminFlashcred,p_ids:ids});
-        if(error) throw error;
-        propostasSelecionadas.clear(); propostaEmEdicaoId=null; atualizacaoPendenteDuranteEdicao=false;
-        await carregarPropostas(true);
-        alert(`✅ ${Number(totalExcluido)||0} proposta(s) excluída(s).`);
-    }catch(erro){ console.error(erro); alert('Erro ao excluir em massa:\n'+(erro.message||erro)); }
-}
-
-async function excluirPropostasSelecionadas(){
-    const ids = Array.from(propostasSelecionadas)
-        .map(id => Number(id))
-        .filter(Number.isInteger);
-
-    if(!ids.length){
-        alert('Selecione pelo menos uma proposta.');
-        return;
-    }
-
-    const texto = ids.length === 1
-        ? '1 proposta selecionada'
-        : `${ids.length} propostas selecionadas`;
-
-    if(!confirm(
-        `Excluir ${texto}?\n\nEsta ação apaga as propostas selecionadas e não pode ser desfeita.`
-    )){
-        return;
-    }
-
-    try{
-        const { data: totalExcluido, error } = await supabaseClient
-            .rpc('admin_propostas_excluir_em_massa', {
-                p_token: tokenAdminFlashcred,
-                p_ids: ids
-            });
-
-        if(error) throw error;
-
-        propostasSelecionadas.clear();
-        propostaEmEdicaoId = null;
-        atualizacaoPendenteDuranteEdicao = false;
-
-        await carregarPropostas(true);
-
-        alert(`✅ ${Number(totalExcluido)||0} proposta(s) excluída(s).`);
-    }catch(erro){
-        console.error(erro);
-        alert('Erro ao excluir propostas selecionadas:\n' + (erro.message || erro));
-    }
-}
-
-
 async function excluirProposta(id){
 
     if(
@@ -6611,7 +6283,9 @@ async function excluirProposta(id){
         error
     } =
         await supabaseClient
-        .rpc('admin_propostas_excluir', { p_token: tokenAdminFlashcred, p_id: id });
+        .from('propostas')
+        .delete()
+        .eq('id',id);
 
     if(error){
 
@@ -6623,9 +6297,7 @@ async function excluirProposta(id){
         return;
     }
 
-    propostasSelecionadas.delete(String(id));
-    if(String(propostaEmEdicaoId) === String(id)) propostaEmEdicaoId = null;
-    await carregarPropostas(true);
+    await carregarPropostas();
 }
 
 
@@ -6641,21 +6313,27 @@ async function marcarParcela(
 
     try{
 
-        const item = (propostasCache || []).find(p => String(p.id) === String(id));
+        const {
+            data,
+            error
+        } =
+            await supabaseClient
+            .from('propostas')
+            .select(
+                'parcelas_pagas, quantidade_parcelas'
+            )
+            .eq('id',id)
+            .single();
 
-        if(!item){
+        if(error){
 
             alert(
-                'Erro ao consultar parcela:\nProposta não encontrada no cache. Atualize a página.'
+                'Erro ao consultar parcela:\n' +
+                error.message
             );
 
             return;
         }
-
-        const data = {
-            parcelas_pagas: item.parcelas_pagas,
-            quantidade_parcelas: item.quantidade_parcelas
-        };
 
         const total =
             Number(
@@ -6710,11 +6388,11 @@ async function marcarParcela(
             error:updateError
         } =
             await supabaseClient
-            .rpc('admin_propostas_atualizar', {
-                p_token: tokenAdminFlashcred,
-                p_id: id,
-                p_dados: { parcelas_pagas:pagas }
-            });
+            .from('propostas')
+            .update({
+                parcelas_pagas:pagas
+            })
+            .eq('id',id);
 
         if(updateError){
 
@@ -6795,14 +6473,12 @@ async function alternarEmRotaEntrega(
         error
     } =
         await supabaseClient
-        .rpc('admin_propostas_atualizar', {
-            p_token: tokenAdminFlashcred,
-            p_id: id,
-            p_dados: {
-                em_rota_entrega:Boolean(status),
-                data_em_rota_entrega: Boolean(status) ? new Date().toISOString() : null
-            }
-        });
+        .from('propostas')
+        .update({
+            em_rota_entrega:Boolean(status),
+            data_em_rota_entrega: Boolean(status) ? new Date().toISOString() : null
+        })
+        .eq('id',id);
 
     if(error){
 
@@ -6827,11 +6503,11 @@ async function alternarEntregaConcluida(
         error
     } =
         await supabaseClient
-        .rpc('admin_propostas_atualizar', {
-            p_token: tokenAdminFlashcred,
-            p_id: id,
-            p_dados: { entrega_concluida:Boolean(status) }
-        });
+        .from('propostas')
+        .update({
+            entrega_concluida:Boolean(status)
+        })
+        .eq('id',id);
 
     if(error){
 
@@ -6853,35 +6529,25 @@ async function alternarEntregaConcluida(
 
 function toggleEditar(id){
 
-    const area = document.getElementById(`edicao_${id}`);
-    if(!area) return;
+    const area =
+        document.getElementById(
+            `edicao_${id}`
+        );
 
-    const vaiAbrir = !area.classList.contains('ativa');
+    if(!area){
+        return;
+    }
 
-    // Fecha qualquer outra edição para nunca haver dois formulários concorrendo.
-    document.querySelectorAll('[id^="edicao_"].ativa').forEach(outra => {
-        if(outra !== area) outra.classList.remove('ativa');
-    });
+    area.classList.toggle('ativa');
 
-    if(vaiAbrir){
-        area.classList.add('ativa');
-        propostaEmEdicaoId = String(id);
-        atualizacaoPendenteDuranteEdicao = false;
+    if(area.classList.contains('ativa')){
 
         atualizarCalculo(area);
-        // Não força a tela para o topo ao editar. Mantém exatamente a posição do administrador.
-        document.body.classList.add('flashcred-editando');
-    }else{
-        area.classList.remove('ativa');
-        if(String(propostaEmEdicaoId) === String(id)){
-            propostaEmEdicaoId = null;
-        }
-        document.body.classList.remove('flashcred-editando');
 
-        if(atualizacaoPendenteDuranteEdicao){
-            atualizacaoPendenteDuranteEdicao = false;
-            carregarPropostas(true);
-        }
+        area.scrollIntoView({
+            behavior:'smooth',
+            block:'start'
+        });
     }
 }
 
@@ -6968,7 +6634,7 @@ async function salvarEdicao(id){
                 document
                 .getElementById(`edit_dias_${id}`)
                 .value
-            ) || 8;
+            ) || 7;
 
         const data_preferida_entrega =
             document
@@ -7081,32 +6747,18 @@ async function salvarEdicao(id){
         // Se a quantidade de parcelas foi alterada, recria automaticamente o cronograma.
         // Assim 8 parcelas sempre terão exatamente 8 datas, sem exigir edição manual.
         if(datas_parcelas.length !== quantidade_parcelas){
-            const selectIntervalo = document.getElementById(`edit_intervalo_${id}`);
-            const modoIntervalo = selectIntervalo?.value || '30';
-            const intervalo = modoIntervalo === 'manual'
-                ? 30
-                : Math.max(1, Number(modoIntervalo) || 30);
-
-            const propostaAtual = propostasCache.find(
-                x => String(x.id) === String(id)
-            );
-            const anteriores = Array.isArray(propostaAtual?.datas_parcelas)
-                ? propostaAtual.datas_parcelas
-                : [];
-
-            let base = anteriores.length
-                ? new Date(anteriores[0] + 'T00:00:00')
-                : new Date();
-
+            const intervalo = Math.max(1, Number(dias_entrega) || 30);
+            const anteriores = Array.isArray(propostasCache.find(x => String(x.id)===String(id))?.datas_parcelas)
+                ? propostasCache.find(x => String(x.id)===String(id)).datas_parcelas : [];
+            let base = anteriores.length ? new Date(anteriores[0]+'T00:00:00') : new Date();
             datas_parcelas = [];
-
             for(let i=0;i<quantidade_parcelas;i++){
-                if(i === 0 && anteriores.length){
+                if(i===0 && anteriores.length) {
                     base = new Date(base);
-                }else{
-                    base = adicionarDias(base, intervalo);
+                } else {
+                    base = new Date(base.getTime() + intervalo*86400000);
                 }
-                datas_parcelas.push(dataLocalISO(base));
+                datas_parcelas.push(base.toISOString().slice(0,10));
             }
         }
 
@@ -7182,24 +6834,13 @@ async function salvarEdicao(id){
             }
         }
 
-        // Remove propriedades undefined antes de enviar ao Supabase.
-        // Isso evita payload inconsistente em navegadores/versões diferentes.
-        Object.keys(dadosParaSalvar).forEach(chave => {
-            if(dadosParaSalvar[chave] === undefined){
-                delete dadosParaSalvar[chave];
-            }
-        });
-
         const {
-            data: propostaSalva,
             error
         } =
             await supabaseClient
-            .rpc('admin_propostas_atualizar', {
-                p_token: tokenAdminFlashcred,
-                p_id: id,
-                p_dados: dadosParaSalvar
-            });
+            .from('propostas')
+            .update(dadosParaSalvar)
+            .eq('id',id);
 
 
         if(error){
@@ -7214,30 +6855,16 @@ async function salvarEdicao(id){
             return;
         }
 
-        if(!propostaSalva){
-            alert('A alteração não foi confirmada no banco. Atualize a página e tente novamente.');
-            return;
-        }
 
-        // Atualiza o cache imediatamente com exatamente o que voltou do banco.
-        const indiceCache = propostasCache.findIndex(p => String(p.id) === String(id));
-        if(indiceCache >= 0){
-            propostasCache[indiceCache] = propostaSalva;
-        }
+        await carregarPropostas();
 
-        // Libera a atualização somente depois do banco confirmar o salvamento.
-        propostaEmEdicaoId = null;
-        atualizacaoPendenteDuranteEdicao = false;
-
-        await carregarPropostas(true);
-
-        // Mantém a proposta editada aberta e visível após salvar.
+        // Mantém a proposta editada aberta e visível, em vez de fechar
+        // tudo e voltar pro topo da lista.
         const areaReaberta = document.getElementById(`edicao_${id}`);
         if(areaReaberta){
             areaReaberta.classList.add('ativa');
-            propostaEmEdicaoId = String(id);
             atualizarCalculo(areaReaberta);
-            areaReaberta.scrollIntoView({behavior:'smooth', block:'center'});
+            areaReaberta.scrollIntoView({behavior:'smooth', block:'start'});
         }
 
         alert(
@@ -7648,24 +7275,19 @@ async function mostrarNotificacoes(){
     try{
 
         const {
-            data: dadosCompletos,
+            data,
             error
         } =
             await supabaseClient
-            .rpc('admin_propostas_listar', { p_token: tokenAdminFlashcred });
-
-        const data = (dadosCompletos || [])
-            .filter(p => p.status === 'Nova')
-            .map(p => ({
-                id: p.id,
-                nome: p.nome,
-                cpf: p.cpf,
-                status: p.status,
-                created_at: p.created_at,
-                funcionario_id: p.funcionario_id,
-                indicado_por_cpf: p.indicado_por_cpf
-            }))
-            .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+            .from('propostas')
+            .select('id,nome,cpf,status,created_at,funcionario_id,indicado_por_cpf')
+            .eq('status','Nova')
+            .order(
+                'created_at',
+                {
+                    ascending:false
+                }
+            );
 
         if(error){
 
@@ -8195,17 +7817,15 @@ async function responderPedidoLimite(id, aprovar){
     try{
         if(aprovar && pedido.proposta_id){
             const { error: erroProposta } = await supabaseClient
-                .rpc('admin_propostas_atualizar', {
-                    p_token: tokenAdminFlashcred,
-                    p_id: pedido.proposta_id,
-                    p_dados: { valor_desejado: pedido.valor_solicitado }
-                });
+                .from('propostas')
+                .update({ valor_desejado: pedido.valor_solicitado })
+                .eq('id', pedido.proposta_id);
             if(erroProposta) throw erroProposta;
         }
 
         const { error } = await supabaseClient
             .from('pedidos_limite')
-            .update({ status: aprovar ? 'Aprovada' : 'Recusado' })
+            .update({ status: aprovar ? 'Aprovado' : 'Recusado' })
             .eq('id', id);
         if(error) throw error;
 
