@@ -3280,32 +3280,17 @@ async function entrar(){
 
     try{
 
-        const resposta =
-            await fetch('/api/verificar-senha-admin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ senha })
-            });
+        const { data: sessaoDados, error: sessaoErro } = await supabaseClient.functions.invoke(
+            'flashcred-admin-session',
+            { body: { senha } }
+        );
 
-        const dados = await resposta.json();
-
-        if(!dados.ok){
-
-            alert(
-                dados.mensagem ||
-                'Senha incorreta!'
-            );
-
+        if(sessaoErro || !sessaoDados?.ok || !sessaoDados?.token){
+            alert(sessaoDados?.mensagem || 'Senha incorreta ou não foi possível abrir a sessão.');
             return;
         }
 
-        const { data: token, error: erroToken } = await supabaseClient
-            .rpc('flashcred_admin_login', { p_senha: senha });
-
-        if(erroToken || !token){
-            alert('Senha confirmada, mas não foi possível abrir a sessão com o banco de dados. Tente novamente.');
-            return;
-        }
+        const token = sessaoDados.token;
 
         tokenAdminFlashcred = token;
         localStorage.setItem('flashcred_admin_token', token);
