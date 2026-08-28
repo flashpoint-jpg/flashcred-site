@@ -1829,6 +1829,8 @@ const supabaseClient =
 
 let inscricaoTempoReal = null;
 let carregando = false;
+let tokenAdminFlashcred = null;
+let intervaloAtualizacaoPainelAdmin = null;
 
 
 /* ============================================================
@@ -3235,16 +3237,26 @@ function calcularProgressoEntrega(
 
 window.addEventListener(
     'load',
-    function(){
+    async function(){
 
-        if(
-            localStorage.getItem(
-                'logado_flashcred'
-            ) === 'SIM'
-        ){
+        const tokenSalvo = localStorage.getItem('flashcred_admin_token');
 
-            mostrarPainel();
+        if(tokenSalvo){
+            try{
+                const { data: valido } = await supabaseClient
+                    .rpc('flashcred_validar_sessao_admin', { p_token: tokenSalvo });
 
+                if(valido){
+                    tokenAdminFlashcred = tokenSalvo;
+                    mostrarPainel();
+                    return;
+                }
+            }catch(e){
+                console.warn('Sessão salva inválida, pedindo login novamente.', e);
+            }
+
+            localStorage.removeItem('flashcred_admin_token');
+            localStorage.removeItem('logado_flashcred');
         }
 
     }
@@ -3287,6 +3299,17 @@ async function entrar(){
             return;
         }
 
+        const { data: token, error: erroToken } = await supabaseClient
+            .rpc('flashcred_admin_login', { p_senha: senha });
+
+        if(erroToken || !token){
+            alert('Senha confirmada, mas não foi possível abrir a sessão com o banco de dados. Tente novamente.');
+            return;
+        }
+
+        tokenAdminFlashcred = token;
+        localStorage.setItem('flashcred_admin_token', token);
+
         localStorage.setItem(
             'logado_flashcred',
             'SIM'
@@ -3316,6 +3339,13 @@ function sair(){
     localStorage.removeItem(
         'logado_flashcred'
     );
+    localStorage.removeItem('flashcred_admin_token');
+    tokenAdminFlashcred = null;
+
+    if(intervaloAtualizacaoPainelAdmin){
+        clearInterval(intervaloAtualizacaoPainelAdmin);
+        intervaloAtualizacaoPainelAdmin = null;
+    }
 
     if(inscricaoTempoReal){
 
@@ -3349,6 +3379,15 @@ function mostrarPainel(){
     carregarPropostas();
 
     ativarTempoReal();
+
+    // Plano B: com a tabela agora protegida (acesso só via funções RPC),
+    // o Realtime não recebe mais eventos de propostas sem uma policy de
+    // leitura aberta. Este polling garante que novas propostas, entradas
+    // pagas e contratos assinados continuem sendo detectados mesmo assim.
+    if(intervaloAtualizacaoPainelAdmin) clearInterval(intervaloAtualizacaoPainelAdmin);
+    intervaloAtualizacaoPainelAdmin = setInterval(() => {
+        if(tokenAdminFlashcred) carregarPropostas();
+    }, 15000);
 
     setTimeout(mostrarConviteNotificacaoAdmin, 800);
 }
@@ -3513,9 +3552,7 @@ async function salvarNovo(){
         // "Quitada" = entrada paga + todas as parcelas pagas.
         const {data: propostasDoCpf, error: erroCpf} =
             await supabaseClient
-            .from('propostas')
-            .select('id,entrada_paga,parcelas_pagas,quantidade_parcelas')
-            .eq('cpf', cpf);
+            .rpc('admin_propostas_por_cpf', { p_token: tokenAdminFlashcred, p_cpf: cpf });
 
         if(erroCpf){
             console.error('Erro ao checar CPF duplicado:', erroCpf);
@@ -3644,8 +3681,7 @@ async function salvarNovo(){
             error
         } =
             await supabaseClient
-            .from('propostas')
-            .insert([dados]);
+            .rpc('admin_propostas_inserir', { p_token: tokenAdminFlashcred, p_dados: dados });
 
         if(error){
 
@@ -4150,14 +4186,7 @@ async function carregarPropostas(){
             error
         } =
             await supabaseClient
-            .from('propostas')
-            .select('*')
-            .order(
-                'created_at',
-                {
-                    ascending:false
-                }
-            );
+            .rpc('admin_propostas_listar', { p_token: tokenAdminFlashcred });
 
         if(error){
 
@@ -4691,9 +4720,11 @@ async function agendarEntregaRapido(id, novaData){
     }
 
     const { error } = await supabaseClient
-        .from('propostas')
-        .update({ data_preferida_entrega: novaData })
-        .eq('id', id);
+        .rpc('admin_propostas_atualizar', {
+            p_token: tokenAdminFlashcred,
+            p_id: id,
+            p_dados: { data_preferida_entrega: novaData }
+        });
 
     if(error){
         alert('Erro ao agendar a entrega:\n' + error.message);
@@ -6208,11 +6239,11 @@ async function aprovarProposta(id){
         error
     } =
         await supabaseClient
-        .from('propostas')
-        .update({
-            status:'Aprovada'
-        })
-        .eq('id',id);
+        .rpc('admin_propostas_atualizar', {
+            p_token: tokenAdminFlashcred,
+            p_id: id,
+            p_dados: { status:'Aprovada' }
+        });
 
     if(error){
 
@@ -6262,9 +6293,11 @@ async function alternarEntradaPaga(
         error
     } =
         await supabaseClient
-        .from('propostas')
-        .update(dadosAtualizar)
-        .eq('id',id);
+        .rpc('admin_propostas_atualizar', {
+            p_token: tokenAdminFlashcred,
+            p_id: id,
+            p_dados: dadosAtualizar
+        });
 
     if(error){
 
@@ -6384,9 +6417,7 @@ async function excluirProposta(id){
         error
     } =
         await supabaseClient
-        .from('propostas')
-        .delete()
-        .eq('id',id);
+        .rpc('admin_propostas_excluir', { p_token: tokenAdminFlashcred, p_id: id });
 
     if(error){
 
@@ -6414,27 +6445,21 @@ async function marcarParcela(
 
     try{
 
-        const {
-            data,
-            error
-        } =
-            await supabaseClient
-            .from('propostas')
-            .select(
-                'parcelas_pagas, quantidade_parcelas'
-            )
-            .eq('id',id)
-            .single();
+        const item = (propostasCache || []).find(p => String(p.id) === String(id));
 
-        if(error){
+        if(!item){
 
             alert(
-                'Erro ao consultar parcela:\n' +
-                error.message
+                'Erro ao consultar parcela:\nProposta não encontrada no cache. Atualize a página.'
             );
 
             return;
         }
+
+        const data = {
+            parcelas_pagas: item.parcelas_pagas,
+            quantidade_parcelas: item.quantidade_parcelas
+        };
 
         const total =
             Number(
@@ -6489,11 +6514,11 @@ async function marcarParcela(
             error:updateError
         } =
             await supabaseClient
-            .from('propostas')
-            .update({
-                parcelas_pagas:pagas
-            })
-            .eq('id',id);
+            .rpc('admin_propostas_atualizar', {
+                p_token: tokenAdminFlashcred,
+                p_id: id,
+                p_dados: { parcelas_pagas:pagas }
+            });
 
         if(updateError){
 
@@ -6574,12 +6599,14 @@ async function alternarEmRotaEntrega(
         error
     } =
         await supabaseClient
-        .from('propostas')
-        .update({
-            em_rota_entrega:Boolean(status),
-            data_em_rota_entrega: Boolean(status) ? new Date().toISOString() : null
-        })
-        .eq('id',id);
+        .rpc('admin_propostas_atualizar', {
+            p_token: tokenAdminFlashcred,
+            p_id: id,
+            p_dados: {
+                em_rota_entrega:Boolean(status),
+                data_em_rota_entrega: Boolean(status) ? new Date().toISOString() : null
+            }
+        });
 
     if(error){
 
@@ -6604,11 +6631,11 @@ async function alternarEntregaConcluida(
         error
     } =
         await supabaseClient
-        .from('propostas')
-        .update({
-            entrega_concluida:Boolean(status)
-        })
-        .eq('id',id);
+        .rpc('admin_propostas_atualizar', {
+            p_token: tokenAdminFlashcred,
+            p_id: id,
+            p_dados: { entrega_concluida:Boolean(status) }
+        });
 
     if(error){
 
@@ -6962,11 +6989,11 @@ async function salvarEdicao(id){
             error
         } =
             await supabaseClient
-            .from('propostas')
-            .update(dadosParaSalvar)
-            .eq('id',id)
-            .select('*')
-            .maybeSingle();
+            .rpc('admin_propostas_atualizar', {
+                p_token: tokenAdminFlashcred,
+                p_id: id,
+                p_dados: dadosParaSalvar
+            });
 
 
         if(error){
@@ -7411,19 +7438,24 @@ async function mostrarNotificacoes(){
     try{
 
         const {
-            data,
+            data: dadosCompletos,
             error
         } =
             await supabaseClient
-            .from('propostas')
-            .select('id,nome,cpf,status,created_at,funcionario_id,indicado_por_cpf')
-            .eq('status','Nova')
-            .order(
-                'created_at',
-                {
-                    ascending:false
-                }
-            );
+            .rpc('admin_propostas_listar', { p_token: tokenAdminFlashcred });
+
+        const data = (dadosCompletos || [])
+            .filter(p => p.status === 'Nova')
+            .map(p => ({
+                id: p.id,
+                nome: p.nome,
+                cpf: p.cpf,
+                status: p.status,
+                created_at: p.created_at,
+                funcionario_id: p.funcionario_id,
+                indicado_por_cpf: p.indicado_por_cpf
+            }))
+            .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
 
         if(error){
 
@@ -7953,9 +7985,11 @@ async function responderPedidoLimite(id, aprovar){
     try{
         if(aprovar && pedido.proposta_id){
             const { error: erroProposta } = await supabaseClient
-                .from('propostas')
-                .update({ valor_desejado: pedido.valor_solicitado })
-                .eq('id', pedido.proposta_id);
+                .rpc('admin_propostas_atualizar', {
+                    p_token: tokenAdminFlashcred,
+                    p_id: pedido.proposta_id,
+                    p_dados: { valor_desejado: pedido.valor_solicitado }
+                });
             if(erroProposta) throw erroProposta;
         }
 

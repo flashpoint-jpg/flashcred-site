@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FlashCred | Limite no Pix - Distribuidora Flash Point</title>
+<meta name="description" content="Compre móveis com Limite no Pix Parcelado na Distribuidora Flash Point Móveis. Faça sua Pré-Análise Expressa em 2 minutos e simule seu limite.">
+<meta property="og:title" content="FlashCred | Limite no Pix Parcelado">
+<meta property="og:description" content="Compre móveis com Limite no Pix Parcelado na Distribuidora Flash Point Móveis.">
+<meta property="og:image" content="/banner.png">
+<meta property="og:type" content="website">
 <link rel="manifest" href="manifest-cliente.json">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -34,7 +39,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
 .logo-nome{font-size:30px;font-weight:900;letter-spacing:-1px;background:linear-gradient(90deg,#0A2463,#0F8B8D);-webkit-background-clip:text;background-clip:text;color:transparent;text-decoration:none}
 .logo-slogan{font-size:13px;color:#0F8B8D;font-weight:700;letter-spacing:.2px;opacity:.78}
 main{padding-top:48px}
-.destaque-container{width:100%;max-width:980px;margin:0 auto 38px;border-radius:28px;overflow:hidden;box-shadow:0 22px 60px rgba(10,36,99,.13);background:#fff;border:1px solid #e2e8f0;transition:.3s}
+.destaque-container{width:100%;max-width:980px;margin:0 auto 38px;border-radius:28px;overflow:hidden;box-shadow:0 22px 60px rgba(10,36,99,.13);background:#eef2f7;border:1px solid #e2e8f0;transition:.3s;min-height:120px}
 .destaque-container:hover{transform:translateY(-3px);box-shadow:0 28px 70px rgba(10,36,99,.16)}
 .destaque-imagem{width:100%;height:auto;display:block}
 .card{background:rgba(255,255,255,.97);border-radius:28px;box-shadow:0 18px 50px rgba(15,23,42,.075);padding:34px;border:1px solid rgba(226,232,240,.95);transition:.25s}
@@ -227,6 +232,7 @@ footer{background:linear-gradient(135deg,#071b4d,#0A2463);color:#cbd5e1;border-r
 .leilao-flutuante .leilao-sub{display:block;font-size:10px;font-weight:700;opacity:.9}
 @keyframes leilaoPulse{0%,100%{box-shadow:0 12px 28px rgba(220,38,38,.35)}50%{box-shadow:0 12px 28px rgba(220,38,38,.6)}}
 @media(max-width:640px){.leilao-flutuante{bottom:156px;padding:13px;border-radius:50%}.leilao-flutuante span{display:none}}
+@media(max-width:640px){#botaoInstalarAppCliente{padding:15px;border-radius:50%}#botaoInstalarAppCliente span{display:none}}
 .vitrine-card{background:#fff;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden;box-shadow:0 4px 14px rgba(10,36,99,.06);transition:.25s}
 .vitrine-card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(10,36,99,.12)}
 .vitrine-card img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:#F1F5F9}
@@ -429,7 +435,7 @@ footer{background:linear-gradient(135deg,#071b4d,#0A2463);color:#cbd5e1;border-r
 </div>
 
 <div class="destaque-container">
-  <img src="/banner.png" alt="FlashCred - Limite no Pix Parcelado" class="destaque-imagem" onerror="this.parentElement.style.display='none';">
+  <img src="/banner.png" alt="FlashCred - Limite no Pix Parcelado" class="destaque-imagem" decoding="async" onerror="this.parentElement.style.display='none';">
 </div>
 
 <div style="max-width:980px;margin:0 auto 30px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
@@ -668,8 +674,9 @@ footer{background:linear-gradient(135deg,#071b4d,#0A2463);color:#cbd5e1;border-r
       <label>WhatsApp / Telefone</label>
       <input type="tel" id="telefone" class="input" placeholder="(00) 00000-0000" maxlength="16" required>
 
-      <label>CPF de quem te indicou (opcional)</label>
-      <input type="text" id="indicado_por_cpf" class="input" placeholder="000.000.000-00" maxlength="14">
+      <label>Código de quem te indicou (opcional)</label>
+      <input type="text" id="indicado_por_cpf" class="input" placeholder="Cole aqui o código recebido" maxlength="20">
+      <p style="font-size:11.5px;color:#94a3b8;margin:-10px 0 17px">Se alguém te enviou um link de indicação, o código já vem preenchido automaticamente.</p>
 
       <label>Valor Desejado para Compra (R$)</label>
       <input type="number" id="valor_desejado" class="input" placeholder="Digite apenas números, ex: 1500" min="100" step="1" required>
@@ -1340,7 +1347,7 @@ document.getElementById('formPreAnalise').addEventListener('submit',async e=>{
     await new Promise(res=>setTimeout(res,2000+Math.random()*800));
   }
 
-  const{error}=await supabase.from('propostas').insert([dados]);
+  const{error}=await supabase.rpc('cliente_criar_proposta',{p_dados:dados});
 
   if(error){
     bolinha.style.display='none';
@@ -1438,32 +1445,63 @@ document.getElementById('cpfIndicador').addEventListener('input',e=>{
   e.target.value=e.target.value.replace(/\D/g,'').slice(0,11).replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
 });
 
-document.getElementById('btnGerarLinkIndicacao').addEventListener('click',()=>{
+/*
+  Segurança: o link de indicação NÃO carrega mais o CPF em texto puro na URL.
+  Em vez disso, geramos um código aleatório opaco, guardamos a relação
+  código -> CPF numa tabela própria no Supabase (codigos_indicacao) e usamos
+  só o código no link. Quem recebe o link nunca vê o CPF de quem indicou.
+*/
+function gerarCodigoIndicacaoAleatorio(){
+  if(window.crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g,'').slice(0,10);
+  return Array.from({length:10},()=>Math.floor(Math.random()*36).toString(36)).join('');
+}
+
+document.getElementById('btnGerarLinkIndicacao').addEventListener('click',async ()=>{
   const cpf=document.getElementById('cpfIndicador').value.replace(/\D/g,'');
   if(cpf.length!==11){ alert('Digite os 11 números do seu CPF.'); return; }
-  const link=`${location.origin}${location.pathname}?ref=${cpf}`;
+
+  const cliente=inicializarSupabase();
+  if(!cliente){ alert('Não foi possível gerar o link agora. Tente novamente em instantes.'); return; }
+
+  const btn=document.getElementById('btnGerarLinkIndicacao');
+  const textoOriginal=btn.textContent;
+  btn.disabled=true;
+  btn.textContent='Gerando link...';
+
+  let codigo=null;
+  for(let tentativa=0;tentativa<3 && !codigo;tentativa++){
+    const candidato=gerarCodigoIndicacaoAleatorio();
+    const{error}=await cliente.from('codigos_indicacao').insert([{codigo:candidato,cpf}]);
+    if(!error) codigo=candidato;
+  }
+
+  btn.disabled=false;
+  btn.textContent=textoOriginal;
+
+  if(!codigo){ alert('Não foi possível gerar seu link agora. Tente novamente em instantes.'); return; }
+
+  const link=`${location.origin}${location.pathname}?ref=${codigo}`;
   const resultado=document.getElementById('linkIndicacaoResultado');
   resultado.style.display='block';
   resultado.innerHTML=`
     Seu link: <a href="${link}" style="word-break:break-all">${link}</a>
-    <button type="button" class="indique-btn mt-2" style="background:linear-gradient(135deg,#075e54,#25D366)" onclick="window.open('https://wa.me/?text='+encodeURIComponent('Olha essa oportunidade de comprar móveis com limite no Pix parcelado! '+'${link}'),'_blank')">
+    <button type="button" class="indique-btn mt-2" style="background:linear-gradient(135deg,#075e54,#25D366)" onclick="window.open('https://wa.me/?text='+encodeURIComponent('Olha essa oportunidade de comprar móveis com limite no Pix parcelado! '+'${link}'),'_blank','noopener')">
       <i class="fab fa-whatsapp"></i> Compartilhar no WhatsApp
     </button>
   `;
 });
 
-// Se a pessoa chegou por um link de indicação (?ref=CPF), pré-preenche o campo.
+// Se a pessoa chegou por um link de indicação (?ref=CÓDIGO), pré-preenche o campo com o código (não é mais um CPF).
 (function(){
   const params=new URLSearchParams(location.search);
   const ref=params.get('ref');
   const campoIndicador=document.getElementById('indicado_por_cpf');
   if(ref && campoIndicador){
-    const cpfLimpo=ref.replace(/\D/g,'').slice(0,11);
-    campoIndicador.value=cpfLimpo.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+    campoIndicador.value=ref.replace(/[^a-zA-Z0-9]/g,'').slice(0,20);
   }
 })();
 document.getElementById('indicado_por_cpf').addEventListener('input',e=>{
-  e.target.value=e.target.value.replace(/\D/g,'').slice(0,11).replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  e.target.value=e.target.value.replace(/[^a-zA-Z0-9]/g,'').slice(0,20);
 });
 document.getElementById('telefone').addEventListener('input',e=>{
   e.target.value=e.target.value.replace(/\D/g,'').replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3')
@@ -1477,7 +1515,7 @@ document.getElementById('formPagarParcelas').addEventListener('submit',function(
   e.preventDefault();
   const cpf=document.getElementById('cpfPagarParcelas').value.replace(/\D/g,'');
   if(cpf.length!==11){alert('Digite os 11 números do CPF.');return}
-  localStorage.setItem('flashcred_cpf',document.getElementById('cpfPagarParcelas').value);
+  sessionStorage.setItem('flashcred_cpf',document.getElementById('cpfPagarParcelas').value);
   document.getElementById('overlayParcelas').classList.add('ativo');
   setTimeout(()=>{location.href='consultar.html?cpf='+encodeURIComponent(cpf)},1400);
 });
@@ -1543,12 +1581,12 @@ document.getElementById('formSolicitacao').addEventListener('submit',async e=>{
     valor_seguro:valorSeguro,
     montagem_contratada:montagemContratada,
     valor_montagem:valorMontagem,
-    indicado_por_cpf:document.getElementById('indicado_por_cpf').value.replace(/\D/g,'')||null,
+    indicado_por_cpf:document.getElementById('indicado_por_cpf').value.replace(/[^a-zA-Z0-9]/g,'')||null,
     forma_pagamento_entrada:(document.querySelector('input[name="forma_entrada"]:checked')||{}).value||'pix_antecipado',
     status:'Nova'
   };
 
-  const{error}=await supabase.from('propostas').insert([dados]);
+  const{error}=await supabase.rpc('cliente_criar_proposta',{p_dados:dados});
 
   if(error){
     alert('❌ Erro ao enviar: '+error.message);
@@ -1562,7 +1600,7 @@ document.getElementById('formSolicitacao').addEventListener('submit',async e=>{
     overlay.setAttribute('aria-hidden','false');
     const msgWpp=`Olá! Acabei de enviar minha proposta de análise de crédito no site (Nome: ${dados.nome}, valor desejado: R$ ${dados.valor_desejado}). Quero saber mais sobre os móveis disponíveis!`;
     setTimeout(()=>{
-      window.open('consultar.html?cpf='+encodeURIComponent(dados.cpf),'_blank');
+      window.open('consultar.html?cpf='+encodeURIComponent(dados.cpf),'_blank','noopener');
       location.href=linkWhatsapp(msgWpp);
     },1900);
   }
@@ -1625,9 +1663,9 @@ window.addEventListener('appinstalled', () => {
 <button
     id="botaoInstalarAppCliente"
     onclick="instalarAppCliente()"
-    style="display:flex;position:fixed;bottom:96px;right:20px;z-index:9999;align-items:center;gap:8px;background:linear-gradient(135deg,#0A2463,#0F8B8D);color:#fff;border:none;border-radius:999px;padding:14px 20px;font-weight:800;font-size:14px;box-shadow:0 10px 30px rgba(10,36,99,.35);cursor:pointer"
+    style="display:flex;position:fixed;bottom:96px;right:20px;z-index:9999;align-items:center;gap:8px;background:linear-gradient(135deg,#0A2463,#0F8B8D);color:#fff;border:none;border-radius:999px;padding:14px 20px;font-weight:800;font-size:14px;box-shadow:0 10px 30px rgba(10,36,99,.35);cursor:pointer;white-space:nowrap"
 >
-    📲 Instalar App
+    📲 <span>Instalar App</span>
 </button>
 
 </body>

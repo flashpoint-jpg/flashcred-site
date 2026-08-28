@@ -1310,38 +1310,7 @@ async function executarConsulta(
          */
         let resultado =
             await supabase
-                .from('propostas')
-                .select('*')
-                .eq('cpf', cpf)
-                .order('created_at', { ascending:false })
-                .limit(1);
-
-
-        /*
-         * Se não encontrou,
-         * tenta CPF formatado.
-         */
-        if(
-            !resultado.error &&
-            (!resultado.data ||
-             resultado.data.length === 0)
-        ) {
-
-            const cpfFormatado =
-                formatarCPF(cpf);
-
-
-            resultado =
-                await supabase
-                    .from('propostas')
-                    .select('*')
-                    .eq(
-                        'cpf',
-                        cpfFormatado
-                    )
-                    .order('created_at', { ascending:false })
-                    .limit(1);
-        }
+                .rpc('cliente_consultar_por_cpf', { p_cpf: cpf });
 
 
         if(resultado.error) {
@@ -1419,12 +1388,11 @@ async function carregarPorId(id) {
         }
 
 
-        const { data, error } =
+        const { data: dadosRpc, error } =
             await supabase
-                .from('propostas')
-                .select('*')
-                .eq('id', id)
-                .maybeSingle();
+                .rpc('cliente_consultar_por_id', { p_id: id });
+
+        const data = Array.isArray(dadosRpc) ? dadosRpc[0] : dadosRpc;
 
 
         if(error) {
@@ -1631,9 +1599,7 @@ async function calcularScoreClienteRemoto(cpf){
 
     try{
         const {data, error} = await supabase
-            .from('propostas')
-            .select('entrada_paga,parcelas_pagas,quantidade_parcelas,datas_parcelas,valor_desejado,valor_entrada,juros_mensal')
-            .eq('cpf', cpf);
+            .rpc('cliente_score_dados_por_cpf', { p_cpf: cpf });
 
         if(error || !data || !data.length){
             return null;
@@ -1909,11 +1875,10 @@ function configurarRealtime() {
         try{
             if(!propostaAtual || !propostaAtual.id) return;
 
-            const { data, error } = await supabase
-                .from('propostas')
-                .select('*')
-                .eq('id', propostaAtual.id)
-                .maybeSingle();
+            const { data: dadosPollRpc, error } = await supabase
+                .rpc('cliente_consultar_por_id', { p_id: propostaAtual.id });
+
+            const data = Array.isArray(dadosPollRpc) ? dadosPollRpc[0] : dadosPollRpc;
 
             if(error || !data) return;
 
@@ -2427,9 +2392,7 @@ function produtosJaEscolhidos(p){
 async function continuarSemEscolherProdutos(propostaId){
     try{
         const {error} = await supabase
-            .from('propostas')
-            .update({ produtos_confirmados_cliente: true })
-            .eq('id', propostaId);
+            .rpc('cliente_confirmar_sem_produtos', { p_id: propostaId });
 
         if(error) throw error;
 
@@ -4378,28 +4341,22 @@ async function confirmarParcelas() {
 
     try {
 
+        const datasParaEnviar = (() => {
+            const atuais = Array.isArray(propostaAtual.datas_parcelas) ? propostaAtual.datas_parcelas : [];
+            if(atuais.length >= quantidade) return atuais.slice(0, quantidade);
+            const base = new Date();
+            const out = [];
+            for(let i=1;i<=quantidade;i++){ const d=new Date(base); d.setMonth(d.getMonth()+i); out.push(d.toISOString().slice(0,10)); }
+            return out;
+        })();
+
         const { data, error } =
             await supabase
-                .from('propostas')
-                .update({
-
-                    qtd_parcelas_escolhida: quantidade,
-                    datas_parcelas: (() => {
-                        const atuais = Array.isArray(propostaAtual.datas_parcelas) ? propostaAtual.datas_parcelas : [];
-                        if(atuais.length >= quantidade) return atuais.slice(0, quantidade);
-                        const base = new Date();
-                        const out = [];
-                        for(let i=1;i<=quantidade;i++){ const d=new Date(base); d.setMonth(d.getMonth()+i); out.push(d.toISOString().slice(0,10)); }
-                        return out;
-                    })()
-
-                })
-                .eq(
-                    'id',
-                    propostaAtual.id
-                )
-                .select()
-                .single();
+                .rpc('cliente_escolher_parcelas', {
+                    p_id: propostaAtual.id,
+                    p_quantidade: quantidade,
+                    p_datas: datasParaEnviar
+                });
 
 
         if(error) {
@@ -4926,29 +4883,11 @@ async function assinarContrato() {
 
         const { data, error } =
             await supabase
-                .from('propostas')
-                .update({
-
-                    contrato_assinado:
-                        true,
-
-                    assinatura:
-                        assinatura,
-
-                    selfie_url:
-                        selfie,
-
-                    data_assinatura:
-                        new Date()
-                            .toISOString()
-
-                })
-                .eq(
-                    'id',
-                    propostaAtual.id
-                )
-                .select()
-                .single();
+                .rpc('cliente_assinar_contrato', {
+                    p_id: propostaAtual.id,
+                    p_assinatura: assinatura,
+                    p_selfie: selfie
+                });
 
 
         if(error) {
@@ -5339,30 +5278,14 @@ async function trocarFormaEntrada(novaForma) {
     if(!confirmar)
         return;
 
-    const valorTotal = Number(propostaAtual.valor_desejado || 0);
-
-    const percentuaisPorForma = {
-        pix_antecipado: 0.40,
-        na_entrega: 0.55,
-        cartao_entrega: 0,
-        pix_total_entrega: 0
-    };
-
-    const novoPercentual = percentuaisPorForma[novaForma] ?? 0.40;
-
-    const novaEntrada =
-        Math.round(valorTotal * novoPercentual * 100) / 100;
-
     try {
 
         const { error } =
             await supabase
-                .from('propostas')
-                .update({
-                    forma_pagamento_entrada: novaForma,
-                    valor_entrada: novaEntrada
-                })
-                .eq('id', propostaAtual.id);
+                .rpc('cliente_trocar_forma_pagamento', {
+                    p_id: propostaAtual.id,
+                    p_nova_forma: novaForma
+                });
 
         if(error)
             throw new Error(error.message);
