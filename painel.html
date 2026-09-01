@@ -1054,6 +1054,70 @@ select:focus-visible{
     }
 }
 
+/* ===== PAINEL PREMIUM 2026 — EDIÇÃO ESTÁVEL E ORGANIZADA ===== */
+.linha-proposta{
+    border:1px solid rgba(203,213,225,.78);
+    border-left:4px solid var(--borda);
+    box-shadow:0 12px 34px rgba(15,23,42,.07);
+    overflow:visible;
+}
+.linha-proposta:has(.area-edicao.ativa){
+    border-color:rgba(37,99,235,.42);
+    border-left-color:var(--azul);
+    box-shadow:0 20px 55px rgba(10,36,99,.14);
+}
+.area-edicao{
+    margin:20px -8px -8px;
+    padding:0;
+    border:1px solid #D8E2F0;
+    border-radius:18px;
+    background:linear-gradient(180deg,#F8FAFF 0%,#F5F8FC 100%);
+    box-shadow:inset 0 1px 0 #fff,0 12px 30px rgba(15,23,42,.07);
+    overflow:hidden;
+}
+.area-edicao.ativa{animation:none}
+.area-edicao.ativa > h3{
+    margin:0;padding:18px 22px;color:#fff;font-size:17px;letter-spacing:-.2px;
+    background:linear-gradient(135deg,#081D50,#123B91 58%,#2563EB);
+    border-bottom:1px solid rgba(255,255,255,.16);
+}
+.area-edicao.ativa > .grid{padding:20px 22px 6px;gap:14px 16px}
+.area-edicao .campo,.area-edicao select{
+    min-height:44px;margin-bottom:0;background:#fff;border-color:#CBD5E1;
+    box-shadow:0 1px 2px rgba(15,23,42,.03);
+}
+.area-edicao .campo:focus,.area-edicao select:focus{
+    border-color:#2563EB;box-shadow:0 0 0 4px rgba(37,99,235,.11);
+}
+.area-edicao .titulo-bloco{
+    margin:8px 0 12px;padding:11px 13px;border:1px solid #D8E2F0;
+    border-radius:10px;background:#EEF4FF;
+}
+.area-edicao .edicao-resumo-topo{
+    top:8px;margin:18px 22px 4px;border:1px solid rgba(37,99,235,.32);
+    border-radius:14px;box-shadow:0 12px 30px rgba(10,36,99,.12);
+}
+.area-edicao .resumo-valores{margin:14px 22px 0;padding:14px 16px;border-radius:12px}
+.area-edicao .acoes-form{
+    position:sticky;bottom:0;z-index:40;margin:18px 0 0;padding:14px 22px;
+    background:rgba(255,255,255,.96);border-top:1px solid #D8E2F0;
+    box-shadow:0 -10px 25px rgba(15,23,42,.07);backdrop-filter:blur(10px);
+}
+.area-edicao .acoes-form .botao{min-height:44px;padding-inline:20px}
+@media(max-width:700px){
+    .area-edicao{margin:16px -6px -6px;border-radius:15px}
+    .area-edicao.ativa > h3{padding:16px;font-size:16px}
+    .area-edicao.ativa > .grid{padding:16px 14px 4px;gap:12px}
+    .area-edicao .edicao-resumo-topo{margin:14px 14px 2px;position:static}
+    .area-edicao .resumo-valores{margin:12px 14px 0}
+    .area-edicao .acoes-form{padding:12px 14px}
+    .area-edicao .acoes-form .botao{flex:1 1 100%}
+}
+@media(prefers-reduced-motion:reduce){
+    *,*::before,*::after{scroll-behavior:auto!important;transition:none!important}
+    .area-edicao.ativa,.gauge-score{animation:none!important}
+}
+
 </style>
 </head>
 
@@ -3735,6 +3799,8 @@ function limparFormulario(){
 ============================================================ */
 
 let propostasCache = [];
+let assinaturaListaPropostas = '';
+let atualizacaoListaPendente = false;
 let intervaloAtualizacaoAdmin = null;
 let estadoEntradaAnterior = new Map();
 let funcionariosCache = [];
@@ -4096,9 +4162,18 @@ function mostrarModalDetalhesResumo(titulo, linhas){
     `;
 }
 
-function renderizarListaFiltrada(){
+function renderizarListaFiltrada(forcar = false){
     const lista = document.getElementById('listaPropostas');
     if(!lista) return;
+
+    // Não substitui o formulário enquanto alguém está editando ou digitando.
+    const editando = Boolean(lista.querySelector('.area-edicao.ativa'));
+    const digitandoNaLista = lista.contains(document.activeElement) &&
+        /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement?.tagName || '');
+    if(!forcar && (editando || digitandoNaLista)){
+        atualizacaoListaPendente = true;
+        return;
+    }
 
     const base = propostasCache.filter(item => clienteNoFluxo(item, filtroFluxoAtual));
     const filtrado = termoBuscaAtual
@@ -4109,6 +4184,17 @@ function renderizarListaFiltrada(){
         : filtroResumoAtual === 'entrada_atrasada'
         ? filtrado.filter(item => item.status === 'Aprovada' && !item.entrada_paga && item.created_at && diasEntre(item.created_at) > 3)
         : filtrado.filter(item => parcelaTemStatus(item, filtroResumoAtual));
+
+    // Evita recriar a mesma tela a cada consulta automática de 15 segundos.
+    const novaAssinatura = JSON.stringify({
+        fluxo:filtroFluxoAtual,
+        resumo:filtroResumoAtual,
+        busca:termoBuscaAtual,
+        dados
+    });
+    if(!forcar && novaAssinatura === assinaturaListaPropostas) return;
+    assinaturaListaPropostas = novaAssinatura;
+    atualizacaoListaPendente = false;
 
     if(!dados.length){
         lista.innerHTML = `
@@ -6652,9 +6738,16 @@ function toggleEditar(id){
         return;
     }
 
-    area.classList.toggle('ativa');
+    const vaiAbrir = !area.classList.contains('ativa');
 
-    if(area.classList.contains('ativa')){
+    // Uma ficha por vez deixa o painel mais limpo e evita formulários enormes.
+    document.querySelectorAll('#listaPropostas .area-edicao.ativa').forEach(el => {
+        if(el !== area) el.classList.remove('ativa');
+    });
+
+    area.classList.toggle('ativa', vaiAbrir);
+
+    if(vaiAbrir){
 
         atualizarCalculo(area);
 
@@ -6662,6 +6755,8 @@ function toggleEditar(id){
             behavior:'smooth',
             block:'start'
         });
+    }else if(atualizacaoListaPendente){
+        renderizarListaFiltrada(true);
     }
 }
 
