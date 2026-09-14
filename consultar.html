@@ -890,7 +890,49 @@ video,
 
 </style>
 
-</head>
+<style id="flashcred-professional-responsive-1409">
+:root{--fc-max:1180px;--fc-gutter:clamp(12px,3vw,28px);--fc-safe:env(safe-area-inset-bottom,0px)}
+html{width:100%;min-height:100%;overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{width:100%;min-width:0;min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+*,*::before,*::after{box-sizing:border-box;min-width:0}
+img,svg,video,canvas{max-width:100%;height:auto}
+button,input,select,textarea{font:inherit;max-width:100%}
+button,.btn,[role="button"]{touch-action:manipulation}
+input,select,textarea{min-height:44px}textarea{min-height:96px;resize:vertical}
+:focus-visible{outline:3px solid rgba(15,139,141,.38);outline-offset:2px}
+main>div,.page,.container,[class*="container"]{max-width:var(--fc-max)}
+.card{overflow-wrap:anywhere}
+table{border-collapse:collapse;max-width:100%}
+.table-wrap,.tableWrap,.overflow-x-auto,[class*="table-wrap"],[class*="tabela-wrap"]{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+[style*="position:fixed"],[class*="overlay"],[class*="modal"]{max-width:100vw}
+#drawerMenuMobile{height:100dvh!important;padding-bottom:var(--fc-safe)}
+#overlayParcelas,#overlayEnvio{height:100dvh}
+@media(max-width:640px){
+  nav>div{min-height:64px;padding-left:12px!important;padding-right:12px!important}
+  .logo-nome{font-size:25px}
+  .logo-slogan{font-size:11px}
+  main{padding:26px 12px!important}
+  .card{padding:20px!important;border-radius:21px}
+  .destaque-container,.secao-limite-pix,.parcelas-section,.simulador{border-radius:21px;margin-bottom:26px}
+  .conteudo-destaque,.simulador-inner,.parcelas-inner{padding-left:17px!important;padding-right:17px!important}
+  .sim-grid,.result-grid{grid-template-columns:1fr!important}
+  .sim-mini{min-width:0;width:100%}
+  .nav-link{white-space:normal}
+  .btn{min-height:50px}
+  footer{border-radius:24px 24px 0 0;padding:24px 16px calc(24px + var(--fc-safe))}
+}
+@media(max-width:360px){
+  main{padding-left:9px!important;padding-right:9px!important}
+  .card{padding:16px!important}
+  .titulo-destaque{font-size:1.8rem}
+}
+@media(min-width:1024px){
+  .card,.destaque-container,.secao-limite-pix,.parcelas-section,.simulador{box-shadow:0 22px 60px rgba(10,36,99,.11)}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+</style></head>
 
 <body>
 
