@@ -3,7 +3,7 @@
 // Não guarda em cache os dados do painel (propostas, comissões, etc.)
 // para sempre mostrar informação atualizada — só o "casco" do app.
 
-const CACHE_NAME = 'flashcred-painel-v1';
+const CACHE_NAME = 'flashcred-profissional-20260914-1';
 const ARQUIVOS_ESTATICOS = [
   './painel.html',
   './manifest.json',
