@@ -265,11 +265,16 @@ app.all('/api/webhook-mercadopago', async (req, res) => {
         const pagamento = await pagamentoServico.get({ id: paymentId });
 
         if(pagamento.status !== 'approved') {
-            // Pix pendente, rejeitado, cancelado etc — não faz nada ainda
+            // IMPORTANTE: criar a cobrança nunca dá baixa na parcela.
+            // pending/in_process = continua aguardando; cancelled/rejected/refunded = continua em aberto
+            // e o cliente pode gerar uma NOVA cobrança para a mesma parcela.
+            const statusSemPagamento = ['cancelled', 'rejected', 'refunded', 'charged_back'].includes(pagamento.status);
             await registrarLogWebhook({
                 paymentId, statusMp: pagamento.status, referencia: pagamento.external_reference,
-                resultado: 'nao_aprovado',
-                detalhe: `Status do pagamento: ${pagamento.status}`
+                resultado: statusSemPagamento ? 'pagamento_nao_concluido' : 'aguardando_pagamento',
+                detalhe: statusSemPagamento
+                    ? `Cobrança ${pagamento.status}; parcela NÃO baixada e permanece em aberto para nova cobrança.`
+                    : `Pagamento ainda não aprovado: ${pagamento.status}. Parcela permanece em aberto.`
             });
             return res.sendStatus(200);
         }
@@ -360,12 +365,35 @@ app.all('/api/webhook-mercadopago', async (req, res) => {
         } else if(tipo === 'parcela' && numeroParcela) {
 
             const parcelasPagasAtual = Number(proposta.parcelas_pagas || 0);
-            const novoValor = Math.max(parcelasPagasAtual, numeroParcela);
+
+            // Idempotência + proteção contra baixa fora de ordem:
+            // - webhook repetido da mesma parcela não altera novamente;
+            // - uma cobrança antiga/aprovada atrasada não avança o contador;
+            // - só a próxima parcela esperada pode ser baixada.
+            if(numeroParcela <= parcelasPagasAtual) {
+                await registrarLogWebhook({
+                    paymentId, statusMp: pagamento.status, referencia, propostaId, tipo,
+                    resultado: 'ja_processado',
+                    detalhe: `Parcela ${numeroParcela} já estava baixada. Webhook duplicado ignorado.`
+                });
+                return res.sendStatus(200);
+            }
+
+            const proximaParcela = parcelasPagasAtual + 1;
+            if(numeroParcela !== proximaParcela) {
+                await registrarLogWebhook({
+                    paymentId, statusMp: pagamento.status, referencia, propostaId, tipo,
+                    resultado: 'parcela_fora_de_ordem',
+                    detalhe: `Recebida parcela ${numeroParcela}, mas a próxima esperada é ${proximaParcela}. Nenhuma baixa realizada.`
+                });
+                return res.sendStatus(200);
+            }
 
             const { error: erroUpdate } = await supabase
                 .from('propostas')
-                .update({ parcelas_pagas: novoValor })
-                .eq('id', propostaId);
+                .update({ parcelas_pagas: numeroParcela })
+                .eq('id', propostaId)
+                .eq('parcelas_pagas', parcelasPagasAtual);
 
             if(erroUpdate) {
                 console.error('❌ Erro ao atualizar parcela da proposta', propostaId, erroUpdate);
