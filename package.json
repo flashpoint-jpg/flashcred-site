@@ -8,7 +8,6 @@
   "dependencies": {
     "express": "^4.18.2",
     "@supabase/supabase-js": "^2.45.1",
-    "mercadopago": "^2.0.8",
     "web-push": "^3.6.7"
   }
 }
