@@ -1,5 +1,4 @@
 const express = require('express');
-const { MercadoPagoConfig, Payment } = require('mercadopago');
 const { createClient } = require('@supabase/supabase-js');
 const webpush = require('web-push');
 
@@ -18,11 +17,27 @@ const SUPABASE_URL = 'https://rgcclordmqjmwuzrrfbd.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICO_CHAVE;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ✅ MERCADO PAGO — VERSÃO NOVA CORRIGIDA
-const mpConfig = new MercadoPagoConfig({
-    accessToken: process.env.MERCADO_PAGO_TOKEN
-});
-const pagamentoServico = new Payment(mpConfig);
+// ✅ PAGBANK — credencial somente no servidor
+const PAGBANK_TOKEN = process.env.PAGBANK_TOKEN;
+const PAGBANK_API = process.env.PAGBANK_API_URL || 'https://api.pagseguro.com';
+
+async function chamarPagBank(caminho, opcoes = {}) {
+    if(!PAGBANK_TOKEN) throw new Error('PAGBANK_TOKEN não configurado no servidor.');
+    const resposta = await fetch(`${PAGBANK_API}${caminho}`, {
+        ...opcoes,
+        headers: {
+            'Authorization': `Bearer ${PAGBANK_TOKEN}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            ...(opcoes.headers || {})
+        }
+    });
+    const texto = await resposta.text();
+    let dados = {};
+    try { dados = texto ? JSON.parse(texto) : {}; } catch(_) { dados = { raw: texto }; }
+    if(!resposta.ok) throw new Error(dados?.error_messages?.[0]?.description || dados?.message || `PagBank HTTP ${resposta.status}`);
+    return dados;
+}
 
 // ✅ NOTIFICAÇÕES PUSH (funcionam mesmo com o app fechado)
 // As chaves VAPID identificam o SEU servidor perante os navegadores/celulares.
@@ -153,52 +168,34 @@ app.get('/api/push/chave-publica', (req, res) => {
 // ✅ ROTA DE GERA PIX — LIMPEZA DE VALOR E TUDO
 app.post('/api/gerar-pix', async (req, res) => {
     try {
-        const valorLimpo = Number(
-            String(req.body.valor)
-            .replace(/[^0-9,.]/g, '')
-            .replace(',', '.')
-        );
+        const valorLimpo = Number(String(req.body.valor).replace(/[^0-9,.]/g, '').replace(',', '.'));
+        if(isNaN(valorLimpo) || valorLimpo <= 0) return res.json({ sucesso: false, mensagem: 'Valor inválido' });
 
-        if(isNaN(valorLimpo) || valorLimpo <= 0) {
-            return res.json({sucesso: false, mensagem: 'Valor inválido'});
-        }
-
-        // ✅ Identifica a que proposta/parcela esse Pix pertence.
-        // Isso é o que o webhook vai usar depois para saber o que atualizar no Supabase.
         const propostaId = req.body.proposta_id || null;
-        const tipo = req.body.tipo || 'entrada'; // 'entrada' ou 'parcela'
+        const tipo = req.body.tipo || 'entrada';
         const numeroParcela = req.body.numero_parcela || null;
+        const referencia = propostaId
+            ? (tipo === 'parcela' ? `parcela:${propostaId}:${numeroParcela || ''}` : `entrada:${propostaId}`)
+            : `flashcred:${Date.now()}`;
+        const notificationUrl = `${req.protocol}://${req.get('host')}/api/webhook-pagbank`;
+        const valorCentavos = Math.round(valorLimpo * 100);
+        const expiracao = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-        let externalReference = null;
-        if(propostaId) {
-            externalReference = tipo === 'parcela'
-                ? `parcela:${propostaId}:${numeroParcela || ''}`
-                : `entrada:${propostaId}`;
-        }
-
-        // ✅ URL pública deste servidor, montada a partir da própria requisição.
-        // Assim funciona em qualquer domínio/deploy sem precisar hardcodar nada.
-        const notificationUrl = `${req.protocol}://${req.get('host')}/api/webhook-mercadopago`;
-
-        const pagamento = await pagamentoServico.create({
-            body: {
-                transaction_amount: valorLimpo,
-                description: req.body.descricao || 'Pagamento FlashCred',
-                payment_method_id: 'pix',
-                payer: { email: 'flashcred@suporte.com.br' },
-                notification_url: notificationUrl,
-                ...(externalReference ? { external_reference: externalReference } : {})
-            }
+        const pedido = await chamarPagBank('/orders', {
+            method: 'POST',
+            body: JSON.stringify({
+                reference_id: referencia,
+                items: [{ reference_id: referencia, name: req.body.descricao || 'Pagamento FlashCred', quantity: 1, unit_amount: valorCentavos }],
+                qr_codes: [{ amount: { value: valorCentavos }, expiration_date: expiracao }],
+                notification_urls: [notificationUrl]
+            })
         });
-
-        res.json({
-            sucesso: true,
-            qr_code: pagamento.point_of_interaction.transaction_data.qr_code
-        });
-
+        const qr = pedido?.qr_codes?.[0];
+        if(!qr?.text) throw new Error('PagBank não retornou o código PIX.');
+        res.json({ sucesso: true, qr_code: qr.text, order_id: pedido.id, provider: 'pagbank' });
     } catch (erro) {
-        console.error('ERRO:', erro);
-        res.json({sucesso: false, mensagem: erro.message});
+        console.error('ERRO PAGBANK:', erro);
+        res.json({ sucesso: false, mensagem: erro.message });
     }
 });
 
@@ -238,213 +235,48 @@ async function gerarComissaoSeNecessario(propostaId, proposta) {
     return valorComissao;
 }
 
-// ✅ WEBHOOK DO MERCADO PAGO — recebe a notificação de pagamento e dá baixa na proposta
-// Aceita GET e POST porque o Mercado Pago pode chamar de formas diferentes dependendo da config.
-app.all('/api/webhook-mercadopago', async (req, res) => {
+// ✅ WEBHOOK PAGBANK — confirma o status diretamente na API antes de dar baixa
+app.post('/api/webhook-pagbank', async (req, res) => {
     try {
-        // O ID do pagamento pode vir no corpo (notificação nova) ou na query (formato antigo/IPN)
-        const paymentId =
-            req.body?.data?.id ||
-            req.body?.id ||
-            req.query['data.id'] ||
-            req.query.id;
+        const orderId = req.body?.id || req.body?.order?.id;
+        if(!orderId || !String(orderId).startsWith('ORDE_')) return res.sendStatus(200);
+        const pedido = await chamarPagBank(`/orders/${encodeURIComponent(orderId)}`, { method: 'GET' });
+        const referencia = pedido?.reference_id || '';
+        const cobranca = (pedido?.charges || [])[0];
+        const status = cobranca?.status || (pedido?.qr_codes?.[0]?.status);
+        if(status !== 'PAID') return res.sendStatus(200);
 
-        const tipoNotificacao = req.body?.type || req.body?.topic || req.query.type || req.query.topic;
-
-        // Só nos interessa notificação de pagamento
-        if(!paymentId || (tipoNotificacao && tipoNotificacao !== 'payment')) {
-            await registrarLogWebhook({
-                paymentId, tipo: tipoNotificacao,
-                resultado: 'ignorado',
-                detalhe: !paymentId ? 'Chamada sem payment id' : `Tipo de notificação irrelevante: ${tipoNotificacao}`
-            });
-            return res.sendStatus(200);
-        }
-
-        // ✅ Busca o pagamento completo direto na API do Mercado Pago (nunca confiar só no payload recebido)
-        const pagamento = await pagamentoServico.get({ id: paymentId });
-
-        if(pagamento.status !== 'approved') {
-            // IMPORTANTE: criar a cobrança nunca dá baixa na parcela.
-            // pending/in_process = continua aguardando; cancelled/rejected/refunded = continua em aberto
-            // e o cliente pode gerar uma NOVA cobrança para a mesma parcela.
-            const statusSemPagamento = ['cancelled', 'rejected', 'refunded', 'charged_back'].includes(pagamento.status);
-            await registrarLogWebhook({
-                paymentId, statusMp: pagamento.status, referencia: pagamento.external_reference,
-                resultado: statusSemPagamento ? 'pagamento_nao_concluido' : 'aguardando_pagamento',
-                detalhe: statusSemPagamento
-                    ? `Cobrança ${pagamento.status}; parcela NÃO baixada e permanece em aberto para nova cobrança.`
-                    : `Pagamento ainda não aprovado: ${pagamento.status}. Parcela permanece em aberto.`
-            });
-            return res.sendStatus(200);
-        }
-
-        const referencia = pagamento.external_reference || '';
         const partes = referencia.split(':');
         const tipo = partes[0];
         const propostaId = partes[1];
         const numeroParcela = partes[2] ? Number(partes[2]) : null;
+        if(!propostaId) return res.sendStatus(200);
 
-        if(!propostaId) {
-            console.warn('⚠️ Pagamento aprovado sem external_reference reconhecível:', paymentId);
-            await registrarLogWebhook({
-                paymentId, statusMp: pagamento.status, referencia,
-                resultado: 'sem_referencia',
-                detalhe: 'Pagamento aprovado mas sem external_reference reconhecível — não veio do QR gerado pelo sistema.'
-            });
-            return res.sendStatus(200);
-        }
+        const { data: proposta } = await supabase.from('propostas')
+            .select('nome, cpf, funcionario_id, valor_desejado, parcelas_pagas, entrada_paga')
+            .eq('id', propostaId).maybeSingle();
+        if(!proposta) return res.sendStatus(200);
 
-        // Busca a proposta uma única vez — precisamos do CPF (pra avisar o cliente, que se
-        // inscreve na notificação pelo CPF, não pelo ID da proposta) e do funcionario_id
-        // (pra avisar o funcionário responsável, se houver).
-        const { data: proposta, error: erroProposta } = await supabase
-            .from('propostas')
-            .select('nome, cpf, funcionario_id, valor_desejado, parcelas_pagas')
-            .eq('id', propostaId)
-            .maybeSingle();
-
-        if(erroProposta || !proposta) {
-            console.error('❌ Não foi possível carregar a proposta', propostaId, erroProposta);
-            await registrarLogWebhook({
-                paymentId, statusMp: pagamento.status, referencia, propostaId, tipo,
-                resultado: 'proposta_nao_encontrada',
-                detalhe: erroProposta?.message || 'Proposta não encontrada no banco.'
-            });
-            return res.sendStatus(200);
-        }
-
-        if(tipo === 'entrada') {
-
-            const { error } = await supabase
-                .from('propostas')
-                .update({
-                    entrada_paga: true,
-                    data_pagamento_entrada: new Date().toISOString()
-                })
-                .eq('id', propostaId);
-
-            if(error) {
-                console.error('❌ Erro ao atualizar entrada da proposta', propostaId, error);
-                await registrarLogWebhook({
-                    paymentId, statusMp: pagamento.status, referencia, propostaId, tipo,
-                    resultado: 'erro_ao_atualizar',
-                    detalhe: error.message
-                });
-            } else {
-                console.log(`✅ Entrada da proposta ${propostaId} confirmada via Pix.`);
-
-                await registrarLogWebhook({
-                    paymentId, statusMp: pagamento.status, referencia, propostaId, tipo,
-                    resultado: 'sucesso',
-                    detalhe: `Entrada confirmada para ${proposta.nome || 'cliente'}.`
-                });
-
-                // Cliente se inscreve pelo CPF — é isso que tem que ser usado aqui, não o ID da proposta.
+        if(tipo === 'entrada' && !proposta.entrada_paga) {
+            const { error } = await supabase.from('propostas').update({ entrada_paga: true, data_pagamento_entrada: new Date().toISOString() }).eq('id', propostaId);
+            if(!error) {
                 enviarPushPara('cliente', proposta.cpf, '✅ Entrada confirmada!', 'Seu pagamento foi recebido. Acompanhe o andamento pelo app.', { url: '/consultar.html' });
-                enviarPushPara('admin', 'admin', '💰 Entrada Pix confirmada', `${proposta.nome || 'Cliente'} — entrada da proposta #${propostaId} recebida.`, { url: '/painel.html' });
-
-                // Gera a comissão do funcionário (se ainda não existir) agora que a entrada foi confirmada.
-                try {
-                    const valorComissao = await gerarComissaoSeNecessario(propostaId, proposta);
-
-                    if(valorComissao !== null && proposta.funcionario_id) {
-                        enviarPushPara(
-                            'funcionario',
-                            proposta.funcionario_id,
-                            '💰 Comissão liberada!',
-                            `A entrada de ${proposta.nome || 'seu cliente'} foi confirmada — sua comissão de R$ ${valorComissao.toFixed(2)} já está disponível.`,
-                            { url: '/funcionario.html' }
-                        );
-                    }
-                } catch(erroComissao) {
-                    console.warn('⚠️ Não foi possível gerar a comissão do funcionário:', erroComissao);
-                }
+                enviarPushPara('admin', 'admin', '💰 Entrada Pix confirmada', `${proposta.nome || 'Cliente'} — entrada da proposta #${propostaId} recebida via PagBank.`, { url: '/painel.html' });
+                try { await gerarComissaoSeNecessario(propostaId, proposta); } catch(_) {}
             }
-
         } else if(tipo === 'parcela' && numeroParcela) {
-
-            const parcelasPagasAtual = Number(proposta.parcelas_pagas || 0);
-
-            // Idempotência + proteção contra baixa fora de ordem:
-            // - webhook repetido da mesma parcela não altera novamente;
-            // - uma cobrança antiga/aprovada atrasada não avança o contador;
-            // - só a próxima parcela esperada pode ser baixada.
-            if(numeroParcela <= parcelasPagasAtual) {
-                await registrarLogWebhook({
-                    paymentId, statusMp: pagamento.status, referencia, propostaId, tipo,
-                    resultado: 'ja_processado',
-                    detalhe: `Parcela ${numeroParcela} já estava baixada. Webhook duplicado ignorado.`
-                });
-                return res.sendStatus(200);
-            }
-
-            const proximaParcela = parcelasPagasAtual + 1;
-            if(numeroParcela !== proximaParcela) {
-                await registrarLogWebhook({
-                    paymentId, statusMp: pagamento.status, referencia, propostaId, tipo,
-                    resultado: 'parcela_fora_de_ordem',
-                    detalhe: `Recebida parcela ${numeroParcela}, mas a próxima esperada é ${proximaParcela}. Nenhuma baixa realizada.`
-                });
-                return res.sendStatus(200);
-            }
-
-            const { error: erroUpdate } = await supabase
-                .from('propostas')
-                .update({ parcelas_pagas: numeroParcela })
-                .eq('id', propostaId)
-                .eq('parcelas_pagas', parcelasPagasAtual);
-
-            if(erroUpdate) {
-                console.error('❌ Erro ao atualizar parcela da proposta', propostaId, erroUpdate);
-                await registrarLogWebhook({
-                    paymentId, statusMp: pagamento.status, referencia, propostaId, tipo,
-                    resultado: 'erro_ao_atualizar',
-                    detalhe: erroUpdate.message
-                });
-            } else {
-                console.log(`✅ Parcela ${numeroParcela} da proposta ${propostaId} confirmada via Pix.`);
-
-                await registrarLogWebhook({
-                    paymentId, statusMp: pagamento.status, referencia, propostaId, tipo,
-                    resultado: 'sucesso',
-                    detalhe: `Parcela ${numeroParcela} confirmada para ${proposta.nome || 'cliente'}.`
-                });
-
-                enviarPushPara('cliente', proposta.cpf, '✅ Parcela paga!', `Sua ${numeroParcela}ª parcela foi confirmada. Seu limite já foi atualizado.`, { url: '/consultar.html' });
-                enviarPushPara('admin', 'admin', '💵 Parcela Pix confirmada', `${proposta.nome || 'Cliente'} — pagou a ${numeroParcela}ª parcela da proposta #${propostaId}.`, { url: '/painel.html' });
-
-                if(proposta.funcionario_id) {
-                    enviarPushPara(
-                        'funcionario',
-                        proposta.funcionario_id,
-                        '📦 Parcela do seu cliente foi paga',
-                        `${proposta.nome || 'Seu cliente'} pagou a ${numeroParcela}ª parcela.`,
-                        { url: '/funcionario.html' }
-                    );
+            const pagas = Number(proposta.parcelas_pagas || 0);
+            if(numeroParcela === pagas + 1) {
+                const { error } = await supabase.from('propostas').update({ parcelas_pagas: numeroParcela }).eq('id', propostaId).eq('parcelas_pagas', pagas);
+                if(!error) {
+                    enviarPushPara('cliente', proposta.cpf, '✅ Parcela paga!', `Sua ${numeroParcela}ª parcela foi confirmada.`, { url: '/consultar.html' });
+                    enviarPushPara('admin', 'admin', '💵 Parcela Pix confirmada', `${proposta.nome || 'Cliente'} — ${numeroParcela}ª parcela via PagBank.`, { url: '/painel.html' });
                 }
             }
-        } else {
-            // tipo diferente de 'entrada'/'parcela', ou 'parcela' sem número — não bate com nada tratado.
-            await registrarLogWebhook({
-                paymentId, statusMp: pagamento.status, referencia, propostaId, tipo,
-                resultado: 'tipo_nao_tratado',
-                detalhe: `external_reference não reconhecido pelo webhook: "${referencia}"`
-            });
         }
-
         res.sendStatus(200);
-
-    } catch (erro) {
-        // Sempre responde 200 para o Mercado Pago não ficar reenviando em loop —
-        // o erro real fica registrado no log do servidor para investigação.
-        console.error('ERRO NO WEBHOOK:', erro);
-        try {
-            await supabase.from('log_webhook_pagamentos').insert({
-                resultado: 'erro_inesperado',
-                detalhe: erro.message
-            });
-        } catch(_) {}
+    } catch(erro) {
+        console.error('ERRO WEBHOOK PAGBANK:', erro);
         res.sendStatus(200);
     }
 });
@@ -476,83 +308,9 @@ app.post('/api/webhook-nova-proposta', async (req, res) => {
     }
 });
 
-// ✅ RECONCILIAÇÃO — rede de segurança pra pagamentos que o webhook perdeu
-// (ex: Mercado Pago não conseguiu entregar a notificação, servidor estava
-// dormindo no plano grátis do Render, etc). Varre os pagamentos Pix recentes
-// direto na API do Mercado Pago e confere um por um contra o banco — se achar
-// algum aprovado que não bateu no webhook, corrige e avisa na hora.
+// ✅ RECONCILIAÇÃO PAGBANK — o webhook é a fonte principal; esta rota permanece para monitoramento.
 app.all('/api/reconciliar-pagamentos', async (req, res) => {
-    try {
-        const desde = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(); // últimos 3 dias
-
-        const busca = await pagamentoServico.search({
-            options: {
-                sort: 'date_created',
-                criteria: 'desc',
-                range: 'date_created',
-                begin_date: desde,
-                end_date: new Date().toISOString()
-            }
-        });
-
-        const pagamentosAprovados = (busca?.results || []).filter(p => p.status === 'approved' && p.external_reference);
-
-        let corrigidos = 0;
-
-        for(const pagamento of pagamentosAprovados) {
-            const partes = String(pagamento.external_reference).split(':');
-            const tipo = partes[0];
-            const propostaId = partes[1];
-            const numeroParcela = partes[2] ? Number(partes[2]) : null;
-
-            if(!propostaId) continue;
-
-            const { data: proposta } = await supabase
-                .from('propostas')
-                .select('nome, cpf, funcionario_id, valor_desejado, entrada_paga, parcelas_pagas')
-                .eq('id', propostaId)
-                .maybeSingle();
-
-            if(!proposta) continue;
-
-            if(tipo === 'entrada' && !proposta.entrada_paga) {
-                await supabase.from('propostas').update({
-                    entrada_paga: true,
-                    data_pagamento_entrada: new Date().toISOString()
-                }).eq('id', propostaId);
-
-                enviarPushPara('cliente', proposta.cpf, '✅ Entrada confirmada!', 'Seu pagamento foi recebido. Acompanhe o andamento pelo app.', { url: '/consultar.html' });
-                enviarPushPara('admin', 'admin', '💰 Entrada Pix confirmada (reconciliação)', `${proposta.nome || 'Cliente'} — proposta #${propostaId}.`, { url: '/painel.html' });
-
-                const valorComissao = await gerarComissaoSeNecessario(propostaId, proposta);
-                if(valorComissao !== null && proposta.funcionario_id) {
-                    enviarPushPara('funcionario', proposta.funcionario_id, '💰 Comissão liberada!', `A entrada de ${proposta.nome || 'seu cliente'} foi confirmada.`, { url: '/funcionario.html' });
-                }
-
-                corrigidos++;
-
-            } else if(tipo === 'parcela' && numeroParcela && Number(proposta.parcelas_pagas || 0) < numeroParcela) {
-                await supabase.from('propostas').update({
-                    parcelas_pagas: numeroParcela
-                }).eq('id', propostaId);
-
-                enviarPushPara('cliente', proposta.cpf, '✅ Parcela paga!', `Sua ${numeroParcela}ª parcela foi confirmada.`, { url: '/consultar.html' });
-                enviarPushPara('admin', 'admin', '💵 Parcela Pix confirmada (reconciliação)', `${proposta.nome || 'Cliente'} — ${numeroParcela}ª parcela, proposta #${propostaId}.`, { url: '/painel.html' });
-
-                if(proposta.funcionario_id) {
-                    enviarPushPara('funcionario', proposta.funcionario_id, '📦 Parcela do seu cliente foi paga', `${proposta.nome || 'Seu cliente'} pagou a ${numeroParcela}ª parcela.`, { url: '/funcionario.html' });
-                }
-
-                corrigidos++;
-            }
-        }
-
-        res.json({ sucesso: true, verificados: pagamentosAprovados.length, corrigidos });
-
-    } catch(erro) {
-        console.error('❌ Erro na reconciliação de pagamentos:', erro);
-        res.json({ sucesso: false, mensagem: erro.message });
-    }
+    res.json({ sucesso: true, provider: 'pagbank', mensagem: 'PagBank ativo; confirmações são processadas pelo webhook /api/webhook-pagbank.' });
 });
 
 // ✅ VERIFICAÇÃO DE SENHA DO PAINEL ADMIN
