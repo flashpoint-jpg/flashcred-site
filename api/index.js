@@ -17,9 +17,37 @@ const SUPABASE_URL = 'https://rgcclordmqjmwuzrrfbd.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICO_CHAVE;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ✅ PAGBANK — credencial somente no servidor
+// PagBank fica disponível apenas para confirmar cobranças antigas já emitidas.
 const PAGBANK_TOKEN = process.env.PAGBANK_TOKEN;
 const PAGBANK_API = process.env.PAGBANK_API_URL || 'https://api.pagseguro.com';
+
+// Efí compartilhada pelos apps integrados (Vendai / Entrega Flash / FlashCred).
+// As credenciais e o certificado ficam centralizados no backend do Vendai;
+// o FlashCred autentica essa chamada com a mesma service role do Supabase.
+const EFI_BRIDGE = 'https://vendai-site.vercel.app/api/efi-pix';
+
+async function chamarEfi(acao, corpo = {}) {
+    if(!SUPABASE_KEY) throw new Error('SUPABASE_SERVICO_CHAVE não configurada no servidor.');
+    const resposta = await fetch(`${EFI_BRIDGE}?action=${encodeURIComponent(acao)}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-supabase-service-role': SUPABASE_KEY
+        },
+        body: JSON.stringify(corpo)
+    });
+    const texto = await resposta.text();
+    let dados = {};
+    try { dados = texto ? JSON.parse(texto) : {}; } catch(_) { dados = { raw: texto }; }
+    if(!resposta.ok) {
+        const detalhe = dados?.provider?.error_description || dados?.provider?.error || dados?.error || `Efí HTTP ${resposta.status}`;
+        const erro = new Error(detalhe);
+        erro.status = resposta.status;
+        erro.dados = dados;
+        throw erro;
+    }
+    return dados;
+}
 
 async function chamarPagBank(caminho, opcoes = {}) {
     if(!PAGBANK_TOKEN) throw new Error('PAGBANK_TOKEN não configurado no servidor.');
@@ -165,37 +193,124 @@ app.get('/api/push/chave-publica', (req, res) => {
     res.json({ chave: VAPID_PUBLIC_KEY || null });
 });
 
-// ✅ ROTA DE GERA PIX — LIMPEZA DE VALOR E TUDO
+// ✅ PIX FLASHCRED — Efí compartilhada
 app.post('/api/gerar-pix', async (req, res) => {
     try {
         const valorLimpo = Number(String(req.body.valor).replace(/[^0-9,.]/g, '').replace(',', '.'));
-        if(isNaN(valorLimpo) || valorLimpo <= 0) return res.json({ sucesso: false, mensagem: 'Valor inválido' });
+        const propostaId = Number(req.body.proposta_id);
+        const tipo = String(req.body.tipo || 'entrada');
+        const numeroParcela = req.body.numero_parcela != null ? Number(req.body.numero_parcela) : null;
 
-        const propostaId = req.body.proposta_id || null;
-        const tipo = req.body.tipo || 'entrada';
-        const numeroParcela = req.body.numero_parcela || null;
-        const referencia = propostaId
-            ? (tipo === 'parcela' ? `parcela:${propostaId}:${numeroParcela || ''}` : `entrada:${propostaId}`)
-            : `flashcred:${Date.now()}`;
-        const notificationUrl = `${req.protocol}://${req.get('host')}/api/webhook-pagbank`;
-        const valorCentavos = Math.round(valorLimpo * 100);
-        const expiracao = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+        if(!Number.isFinite(valorLimpo) || valorLimpo <= 0) {
+            return res.status(400).json({ sucesso: false, mensagem: 'Valor inválido' });
+        }
+        if(!Number.isInteger(propostaId) || propostaId <= 0 || !['entrada','parcela'].includes(tipo)) {
+            return res.status(400).json({ sucesso: false, mensagem: 'Cobrança inválida' });
+        }
 
-        const pedido = await chamarPagBank('/orders', {
-            method: 'POST',
-            body: JSON.stringify({
-                reference_id: referencia,
-                items: [{ reference_id: referencia, name: req.body.descricao || 'Pagamento FlashCred', quantity: 1, unit_amount: valorCentavos }],
-                qr_codes: [{ amount: { value: valorCentavos }, expiration_date: expiracao }],
-                notification_urls: [notificationUrl]
-            })
+        const { data: proposta, error: erroProposta } = await supabase
+            .from('propostas')
+            .select('id,nome,cpf,funcionario_id,valor_desejado,valor_entrada,parcelas_pagas,entrada_paga,qtd_parcelas_escolhida,quantidade_parcelas,juros_mensal')
+            .eq('id', propostaId)
+            .maybeSingle();
+
+        if(erroProposta || !proposta) {
+            return res.status(404).json({ sucesso: false, mensagem: 'Proposta não encontrada' });
+        }
+
+        if(tipo === 'entrada') {
+            if(proposta.entrada_paga) {
+                return res.status(409).json({ sucesso: false, mensagem: 'A entrada desta proposta já está paga.' });
+            }
+            const entradaEsperada = Number(proposta.valor_entrada || 0);
+            if(entradaEsperada > 0 && Math.abs(valorLimpo - entradaEsperada) > 0.05) {
+                return res.status(409).json({ sucesso: false, mensagem: 'O valor da entrada mudou. Atualize a página e tente novamente.' });
+            }
+        } else {
+            const pagas = Number(proposta.parcelas_pagas || 0);
+            if(!Number.isInteger(numeroParcela) || numeroParcela !== pagas + 1) {
+                return res.status(409).json({ sucesso: false, mensagem: 'Esta não é a próxima parcela em aberto.' });
+            }
+
+            const qtd = Number(proposta.qtd_parcelas_escolhida || proposta.quantidade_parcelas || 0);
+            const principal = Math.max(0, Number(proposta.valor_desejado || 0) - Number(proposta.valor_entrada || 0));
+            const juros = Number(proposta.juros_mensal || 0) / 100;
+            let base = 0;
+            if(qtd > 0 && principal > 0) {
+                base = juros > 0
+                    ? principal * (juros * Math.pow(1 + juros, qtd)) / (Math.pow(1 + juros, qtd) - 1)
+                    : principal / qtd;
+            }
+            if(base > 0 && valorLimpo + 0.05 < base) {
+                return res.status(409).json({ sucesso: false, mensagem: 'O valor da parcela está abaixo do valor oficial. Atualize a página.' });
+            }
+        }
+
+        const { data: existente } = await supabase
+            .from('flashcred_pix_pagamentos')
+            .select('txid,copia_cola,valor,status,criado_em')
+            .eq('proposta_id', propostaId)
+            .eq('tipo', tipo)
+            .eq('numero_parcela', numeroParcela)
+            .eq('status', 'pendente')
+            .gte('criado_em', new Date(Date.now() - 24*60*60*1000).toISOString())
+            .order('criado_em', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if(existente && Math.abs(Number(existente.valor) - valorLimpo) <= 0.01 && existente.copia_cola) {
+            return res.json({
+                sucesso: true,
+                qr_code: existente.copia_cola,
+                payment_id: existente.txid,
+                txid: existente.txid,
+                provider: 'efi',
+                reutilizado: true
+            });
+        }
+
+        const descricao = req.body.descricao || (tipo === 'parcela'
+            ? `Parcela ${numeroParcela} - Proposta ${propostaId}`
+            : `Entrada - Proposta ${propostaId}`);
+
+        const cobranca = await chamarEfi('create', {
+            valor: Math.round(valorLimpo * 100) / 100,
+            descricao,
+            expiracao_seconds: 86400
         });
-        const qr = pedido?.qr_codes?.[0];
-        if(!qr?.text) throw new Error('PagBank não retornou o código PIX.');
-        res.json({ sucesso: true, qr_code: qr.text, order_id: pedido.id, provider: 'pagbank' });
+
+        const txid = String(cobranca?.txid || cobranca?.cobranca_id || '');
+        const copiaCola = String(cobranca?.copia_cola || '');
+        if(!txid || !copiaCola) throw new Error('A Efí não retornou o código PIX.');
+
+        const { error: erroSalvar } = await supabase
+            .from('flashcred_pix_pagamentos')
+            .insert({
+                txid,
+                proposta_id: propostaId,
+                tipo,
+                numero_parcela: numeroParcela,
+                valor: Math.round(valorLimpo * 100) / 100,
+                status: 'pendente',
+                copia_cola: copiaCola,
+                provider: 'efi'
+            });
+
+        if(erroSalvar) {
+            console.error('PIX Efí criado, mas não foi possível registrar:', erroSalvar);
+            throw new Error('PIX criado, mas não foi possível registrar a cobrança.');
+        }
+
+        res.json({
+            sucesso: true,
+            qr_code: copiaCola,
+            payment_id: txid,
+            txid,
+            provider: 'efi'
+        });
     } catch (erro) {
-        console.error('ERRO PAGBANK:', erro);
-        res.json({ sucesso: false, mensagem: erro.message });
+        console.error('ERRO EFI PIX:', erro);
+        res.status(502).json({ sucesso: false, mensagem: erro.message || 'Não foi possível gerar o PIX agora.' });
     }
 });
 
@@ -235,7 +350,7 @@ async function gerarComissaoSeNecessario(propostaId, proposta) {
     return valorComissao;
 }
 
-// ✅ WEBHOOK PAGBANK — confirma o status diretamente na API antes de dar baixa
+// ✅ WEBHOOK PAGBANK LEGADO — mantém baixa de cobranças antigas já emitidas
 app.post('/api/webhook-pagbank', async (req, res) => {
     try {
         const orderId = req.body?.id || req.body?.order?.id;
@@ -261,7 +376,7 @@ app.post('/api/webhook-pagbank', async (req, res) => {
             const { error } = await supabase.from('propostas').update({ entrada_paga: true, data_pagamento_entrada: new Date().toISOString() }).eq('id', propostaId);
             if(!error) {
                 enviarPushPara('cliente', proposta.cpf, '✅ Entrada confirmada!', 'Seu pagamento foi recebido. Acompanhe o andamento pelo app.', { url: '/consultar.html' });
-                enviarPushPara('admin', 'admin', '💰 Entrada Pix confirmada', `${proposta.nome || 'Cliente'} — entrada da proposta #${propostaId} recebida via PagBank.`, { url: '/painel.html' });
+                enviarPushPara('admin', 'admin', '💰 Entrada Pix confirmada', `${proposta.nome || 'Cliente'} — entrada da proposta #${propostaId} recebida via PagBank (legado).`, { url: '/painel.html' });
                 try { await gerarComissaoSeNecessario(propostaId, proposta); } catch(_) {}
             }
         } else if(tipo === 'parcela' && numeroParcela) {
@@ -270,7 +385,7 @@ app.post('/api/webhook-pagbank', async (req, res) => {
                 const { error } = await supabase.from('propostas').update({ parcelas_pagas: numeroParcela }).eq('id', propostaId).eq('parcelas_pagas', pagas);
                 if(!error) {
                     enviarPushPara('cliente', proposta.cpf, '✅ Parcela paga!', `Sua ${numeroParcela}ª parcela foi confirmada.`, { url: '/consultar.html' });
-                    enviarPushPara('admin', 'admin', '💵 Parcela Pix confirmada', `${proposta.nome || 'Cliente'} — ${numeroParcela}ª parcela via PagBank.`, { url: '/painel.html' });
+                    enviarPushPara('admin', 'admin', '💵 Parcela Pix confirmada', `${proposta.nome || 'Cliente'} — ${numeroParcela}ª parcela via PagBank (legado).`, { url: '/painel.html' });
                 }
             }
         }
@@ -308,9 +423,112 @@ app.post('/api/webhook-nova-proposta', async (req, res) => {
     }
 });
 
-// ✅ RECONCILIAÇÃO PAGBANK — o webhook é a fonte principal; esta rota permanece para monitoramento.
+// ✅ RECONCILIAÇÃO EFÍ — baixa automática, parcelas e push
 app.all('/api/reconciliar-pagamentos', async (req, res) => {
-    res.json({ sucesso: true, provider: 'pagbank', mensagem: 'PagBank ativo; confirmações são processadas pelo webhook /api/webhook-pagbank.' });
+    try {
+        const { data: pendentes, error } = await supabase
+            .from('flashcred_pix_pagamentos')
+            .select('*')
+            .eq('provider', 'efi')
+            .eq('status', 'pendente')
+            .order('criado_em', { ascending: true })
+            .limit(100);
+
+        if(error) throw error;
+
+        let pagos = 0, expirados = 0, erros = 0;
+
+        for(const pagamento of (pendentes || [])) {
+            try {
+                const consulta = await chamarEfi('status', { txid: pagamento.txid });
+                const status = String(consulta?.status || '').toUpperCase();
+                const valorEfi = Number(consulta?.valor || 0);
+                const valorEsperado = Number(pagamento.valor || 0);
+
+                if(consulta?.pago === true || status === 'CONCLUIDA') {
+                    if(Math.abs(valorEfi - valorEsperado) > 0.01) {
+                        await supabase.from('flashcred_pix_pagamentos')
+                            .update({ status: 'erro', atualizado_em: new Date().toISOString() })
+                            .eq('id', pagamento.id);
+                        erros++;
+                        continue;
+                    }
+
+                    const { data: proposta } = await supabase.from('propostas')
+                        .select('nome,cpf,funcionario_id,valor_desejado,parcelas_pagas,entrada_paga')
+                        .eq('id', pagamento.proposta_id)
+                        .maybeSingle();
+
+                    if(!proposta) {
+                        await supabase.from('flashcred_pix_pagamentos')
+                            .update({ status: 'erro', atualizado_em: new Date().toISOString() })
+                            .eq('id', pagamento.id);
+                        erros++;
+                        continue;
+                    }
+
+                    if(pagamento.tipo === 'entrada') {
+                        if(!proposta.entrada_paga) {
+                            const { error: erroBaixa } = await supabase.from('propostas')
+                                .update({ entrada_paga: true, data_pagamento_entrada: new Date().toISOString() })
+                                .eq('id', pagamento.proposta_id)
+                                .eq('entrada_paga', false);
+
+                            if(erroBaixa) throw erroBaixa;
+
+                            await enviarPushPara('cliente', proposta.cpf, '✅ Entrada confirmada!', 'Seu pagamento foi recebido. Acompanhe o andamento pelo app.', { url: '/consultar.html' });
+                            await enviarPushPara('admin', 'admin', '💰 Entrada Pix confirmada', `${proposta.nome || 'Cliente'} — entrada da proposta #${pagamento.proposta_id} recebida via Efí.`, { url: '/painel.html' });
+                            try { await gerarComissaoSeNecessario(pagamento.proposta_id, proposta); } catch(_) {}
+                        }
+                    } else if(pagamento.tipo === 'parcela' && pagamento.numero_parcela) {
+                        const pagas = Number(proposta.parcelas_pagas || 0);
+                        const numero = Number(pagamento.numero_parcela);
+
+                        if(numero === pagas + 1) {
+                            const { error: erroBaixa } = await supabase.from('propostas')
+                                .update({ parcelas_pagas: numero })
+                                .eq('id', pagamento.proposta_id)
+                                .eq('parcelas_pagas', pagas);
+                            if(erroBaixa) throw erroBaixa;
+
+                            await enviarPushPara('cliente', proposta.cpf, '✅ Parcela paga!', `Sua ${numero}ª parcela foi confirmada.`, { url: '/consultar.html' });
+                            await enviarPushPara('admin', 'admin', '💵 Parcela Pix confirmada', `${proposta.nome || 'Cliente'} — ${numero}ª parcela recebida via Efí.`, { url: '/painel.html' });
+                        } else if(numero > pagas + 1) {
+                            continue;
+                        }
+                    }
+
+                    await supabase.from('flashcred_pix_pagamentos')
+                        .update({
+                            status: 'pago',
+                            pago_em: new Date().toISOString(),
+                            atualizado_em: new Date().toISOString()
+                        })
+                        .eq('id', pagamento.id)
+                        .eq('status', 'pendente');
+                    pagos++;
+                    continue;
+                }
+
+                const criado = new Date(pagamento.criado_em).getTime();
+                if(status.includes('REMOVIDA') || Date.now() - criado > 24*60*60*1000) {
+                    await supabase.from('flashcred_pix_pagamentos')
+                        .update({ status: 'expirado', atualizado_em: new Date().toISOString() })
+                        .eq('id', pagamento.id)
+                        .eq('status', 'pendente');
+                    expirados++;
+                }
+            } catch(erroItem) {
+                erros++;
+                console.error('Erro conciliando PIX Efí', pagamento.txid, erroItem);
+            }
+        }
+
+        res.json({ sucesso: true, provider: 'efi', pagos, expirados, erros });
+    } catch (erro) {
+        console.error('ERRO RECONCILIACAO EFI:', erro);
+        res.status(500).json({ sucesso: false, provider: 'efi', mensagem: erro.message });
+    }
 });
 
 // ✅ VERIFICAÇÃO DE SENHA DO PAINEL ADMIN
